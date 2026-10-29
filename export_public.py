@@ -36,7 +36,7 @@ package_port.py pen_policy.py port_changes.py prepare_inputs.py stability_probe.
 validate_candidate.py UpdateDsuImages.java VerifyDsuImages.java
 test_android_disk.py test_bootanimation_geometry.py test_build_dsu_diagnostic.py
 test_build_native_rom.py test_build_oplus_pen.py test_build_pen_dsu.py test_build_updater.py test_build_face_overlay.py test_check_sukisu_layout.py
-test_build_native_userspace.py test_initial_install.py test_engine_libraries.py test_source_copy.py
+test_build_native_userspace.py test_native_r5_userspace.py test_initial_install.py test_engine_libraries.py test_source_copy.py
 test_patch_taskmanager.py
 test_check_updates.py test_cold_build_dsu.py test_desktop_repair_gate.py
 test_erofs_overlay.py test_erofs_sanitize.py test_flash_test.py test_pen_policy.py test_port_changes.py
@@ -80,8 +80,9 @@ policy/vendor/plat_pub_versioned.cil policy/vendor/plat_sepolicy_vers.txt
 policy/vendor/vendor_sepolicy.cil
 """.split()
 NATIVE_FILES = """
-avb.py fstab.py layout.py payload.py public_image.py product_cleanup.py initial_install.py engine_libraries.py install-sukisu-manager.sh tools/avbtool.py
+avb.py fstab.py layout.py payload.py public_image.py product_cleanup.py r5_userspace.py initial_install.py engine_libraries.py install-sukisu-manager.sh tools/avbtool.py
 patch_sukisu_module.py
+donor-extractor/README.md donor-extractor/LICENSE donor-extractor/source-lock.json donor-extractor/native-lz4.patch
 source-pins.json sukisu-layout-baseline.json plan.example.json tools.example.json
 review.example.json bootcontrol/build_probe.py bootcontrol/NativeBootControlProbe.java
 plan.schema.json review.schema.json slot-state.example.json slot-state.schema.json
@@ -271,6 +272,11 @@ verify the final candidate before creating a fresh public repository.
 Never reuse the private repository's Git directory, commits, branches or remotes.
 """,
     "native_install/README.md": """# Native installer source and private build inputs
+
+The private native5 candidate rebases userspace onto mica R5/build 16693588.
+It has passed host checks but has not been installed. Schema 2 composes clean R5
+images with the reviewed tablet graft; see [donor-extractor](donor-extractor/README.md).
+The public binary feed remains native3.
 
 Native3 has been installed through the maintainer's built-in updater and completed
 its snapshot merge. This qualifies that exact update path, not a public first

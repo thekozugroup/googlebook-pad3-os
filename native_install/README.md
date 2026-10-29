@@ -1,5 +1,10 @@
 # Native installer source and private build inputs
 
+The private native5 candidate rebases userspace onto mica R5/build 16693588.
+It has passed host checks but has not been installed. Schema 2 composes clean R5
+images with the reviewed tablet graft; see [donor-extractor](donor-extractor/README.md).
+The public binary feed remains native3.
+
 Native3 has been installed through the maintainer's built-in updater and completed
 its snapshot merge. This qualifies that exact update path, not a public first
 installation or restore procedure. See PUBLIC_RELEASE.md and LAUNCH_READINESS.md.

@@ -287,10 +287,8 @@ def validate_plan(plan, certificate, tools):
     hardware = {name: checked(capture["hardware"][name]) for name in sorted(HARDWARE)}
     root_image = check_root_images(hardware, images, copies)
     from native_install import product_cleanup
-    require(sha256(images["product"]) == product_cleanup.TARGET_SHA,
-            "Product must contain the reviewed physical Dell APK removal")
-    if "product" not in copies:
-        product_cleanup.validate(checked(tools["product_source"]), images["product"])
+    product_cleanup.validate_release(images["product"],
+                                    None if "product" in copies else checked(tools["product_source"]))
     for name in HARDWARE - {"init_boot", "vendor_boot", "recovery", "vbmeta", "vbmeta_system", "vbmeta_vendor"}:
         require(sha256(images[name]) == sha256(hardware[name]), "mismatched hardware base: " + name)
     for name, image in images.items():

@@ -6,6 +6,30 @@ GitHub. The public target is `thekozugroup/googlebook-pad3-os`; the parent publi
 reviewed source there using fresh history. Do not copy the private `.git` directory.
 The exporter never changes Git identity, initializes a repository or publishes.
 
+## Native5 R5 candidate: installation pending
+
+The private native5 package rebases the three userspace partitions onto Google's
+signed mica R5/build 16693588 (CL3B.260622.276.R5, security patch 2026-10-01).
+The clean targets were reconstructed from exact signed R2 inputs. Every complete
+raw target hash matches the signed upstream manifest. The existing tablet graft,
+pen, native updater, Task Manager, tablet-posture correction and Dell removal
+were reapplied with exact source guards. Kernel, vendor, firmware and SukiSU
+41100/UAPI 6 are retained.
+
+Host validation ran 198 tests: 193 passed and five optional cases skipped. The
+actual candidate separately passed filesystem/AVB/root checks, strict SELinux
+neverallow and runtime-linkage checks. An independent streaming verifier checked
+all 15 reconstructed payload targets, operation/source hashes, destination
+coverage, and metadata/payload/feed signatures. Product content review found
+only build.prop and boot animation changes plus the three removed Dell APKs.
+
+The package accepts only native4's exact fingerprint and source slot A. It is a
+private owner test preserving userdata. Installation has not started: USB was
+disconnected immediately before staging. Host checks do not establish boot or
+runtime stability. The public native3 feed is unchanged; no R5 binary is public.
+Build instructions and the GPLv2 donor extractor patch are under
+[native_install/donor-extractor](native_install/donor-extractor/README.md).
+
 ## Native4 maintainer-only tablet-mode verification
 
 On 2026-10-29 the maintainer installed a private native4 candidate from native3/B to inactive A using the native UpdateEngine client with the signed local payload. All 15 target hashes were independently reconstructed; metadata, payload and feed signatures were verified. The update preserved accounts/userdata, booted native4/A and completed cleanup with snapshot state `NONE` and slot A successful/bootable. This was a local owner test, not a new public feed release or a validated first-install path.

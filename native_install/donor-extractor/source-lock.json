@@ -1,0 +1,16 @@
+{
+  "repository": "https://github.com/YuKongA/payload_extract_rs",
+  "revision": "f09be1d93f2ee567eb3f98a6c52eb0c7d4d6f806",
+  "source_archive_url": "https://codeload.github.com/YuKongA/payload_extract_rs/tar.gz/f09be1d93f2ee567eb3f98a6c52eb0c7d4d6f806",
+  "source_archive_sha256": "14e81e0eec628fe81ed004e2ef980585cb1027609c2658bc37f559e259dbf70c",
+  "source_archive_bytes": 86359,
+  "cargo_lock_sha256": "22e25dc6bf0460721de5c7771474040852800dacf6c3589cc7955c54c5780e5e",
+  "local_patch_sha256": "c9a964c7ff29ad2b5f397eb3808683a6810a84c3ff9ad6f840893d62f0f2e909",
+  "patched_file_sha256": "b1735a5150787af41c408ebcaf240b9694d6821f299d903c64fd807530e45fae",
+  "upstream_file_sha256": "e9f738136098d51c5b00297091647a703b7a0d38ed9b9cb4bf349a253491d38b",
+  "patch": "native-lz4.patch",
+  "patched_file": "src/extract/lz4diff.rs",
+  "lz4_version": "1.10.0",
+  "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+  "cargo": "cargo 1.97.1 (c980f4866 2026-06-30)"
+}

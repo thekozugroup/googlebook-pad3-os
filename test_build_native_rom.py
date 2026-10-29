@@ -269,6 +269,25 @@ class ValidationTests(unittest.TestCase):
                 self.assertFalse(target.exists())
                 self.assertEqual(source.read_bytes(), b"baseline")
 
+    def test_product_release_accepts_only_reviewed_lineages(self):
+        from native_install import product_cleanup
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            old, current, updated = [root / name for name in ("old", "current", "updated")]
+            for path in (old, current, updated):
+                path.write_bytes(path.name.encode())
+            with patch.object(product_cleanup, "SOURCE_SHA", payload.sha256(old)), \
+                 patch.object(product_cleanup, "TARGET_SHA", payload.sha256(current)), \
+                 patch.object(product_cleanup, "R5_TARGET_SHA", payload.sha256(updated)):
+                for target, source in ((current, None), (updated, None), (current, old), (updated, current)):
+                    product_cleanup.validate_release(target, source)
+                for target, source in ((updated, old), (current, updated)):
+                    with self.assertRaises(ValueError):
+                        product_cleanup.validate_release(target, source)
+                updated.write_bytes(b"unreviewed target")
+                with self.assertRaisesRegex(ValueError, "reviewed physical"):
+                    product_cleanup.validate_release(updated)
+
     def test_image_reader_allows_android_sonames_and_rejects_path_escape(self):
         with patch("erofs_overlay.content", return_value=b"pinned library"):
             self.assertEqual(native.image_file(Path("unused"), "erofs", "/lib64/private/android.hardware.boot@1.2.so"), b"pinned library")

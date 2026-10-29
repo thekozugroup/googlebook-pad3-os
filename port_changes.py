@@ -193,18 +193,10 @@ def disable_repair_receiver(data):
     return data.replace(b"</config>\n", override + b"</config>\n")
 
 
-def diagnostic_changes(images, key):
-    prop = content(images / "system.img", "/system/build.prop")
-    for name, value in [("ro.secure", "1"), ("ro.adb.secure", "1"),
-                        ("ro.debuggable", "0"), ("ro.force.debuggable", "0"),
-                        ("service.adb.listen_addrs", "tcp:localhost:5555")]:
-        require(re.findall(rb"^" + re.escape(name.encode()) + rb"=(.*)$", prop, re.MULTILINE) ==
-                [value.encode()], "unexpected diagnostic security property: " + name)
-    require(not re.search(rb"^ro.boot.apex.early_adbd=", prop, re.MULTILINE),
-            "early ADB boot property requires review")
-    for part, path in [("system", "/system/build.prop"), ("system_ext", "/etc/build.prop"),
-                       ("product", "/etc/build.prop")]:
-        data = prop if part == "system" else content(images / (part + ".img"), path)
+def display_heap_properties(properties):
+    """Add the tablet display/heap values after checking all donor partitions."""
+    for part in ("system", "system_ext", "product"):
+        data = properties[part]
         for name in DISPLAY_PROPERTIES:
             require(not re.search(rb"^[ \t]*" + re.escape(name.encode()) + rb"[ \t]*=", data, re.MULTILINE),
                     "native display property already present: " + part + ":" + name)
@@ -214,8 +206,25 @@ def diagnostic_changes(images, key):
         growth = re.findall(rb"^[ \t]*dalvik\.vm\.heapgrowthlimit[ \t]*=([^\n]*)$", data, re.MULTILINE)
         require(not growth or (len(growth) == 1 and growth[0].strip() == b"512m"),
                 "unexpected existing heap growth limit: " + part)
-    display_prop = prop + (b"" if prop.endswith(b"\n") else b"\n") + b"".join(
+    prop = properties["system"]
+    return prop + (b"" if prop.endswith(b"\n") else b"\n") + b"".join(
         (name + "=" + value + "\n").encode() for name, value in (DISPLAY_PROPERTIES | HEAP_PROPERTIES).items())
+
+
+def diagnostic_changes(images, key):
+    prop = content(images / "system.img", "/system/build.prop")
+    for name, value in [("ro.secure", "1"), ("ro.adb.secure", "1"),
+                        ("ro.debuggable", "0"), ("ro.force.debuggable", "0"),
+                        ("service.adb.listen_addrs", "tcp:localhost:5555")]:
+        require(re.findall(rb"^" + re.escape(name.encode()) + rb"=(.*)$", prop, re.MULTILINE) ==
+                [value.encode()], "unexpected diagnostic security property: " + name)
+    require(not re.search(rb"^ro.boot.apex.early_adbd=", prop, re.MULTILINE),
+            "early ADB boot property requires review")
+    display_prop = display_heap_properties({
+        "system": prop,
+        "system_ext": content(images / "system_ext.img", "/etc/build.prop"),
+        "product": content(images / "product.img", "/etc/build.prop"),
+    })
     tpm = "/system/etc/init/check_tpm_clear.rc"
     changes = {"system": {
         "/system/build.prop": display_prop,
@@ -279,25 +288,30 @@ def remove_desktop_security_hal(data):
 
 
 def create(images):
+    return tablet_changes({part: images / (part + "_a.img") for part in ("system", "system_ext", "product")})
+
+
+def tablet_changes(images):
+    """Functional tablet changes shared by the legacy and clean native planners."""
     system, extension, product = {}, {}, {}
     for path in DISABLED_SYSTEM_INIT:
-        system[path] = neutralize_system_init(path, content(images / "system_a.img", path))
+        system[path] = neutralize_system_init(path, content(images["system"], path))
     for path, reason in DISABLED_EXTENSION_INIT.items():
-        require(b"service " in content(images / "system_ext_a.img", path), "unexpected init input: " + path)
+        require(b"service " in content(images["system_ext"], path), "unexpected init input: " + path)
         extension[path] = ("# erhai Googlebook test port: " + reason + "\n").encode()
     system["/system/build.prop"] = replace_property(
-        content(images / "system_a.img", "/system/build.prop"),
+        content(images["system"], "/system/build.prop"),
         "trusty.security_vm.enabled", "0", expected="1")
     # Retain the desktop UI and headless-user design. Match the tablet's native DPI.
     extension["/etc/build.prop"] = replace_property(
-        content(images / "system_ext_a.img", "/etc/build.prop"), "ro.sf.lcd_density", "420")
+        content(images["system_ext"], "/etc/build.prop"), "ro.sf.lcd_density", "420")
     extension["/etc/vintf/manifest.xml"] = remove_desktop_security_hal(
-        content(images / "system_ext_a.img", "/etc/vintf/manifest.xml"))
+        content(images["system_ext"], "/etc/vintf/manifest.xml"))
     for partition, path, name in [
         ("system", "/system/etc/vintf/manifest/manifest_gscd.xml", "android.system.desktop.security.gsc"),
         ("system_ext", "/etc/vintf/manifest/com.google.android.desktop.super-partition-utils.xml", "com.google.android.desktop"),
     ]:
-        image = images / (partition + "_a.img")
+        image = images[partition]
         root = ET.fromstring(content(image, path))
         nodes = root.findall("hal")
         require(len(nodes) == 1 and nodes[0].findtext("name") == name,
@@ -305,7 +319,7 @@ def create(images):
         root.remove(nodes[0])
         {"system": system, "system_ext": extension}[partition][path] = (
             ET.tostring(root, encoding="utf-8", xml_declaration=True) + b"\n")
-    prop = content(images / "product_a.img", "/etc/build.prop")
+    prop = content(images["product"], "/etc/build.prop")
     for key, old, new in [
         ("ro.product.product.brand", "Dell", "OnePlus"),
         ("ro.product.product.device", "mica", "OP6190L1"),

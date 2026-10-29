@@ -8,6 +8,8 @@ taskmanager_metrics,taskmanager_metrics_verification,
 manager_service,apksigner,aapt2},
 and trust {each relative path emitted by build_native_rom.trust_overlay: file pin}.
 Every file pin is exactly {path: absolute path, sha256: lowercase SHA-256}.
+Schema 2 adds lineage="mica-r5-16693588" and files.tablet_graft_source, pins
+the three clean signed R5 targets, and composes functional tablet changes directly.
 Supply JAVA_HOME for the installed apksigner. Trust files come from the parent's
 trust_overlay call; components and the one-shot shell service are reviewed inputs.
 """
@@ -31,7 +33,7 @@ import build_native_rom as native
 from tablet_state import JAR_PATH as TABLET_STATE_JAR, patch_tablet_state
 from erofs_overlay import apply, content
 from erofs_sanitize import inventory, rewrite
-from native_install import engine_libraries, product_cleanup, public_image
+from native_install import engine_libraries, product_cleanup, public_image, r5_userspace
 from native_install.payload import require, sha256
 from port_changes import (BOOT_STAGE_FILE, BOOT_STAGE_PROPERTY, DIAGNOSTIC_ID,
                           DIAGNOSTIC_USB_REFRESH, DIAGNOSTIC_WAITS, WATCHDOG_NAME,
@@ -185,16 +187,22 @@ def verify_metrics(binary, receipt):
 
 def load_recipe(path):
     recipe = json.loads(native.regular(path).read_text())
-    require(set(recipe) == {"schema", "sequence", "timestamp", "images", "files", "trust"}
-            and recipe["schema"] == 1, "unexpected native userspace recipe")
+    clean = type(recipe.get("schema")) is int and recipe["schema"] == 2
+    require(set(recipe) == {"schema", "sequence", "timestamp", "images", "files", "trust"} | ({"lineage"} if clean else set())
+            and (clean or recipe["schema"] == 1), "unexpected native userspace recipe")
     require(type(recipe["sequence"]) is int and recipe["sequence"] > 0
             and type(recipe["timestamp"]) is int and 1792932356 <= recipe["timestamp"] < 2**63,
             "invalid release sequence/timestamp")
-    require(set(recipe["images"]) == set(PARTITIONS) and set(recipe["files"]) == FILE_INPUTS
+    require(set(recipe["images"]) == set(PARTITIONS)
+            and set(recipe["files"]) == FILE_INPUTS | ({"tablet_graft_source"} if clean else set())
             and set(recipe["trust"]) == set(TRUST_PATHS), "missing or unexpected pinned inputs")
+    if clean:
+        r5_userspace.validate_lineage(recipe)
     checked = {group: {name: native.checked(pin) for name, pin in recipe[group].items()}
                for group in ("images", "files", "trust")}
     require(all(native.image_kind(image) == "erofs" for image in checked["images"].values()), "EROFS inputs required")
+    if clean:
+        require(native.image_kind(checked["files"]["tablet_graft_source"]) == "erofs", "EROFS tablet graft source required")
     return recipe, checked
 
 
@@ -310,8 +318,17 @@ def partition_plan(image, partition, recipe, inputs):
     entries = inventory(image)
     prefix = "/system" if partition == "system" else ""
     prop = prefix + ("/build.prop" if partition == "system" else "/etc/build.prop")
-    payloads = {prop: native_properties(content(image, prop), partition, recipe["sequence"], recipe["timestamp"])}
-    removals = {p for p in ("/adb_keys", prefix + "/etc/security/adb_keys", "/product/etc/security/adb_keys") if p in entries}
+    clean = recipe.get("schema") == 2
+    payloads, grafts, removals = {}, {}, set()
+    if clean:
+        payloads, grafts, removals = r5_userspace.plan(
+            inputs["images"], partition, inputs["files"]["tablet_graft_source"],
+            inputs["files"]["component_certificate"].read_bytes())
+        require(all(path in entries and stat.S_ISREG(entries[path]["mode"]) for path in removals),
+                "clean R5 Product removal paths drifted")
+        require(not grafts.keys() & entries.keys(), "tablet graft would replace existing R5 files")
+    payloads[prop] = native_properties(payloads.get(prop, content(image, prop)), partition, recipe["sequence"], recipe["timestamp"])
+    removals |= {p for p in ("/adb_keys", prefix + "/etc/security/adb_keys", "/product/etc/security/adb_keys") if p in entries}
     for path, item in entries.items():
         if path == INIT:
             continue
@@ -325,22 +342,25 @@ def partition_plan(image, partition, recipe, inputs):
     if partition == "system":
         require(inputs["files"]["update_engine_rc"].read_bytes() == bundled_rc,
                 "native engine RC differs from private bundle")
-        require(WATCHDOG_PATH in removals, "not pure V10: watchdog input missing")
+        if not clean:
+            require(WATCHDOG_PATH in removals, "not pure V10: watchdog input missing")
+            payloads[INIT] = strip_diagnostics(content(image, INIT))
         require(hashlib.sha256(content(image, TASKMANAGER)).hexdigest() == TASKMANAGER_BASE_SHA, "TaskManager source JAR drift")
-        payloads |= {INIT: strip_diagnostics(content(image, INIT)), TASKMANAGER: inputs["files"]["taskmanager_jar"].read_bytes(),
+        payloads |= {TASKMANAGER: inputs["files"]["taskmanager_jar"].read_bytes(),
                      "/system/bin/update_engine": inputs["files"]["update_engine"].read_bytes(),
                      "/system/etc/init/update_engine.rc": bundled_rc}
         if recipe["sequence"] >= 4:
-            payloads[TABLET_STATE_JAR] = patch_tablet_state(content(image, TABLET_STATE_JAR))
+            payloads[TABLET_STATE_JAR] = patch_tablet_state(payloads.get(TABLET_STATE_JAR, content(image, TABLET_STATE_JAR)))
     elif partition == "system_ext":
-        cil, digest = native_policy(content(image, POLICY), content(image, POLICY_MAPPING),
-                                        content(image, POLICY_HASH))
+        cil, digest = native_policy(payloads.get(POLICY, content(image, POLICY)), content(image, POLICY_MAPPING),
+                                   payloads.get(POLICY_HASH, content(image, POLICY_HASH)))
         pen = inputs["files"]["pen_apk"].read_bytes()
         contexts = (METRICS_SOURCE / "file_contexts").read_bytes()
-        old_contexts = content(image, FILE_CONTEXTS)
+        old_contexts = payloads.get(FILE_CONTEXTS, content(image, FILE_CONTEXTS))
         require(b"googlebook_taskmanager_metrics" not in old_contexts, "metrics contexts already present")
-        require(dex_hashes(pen) != dex_hashes(content(image, PEN)),
-                "pen code is unchanged from V10; headless-user and permission fix required")
+        if not clean:
+            require(dex_hashes(pen) != dex_hashes(content(image, PEN)),
+                    "pen code is unchanged from V10; headless-user and permission fix required")
         payloads |= {FACE: inputs["files"]["face_overlay"].read_bytes(), UPDATER: inputs["files"]["updater"].read_bytes(),
                      PEN: pen,
                      POLICY: cil, POLICY_HASH: digest,
@@ -351,6 +371,8 @@ def partition_plan(image, partition, recipe, inputs):
                      MANAGER_RC: inputs["files"]["manager_service"].read_bytes()}
     payloads |= {p: item["data"] for p, item in engine_additions.items()
                  if stat.S_ISREG(item["metadata"]["mode"])}
+    require(not grafts.keys() & payloads.keys(), "tablet graft overlaps production integration")
+    payloads |= {p: item["data"] for p, item in grafts.items()}
     for relative, path in inputs["trust"].items():
         part, _, name = relative.partition("/")
         if part == partition:
@@ -358,6 +380,7 @@ def partition_plan(image, partition, recipe, inputs):
     require(not payloads.keys() & removals, "replacement overlaps a removal")
     changes, additions = additions_and_changes(entries, payloads)
     additions.update(engine_additions)
+    additions.update(grafts)
     if partition == "system_ext":
         require(METRICS_BINARY in additions, "metrics executable must be a new file")
         metadata = additions[METRICS_BINARY]["metadata"]
@@ -369,7 +392,7 @@ def partition_plan(image, partition, recipe, inputs):
 def assemble_partition(partition, recipe, inputs, output, scratch):
     image = native.checked(recipe["images"][partition])
     final = native.scratch_output(Path(output) / (partition + ".img"))
-    if partition == "product" and sha256(image) == product_cleanup.SOURCE_SHA:
+    if recipe.get("schema", 1) == 1 and partition == "product" and sha256(image) == product_cleanup.SOURCE_SHA:
         # Keep the audited Product baseline's other files byte-identical for delta updates.
         result = product_cleanup.build(image, final, scratch)
         return result | {"path": str(final), "base_sha256": recipe["images"][partition]["sha256"],
@@ -417,6 +440,9 @@ def build(recipe_path, output, scratch):
                                   "Parent must verify replacement pen headless/permission guards and protected updater DSU/mount guards; native properties do not prove DSU absence.",
                                   "EROFS requires reviewed vendor_boot AND recovery fstab patches.",
                                   "No AVB signing, payload generation, device actions or runtime pass."]}
+        if recipe["schema"] == 2:
+            report["lineage"] = recipe["lineage"]
+            report["limitations"].append("Clean R5 final composed policy requires separate strict compilation against retained tablet vendor/ODM; policy hashes do not prove linkage.")
         (output / "userspace-build.json").write_bytes(native.json_bytes(report))
         return report
     except BaseException:

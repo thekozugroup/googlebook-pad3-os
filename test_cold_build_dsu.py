@@ -15,7 +15,7 @@ class ColdBuildTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
-        self.root = Path(self.temp.name)
+        self.root = Path(self.temp.name).resolve()
 
     def test_seed_omits_only_tpm_replacement_and_normal_assembly_keeps_it(self):
         config = {"donor": {"partitions": {}}, "tablet": {"partitions": {}}}

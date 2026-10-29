@@ -977,9 +977,9 @@
       "sha256": "007fe52363ee9f5e4c4d1da2e67ca0f9b8b44c2394e1087a5eedd15021bbe90f"
     },
     "test_cold_build_dsu.py": {
-      "bytes": 5554,
+      "bytes": 5564,
       "executable": false,
-      "sha256": "108adcbd4cc4f8ca2acc0798f5f6e03e2ccc5111c93a9e5b53c32880c870dae4"
+      "sha256": "d97d3f1f3aa3edb7c9b09f4d4c62f7e26958ac3eb057113fb7a76016c60752c6"
     },
     "test_desktop_repair_gate.py": {
       "bytes": 5495,

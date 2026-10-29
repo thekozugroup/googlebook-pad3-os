@@ -28,6 +28,7 @@ from pathlib import Path, PurePosixPath
 sys.dont_write_bytecode = True
 
 import build_native_rom as native
+from tablet_state import JAR_PATH as TABLET_STATE_JAR, patch_tablet_state
 from erofs_overlay import apply, content
 from erofs_sanitize import inventory, rewrite
 from native_install import engine_libraries, product_cleanup, public_image
@@ -329,6 +330,8 @@ def partition_plan(image, partition, recipe, inputs):
         payloads |= {INIT: strip_diagnostics(content(image, INIT)), TASKMANAGER: inputs["files"]["taskmanager_jar"].read_bytes(),
                      "/system/bin/update_engine": inputs["files"]["update_engine"].read_bytes(),
                      "/system/etc/init/update_engine.rc": bundled_rc}
+        if recipe["sequence"] >= 4:
+            payloads[TABLET_STATE_JAR] = patch_tablet_state(content(image, TABLET_STATE_JAR))
     elif partition == "system_ext":
         cil, digest = native_policy(content(image, POLICY), content(image, POLICY_MAPPING),
                                         content(image, POLICY_HASH))

@@ -41,7 +41,7 @@ test_patch_taskmanager.py
 test_check_updates.py test_cold_build_dsu.py test_desktop_repair_gate.py
 test_erofs_overlay.py test_erofs_sanitize.py test_flash_test.py test_pen_policy.py test_port_changes.py
 test_prepare_inputs.py test_stability_probe.py export_public.py test_export_public.py
-PUBLIC_RELEASE.md
+PUBLIC_RELEASE.md LAUNCH_READINESS.md COMMUNITY_NOTES.md tablet_state.py test_tablet_state.py
 """.split()
 COMPONENT = "components/oplus-pen/"
 COMPONENT_FILES = """
@@ -101,6 +101,10 @@ src/org/googlebook/pad3/updater/ManifestCodec.java
 src/org/googlebook/pad3/updater/RootInstaller.java
 src/org/googlebook/pad3/updater/UpdateCore.java
 src/org/googlebook/pad3/updater/UpdateService.java
+src/org/googlebook/pad3/updater/WindowMode.java
+src/org/googlebook/pad3/updater/RootWindowMode.java
+src/org/googlebook/pad3/updater/LayoutTileService.java
+tests/WindowModeTest.java
 tests/FeedOrderTest.java tests/UpdateCoreTest.java tests/ProducerConsumerTest.java tests/ManifestCodecTest.java
 """.split()
 FACE_FILES = """
@@ -181,7 +185,7 @@ id_ed25519*
 *.dex
 native_install/capture-manifest.json
 """,
-    "README.md": """# GoogleBook Pad3 OS source candidate
+    "README.md": """# GoogleBook Pad3 OS experimental developer preview
 
 Experimental Googlebook Android desktop porting tools for the OnePlus Pad 3.
 This source export is for review. It does not establish hardware compatibility,
@@ -190,6 +194,7 @@ The native boot, vendor and ODM partitions are preservation requirements.
 
 Keep this checkout in a local development folder such as
 `$HOME/Developer/googlebook-pad3-os`. Run commands from the checkout root.
+Read [LAUNCH_READINESS.md](LAUNCH_READINESS.md) before inviting new installs.
 Read [PUBLIC_RELEASE.md](PUBLIC_RELEASE.md), [BUILDING.md](BUILDING.md),
 [TESTING.md](TESTING.md), and [UPDATING.md](UPDATING.md) before building.
 
@@ -266,6 +271,14 @@ verify the final candidate before creating a fresh public repository.
 Never reuse the private repository's Git directory, commits, branches or remotes.
 """,
     "native_install/README.md": """# Native installer source and private build inputs
+
+Native3 has been installed through the maintainer's built-in updater and completed
+its snapshot merge. This qualifies that exact update path, not a public first
+installation or restore procedure. See PUBLIC_RELEASE.md and LAUNCH_READINESS.md.
+Native3 has a reboot/sign-in rotation issue. Sequence 4's hash-bound tablet-state
+patch changes only the donor provider's OPEN fallback to TABLET. The private
+maintainer candidate passed reboot/user startup and owner-confirmed rotation;
+see PUBLIC_RELEASE.md. It is not a public first-install or stable release.
 
 The source includes the reviewed image/payload, AVB, layout and fstab helpers,
 the pinned AOSP avbtool, source pins, filtered kernel-layout baseline and example
@@ -345,6 +358,10 @@ native layout/COW evidence; the source export grants no installation approval.
 """,
     "native_install/INITIAL_INSTALL.md": """# Initial installation review
 
+Historical offline planning guidance only. This is not a validated public first-
+install procedure for a current stock tablet. Do not run generated example
+commands as installation instructions. See LAUNCH_READINESS.md.
+
 `python3 -B -m native_install.initial_install --help` describes the offline
 five-image plan generator. It checks local candidate and rollback images and
 emits standard fastboot commands; it does not execute them. The first installation
@@ -401,6 +418,14 @@ The parent must separately verify native shell/SELinux behavior, manager
 recognition and user setup. Host tests do not establish an Android runtime pass.
 """,
     "components/updater/README.md": """# Native updater source
+
+Version 1.3 (code 4) adds a Window layout Quick Settings tile: Tablet layout sets
+internal display 0's default to fullscreen; Desktop layout selects freeform.
+Existing windows may retain their layout. Physical tablet posture remains
+independent, and external displays are untouched. Add the tile through Edit.
+It reuses the owner's System update SukiSU grant and verifies native boot,
+current-user ownership, enforcing ksu context and the canonical system APK.
+Only fixed display 0 commands run, with readback; no polling service is added.
 
 The source, compile-only Android API declarations, host tests, manifest, donor API
 pins and integration requirements are included. No APK or release key is copied.

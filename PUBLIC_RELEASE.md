@@ -6,6 +6,16 @@ GitHub. The public target is `thekozugroup/googlebook-pad3-os`; the parent publi
 reviewed source there using fresh history. Do not copy the private `.git` directory.
 The exporter never changes Git identity, initializes a repository or publishes.
 
+## Native4 maintainer-only tablet-mode verification
+
+On 2026-10-29 the maintainer installed a private native4 candidate from native3/B to inactive A using the native UpdateEngine client with the signed local payload. All 15 target hashes were independently reconstructed; metadata, payload and feed signatures were verified. The update preserved accounts/userdata, booted native4/A and completed cleanup with snapshot state `NONE` and slot A successful/bootable. This was a local owner test, not a new public feed release or a validated first-install path.
+
+The tablet-state patch changes only the donor provider's final OPEN (2) fallback to TABLET (3). After reboot, the actual base and committed state are TABLET, with no emulated override. The personal user was unlocked; the orientation listener was active, and the owner physically confirmed portrait/landscape rotation after that reboot. A per-user fixed-rotation workaround alone had failed the earlier reboot/sign-in test and was replaced by this framework correction.
+
+The updater 1.3 (code 4) adds the Window layout Quick Settings tile. Actual tile clicks selected freeform (5) and then fullscreen (1), with native readback after each. The visible tile reports “Tablet layout. New windows: fullscreen”. The tablet is left in fullscreen layout. Existing windows may keep their own layout; external display reconnection and all accessory combinations were not retested.
+
+SukiSU remains 41100/UAPI 6 with SELinux enforcing; no daemon migration was needed because the root/kernel/firmware and cleaned Product images were unchanged. The pen foreground service restarted normally. This limited acceptance does not establish general-release stability. Native4's tested ZIP remains private pending the launch-readiness work in LAUNCH_READINESS.md.
+
 ## Native3 runtime record and one-time root migration
 
 The parent reported the following observations after the built-in Settings

@@ -115,6 +115,11 @@ def build(work, key_path=None, feed=FEED, output=None):
     result = run([java, "-Djava.io.tmpdir=" + str(directory / "tmp"), "-cp", tests,
                   "org.googlebook.pad3.updater.UpdateCoreTest", tests], env, directory, commands)
     require("CORE_CHECKS_PASSED=" in result, "host verification checks did not complete")
+    run([javac, "--release", "17", "-cp", tests, "-d", tests, COMPONENT / "src/org/googlebook/pad3/updater/WindowMode.java",
+         COMPONENT / "tests/WindowModeTest.java"], env, directory, commands)
+    layout_result = run([java, "-cp", tests, "org.googlebook.pad3.updater.WindowModeTest"], env, directory, commands)
+    require("WINDOW_MODE_CHECKS_PASSED=" in layout_result, "window layout checks did not complete")
+    result += "; " + layout_result.strip()
     if key:
         key_file = directory / "release-key.der"
         key_file.write_bytes(key)

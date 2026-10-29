@@ -55,6 +55,11 @@ def disable_repair_mode(data):
     """
     require(isinstance(data, bytes) and hashlib.sha256(data).hexdigest() == JAR_SHA256,
             "repair JAR source drift")
+    return replace_stored_dex(data, patch_dex)
+
+
+def replace_stored_dex(data, transform):
+    """Replace a same-size stored DEX and its CRCs without rewriting the ZIP."""
     with zipfile.ZipFile(io.BytesIO(data)) as source:
         infos = source.infolist()
         require(len(source.namelist()) == len(set(source.namelist())), "duplicate repair JAR member")
@@ -62,7 +67,8 @@ def disable_repair_mode(data):
         require(info.compress_type == zipfile.ZIP_STORED and info.flag_bits == 0,
                 "repair DEX must remain stored without descriptor or encryption")
         dex = source.read(info)
-        patched = patch_dex(dex)
+        patched = transform(dex)
+        require(len(patched) == len(dex), "stored DEX replacement size mismatch")
         crc = zlib.crc32(patched) & 0xffffffff
         local = info.header_offset
         require(data[local:local + 4] == b"PK\x03\x04" and

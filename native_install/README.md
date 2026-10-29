@@ -1,5 +1,13 @@
 # Native installer source and private build inputs
 
+Native3 has been installed through the maintainer's built-in updater and completed
+its snapshot merge. This qualifies that exact update path, not a public first
+installation or restore procedure. See PUBLIC_RELEASE.md and LAUNCH_READINESS.md.
+Native3 has a reboot/sign-in rotation issue. Sequence 4's hash-bound tablet-state
+patch changes only the donor provider's OPEN fallback to TABLET. The private
+maintainer candidate passed reboot/user startup and owner-confirmed rotation;
+see PUBLIC_RELEASE.md. It is not a public first-install or stable release.
+
 The source includes the reviewed image/payload, AVB, layout and fstab helpers,
 the pinned AOSP avbtool, source pins, filtered kernel-layout baseline and example
 plan, tools and review documents. The capture manifest and captured images remain

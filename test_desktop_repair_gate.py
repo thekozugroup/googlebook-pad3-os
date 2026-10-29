@@ -104,6 +104,11 @@ class RepairGateTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "JAR source drift"):
                 gate.disable_repair_mode(result)
 
+    def test_shared_replacement_rejects_size_change(self):
+        source = jar_fixture(dex_fixture())
+        with self.assertRaisesRegex(ValueError, "replacement size mismatch"):
+            gate.replace_stored_dex(source, lambda dex: dex + b"\0")
+
 
 if __name__ == "__main__":
     unittest.main()

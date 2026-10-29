@@ -1,5 +1,9 @@
 # Initial installation review
 
+Historical offline planning guidance only. This is not a validated public first-
+install procedure for a current stock tablet. Do not run generated example
+commands as installation instructions. See LAUNCH_READINESS.md.
+
 `python3 -B -m native_install.initial_install --help` describes the offline
 five-image plan generator. It checks local candidate and rollback images and
 emits standard fastboot commands; it does not execute them. The first installation

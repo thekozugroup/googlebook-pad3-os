@@ -1,4 +1,4 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="org.googlebook.pad3.updater" android:versionCode="3" android:versionName="1.2">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="org.googlebook.pad3.updater" android:versionCode="4" android:versionName="1.3">
     <uses-sdk android:minSdkVersion="35" android:targetSdkVersion="37" />
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
@@ -14,5 +14,11 @@
             </intent-filter>
         </activity>
         <service android:name=".UpdateService" android:exported="false" android:foregroundServiceType="dataSync" />
+        <service android:name=".LayoutTileService" android:exported="true" android:label="Window layout"
+            android:icon="@android:drawable/ic_menu_view" android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+        </service>
     </application>
 </manifest>

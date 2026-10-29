@@ -11,15 +11,25 @@
       "executable": false,
       "sha256": "dbd9b469b6a70f3aff02679c0521913dcc6c8a2349e3f4dafda0dc395921abf7"
     },
-    "PUBLIC_RELEASE.md": {
-      "bytes": 19257,
+    "COMMUNITY_NOTES.md": {
+      "bytes": 1888,
       "executable": false,
-      "sha256": "f793782ab47d80837fc7dcc45e6c321a277f02278bf3e52ae57f47ea22d97bcb"
+      "sha256": "985e14711acf410539b25aea370dd18b03d40360a47b772664d6d2986c8ffb35"
+    },
+    "LAUNCH_READINESS.md": {
+      "bytes": 3097,
+      "executable": false,
+      "sha256": "80312a0c98d91313fe988c14aca8c7ed20c0eccbe3902ed2c1451461cfcae0d2"
+    },
+    "PUBLIC_RELEASE.md": {
+      "bytes": 21062,
+      "executable": false,
+      "sha256": "a6bfcc7ccfd2fe228420115135bd39bfafb877a3bfd3869ed38143b278fcb35b"
     },
     "README.md": {
-      "bytes": 952,
+      "bytes": 1044,
       "executable": false,
-      "sha256": "247082baa94bb1028b0a4bbd1573acb85aa271dc2d2ef1124ae21b7ca8d8fa8d"
+      "sha256": "2a711a49077d6a61f69de8c35ffcffd2b25250bf764baa4e9bf09c88f7184be5"
     },
     "TESTING.md": {
       "bytes": 804,
@@ -77,9 +87,9 @@
       "sha256": "59d73dbc2c44ae6362f8c90db7866315df14ae95b84fa4b6dfb63f464ee3d897"
     },
     "build_native_userspace.py": {
-      "bytes": 27592,
+      "bytes": 27796,
       "executable": false,
-      "sha256": "0b804e4bf88a1480ef50550dd49443d940459d4ef170e8606283e7c96ba7dc39"
+      "sha256": "8dd7bfb9f9e72fe1a7180663a4823441c9ba3e3c40a0e782552ecb41390c7baf"
     },
     "build_oplus_pen.py": {
       "bytes": 20781,
@@ -102,9 +112,9 @@
       "sha256": "a2ec680935d8e898d0f1246f5a593752f74eb236d18149bf4d6340d07ebd6c3f"
     },
     "build_updater.py": {
-      "bytes": 13631,
+      "bytes": 14094,
       "executable": false,
-      "sha256": "aaf3b9ad89baf3d7a8952bba1a52f29984f513857aa9dae6a39ede8a2e81b70a"
+      "sha256": "88907d62a837fdfc016dc330f4f32ebefae774397f9464ae745f742b5d5b223b"
     },
     "check_policy.py": {
       "bytes": 3223,
@@ -607,14 +617,14 @@
       "sha256": "527748e17d99a5dd1acb628b6e9b42b1c38552c340d1d96cd16c3b8adbea1c48"
     },
     "components/updater/AndroidManifest.xml": {
-      "bytes": 1427,
+      "bytes": 1819,
       "executable": false,
-      "sha256": "be2b2a0f2f26b79133e9f4a13c3c40743228bc5beb15a97d0036d01c42f838e2"
+      "sha256": "ecd12554396cfe859c637fdb5bbe5961239067d2a2ea630222cf6d631351c211"
     },
     "components/updater/README.md": {
-      "bytes": 1261,
+      "bytes": 1802,
       "executable": false,
-      "sha256": "c43edf2e739ec1b777626a815e3b4b04f68ec1e2e379393998cd7034a5b2688c"
+      "sha256": "a5c6bad214b60d05ba38407c538db19cc632a1d5f5e16206989eca9e3f9de07a"
     },
     "components/updater/build-support/android/os/SELinux.java": {
       "bytes": 332,
@@ -661,6 +671,11 @@
       "executable": false,
       "sha256": "2c6b1469035f32a766004cdf85e5df22676db2814a5201c6109cf628317c6bba"
     },
+    "components/updater/src/org/googlebook/pad3/updater/LayoutTileService.java": {
+      "bytes": 4207,
+      "executable": false,
+      "sha256": "c70cdfbbf6db0d55025c256295b1d8a8de7012bcba6fd3e1cc7272e7b80d9f1a"
+    },
     "components/updater/src/org/googlebook/pad3/updater/MainActivity.java": {
       "bytes": 3779,
       "executable": false,
@@ -681,6 +696,11 @@
       "executable": false,
       "sha256": "5d1224c80692cd18166e0396840918edfaa937b9231019be27b67aedcebd7250"
     },
+    "components/updater/src/org/googlebook/pad3/updater/RootWindowMode.java": {
+      "bytes": 2543,
+      "executable": false,
+      "sha256": "1ba1b68da54054832ea8ec511331797db9abf80a6ca83e5eaf41d3d529d612fc"
+    },
     "components/updater/src/org/googlebook/pad3/updater/UpdateCore.java": {
       "bytes": 21531,
       "executable": false,
@@ -690,6 +710,11 @@
       "bytes": 8739,
       "executable": false,
       "sha256": "58969cffca9effee2a66171b76a2440f3608286577d7ecd8fc4f0c5732129f12"
+    },
+    "components/updater/src/org/googlebook/pad3/updater/WindowMode.java": {
+      "bytes": 1326,
+      "executable": false,
+      "sha256": "88406ae79a0ab9860330648a9e86c1c6ab804acc91715abd25f59eddb676acd9"
     },
     "components/updater/tests/FeedOrderTest.java": {
       "bytes": 896,
@@ -711,15 +736,20 @@
       "executable": false,
       "sha256": "6e38adf4496a9cfe56a79281247e41966048a24b77afbb5eaeef13cd4e5b4110"
     },
+    "components/updater/tests/WindowModeTest.java": {
+      "bytes": 2619,
+      "executable": false,
+      "sha256": "825e06ef2051562afb958431fc59d589f27fd4705d8095cd5cdbf30453dc71a7"
+    },
     "components/updater/toolchain.json": {
       "bytes": 1011,
       "executable": false,
       "sha256": "3c59ffb7e6f6f44401cf5cc6bb585ce728ded27c6d8c0628f10242c52f97e85a"
     },
     "desktop_repair_gate.py": {
-      "bytes": 6081,
+      "bytes": 6334,
       "executable": false,
-      "sha256": "170b4de5791f3602f3cc9d331fbe4237308cb2321a97ce5b9180a0512de41638"
+      "sha256": "21f68bdf7cea9e5b3588aa24be1e00f08d04490a42d42c4cf1c8cb8aade44eb2"
     },
     "erofs_overlay.py": {
       "bytes": 13599,
@@ -732,9 +762,9 @@
       "sha256": "e3c0549a7c759e061a1687360665789df5a5662515b01bb1733a65651fda246c"
     },
     "export_public.py": {
-      "bytes": 75775,
+      "bytes": 77442,
       "executable": false,
-      "sha256": "1c29881151b3801a96fdd8416e909adcd5598a252c333d7710b5360e617128e8"
+      "sha256": "f5be653c37f115a809406b41840d2db897bc8930d23af70139430ef06f021ff8"
     },
     "ext4_source.py": {
       "bytes": 2262,
@@ -752,14 +782,14 @@
       "sha256": "296c1c9444b8cd01f1574a61bbd2c9aa90334efb67d335b2014ba326f86e4487"
     },
     "native_install/INITIAL_INSTALL.md": {
-      "bytes": 2229,
+      "bytes": 2450,
       "executable": false,
-      "sha256": "ed3ade3cc4d96b7c5d852966ab0a80a2a7e426ad173c5afa6293b0f170c835f1"
+      "sha256": "9efecff4f72a2e90fc4618e7bc10b3f2fd6e07fe47651d5a04ca3c321cee0c82"
     },
     "native_install/README.md": {
-      "bytes": 4003,
+      "bytes": 4559,
       "executable": false,
-      "sha256": "39e03b2b1d10d6ede9ffd2e6613cf8986277ecd7f001cd3dac30bcf862df011e"
+      "sha256": "729519da201694bc4680d1ae1665d6e391252e5fc9711484709dd3cc08a0ad39"
     },
     "native_install/avb.py": {
       "bytes": 7070,
@@ -1001,6 +1031,11 @@
       "executable": false,
       "sha256": "659e3cf06dbecc0ac21320c11e4d31b709463504f8ad81af81c404b966e0a1fb"
     },
+    "tablet_state.py": {
+      "bytes": 3480,
+      "executable": false,
+      "sha256": "39e1c3196273e2d8ce1ee6063f446296d14e761f1ef58de9ea1e438c9bae606c"
+    },
     "test_android_disk.py": {
       "bytes": 1049,
       "executable": false,
@@ -1062,9 +1097,9 @@
       "sha256": "d97d3f1f3aa3edb7c9b09f4d4c62f7e26958ac3eb057113fb7a76016c60752c6"
     },
     "test_desktop_repair_gate.py": {
-      "bytes": 5495,
+      "bytes": 5746,
       "executable": false,
-      "sha256": "794a8879d85254c90a312e52b525d2d4fee5fa1f5311610d0f0ba110611be55a"
+      "sha256": "dc7a7fc40768003e9112ead124d1121aa7c921e29a4e054746806f58d5e39b07"
     },
     "test_engine_libraries.py": {
       "bytes": 21964,
@@ -1125,6 +1160,11 @@
       "bytes": 12281,
       "executable": false,
       "sha256": "bbd925d44934ad38f6855a56bca7a44ba058f2e9ae4f8595f5b0fd50522ea79a"
+    },
+    "test_tablet_state.py": {
+      "bytes": 6469,
+      "executable": false,
+      "sha256": "6f9aec2eb99c2e6890d3723708d69a19a094bf7481c1bddc48d126105d247e60"
     },
     "validate_candidate.py": {
       "bytes": 4536,

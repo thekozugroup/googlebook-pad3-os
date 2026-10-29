@@ -1,0 +1,62 @@
+{
+  "schema": 1,
+  "source_slot": "b",
+  "target_slot": "a",
+  "slot_count": 2,
+  "source_successful": false,
+  "bootloader_unlocked": false,
+  "hal_snapshot_merge_status": "UNVERIFIED",
+  "libsnapshot_update_state": "none",
+  "cow_reconciliation_reviewed": false,
+  "physical_partition_sizes": {
+    "boot": {
+      "a": 0,
+      "b": 0
+    },
+    "init_boot": {
+      "a": 0,
+      "b": 0
+    },
+    "vendor_boot": {
+      "a": 0,
+      "b": 0
+    },
+    "dtbo": {
+      "a": 0,
+      "b": 0
+    },
+    "recovery": {
+      "a": 0,
+      "b": 0
+    },
+    "vbmeta": {
+      "a": 0,
+      "b": 0
+    },
+    "vbmeta_system": {
+      "a": 0,
+      "b": 0
+    },
+    "vbmeta_vendor": {
+      "a": 0,
+      "b": 0
+    }
+  },
+  "firmware_hashes": {
+    "modem": {
+      "a": "REPLACE_WITH_READ_ONLY_SHA256",
+      "b": "REPLACE_WITH_READ_ONLY_SHA256"
+    },
+    "dsp": {
+      "a": "REPLACE_WITH_READ_ONLY_SHA256",
+      "b": "REPLACE_WITH_READ_ONLY_SHA256"
+    },
+    "bluetooth": {
+      "a": "REPLACE_WITH_READ_ONLY_SHA256",
+      "b": "REPLACE_WITH_READ_ONLY_SHA256"
+    }
+  },
+  "other_firmware_compatibility_reviewed": false,
+  "gsi_tool_exit_code": null,
+  "gsi_tool_status": "REPLACE_WITH_EXACT_NATIVE_STATUS_STDOUT"
+}

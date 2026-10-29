@@ -1,0 +1,59 @@
+{
+  "schema": 1,
+  "donor": "mica 16560795",
+  "images": [
+    {
+      "path": "build-inputs/donor-images/system_a.img",
+      "sha256": "263c7af48b33f398d46476dd8034a4e4b0e7942651d46b5e7d2254c19dd23c63",
+      "bytes": 1081446400,
+      "pinned": "263c7af48b33f398d46476dd8034a4e4b0e7942651d46b5e7d2254c19dd23c63",
+      "matches_pin": true
+    }
+  ],
+  "files": [
+    {
+      "image": "build-inputs/donor-images/system_a.img",
+      "image_path": "/system/framework/framework-res.apk",
+      "bytes": 38140121,
+      "sha256": "947a06de1244e753cdc1ab34ea0f36aca83d7ec2b882b5b73beb587ef263acbe"
+    },
+    {
+      "image": "build-inputs/donor-images/system_a.img",
+      "image_path": "/system/framework/framework.jar",
+      "bytes": 49856122,
+      "sha256": "18419dba5cd7bc48e67c5ace4c162a817ef9126ea628276def8ff5535a51ce49"
+    },
+    {
+      "image": "build-inputs/donor-images/system_a.img",
+      "image_path": "/system/apex/com.google.android.bt.apex",
+      "bytes": 17428480,
+      "sha256": "6af72f91ae3ffbca4520cf966958370b1800fbdb7847c47af59a6fa840add5f1"
+    },
+    {
+      "image": "build-inputs/donor-images/system_a.img",
+      "image_path": "/javalib/framework-bluetooth.jar",
+      "bytes": 1359014,
+      "sha256": "377108e96ee44a0862dd3907e245b82771a3efeb47288b9b2a89ca1021298d9c",
+      "container_chain": [
+        "/system/apex/com.google.android.bt.apex",
+        "apex_payload.img"
+      ]
+    },
+    {
+      "image": "build-inputs/donor-images/system_a.img",
+      "image_path": "/system/apex/com.google.android.art.apex",
+      "sha256": "e5a4ada8acfa46530be107137fadb038bd08dc0655af1e9e3de6cfbee156ab60",
+      "bytes": 20324352
+    },
+    {
+      "image": "build-inputs/donor-images/system_a.img",
+      "image_path": "/javalib/core-oj.jar",
+      "sha256": "5c4614029433071f1ecca6d9e15745d5b26b6d02fcf971b7ce76a37f32a08000",
+      "bytes": 6074860,
+      "container_chain": [
+        "/system/apex/com.google.android.art.apex",
+        "apex_payload.img"
+      ]
+    }
+  ]
+}

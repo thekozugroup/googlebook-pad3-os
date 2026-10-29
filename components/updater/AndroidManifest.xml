@@ -1,0 +1,18 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="org.googlebook.pad3.updater" android:versionCode="1" android:versionName="1.0">
+    <uses-sdk android:minSdkVersion="35" android:targetSdkVersion="37" />
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <application android:label="System update" android:theme="@android:style/Theme.Material.Light.NoActionBar" android:allowBackup="false" android:usesCleartextTraffic="false" android:extractNativeLibs="false">
+        <activity android:name=".MainActivity" android:exported="true" android:icon="@android:drawable/stat_sys_download">
+            <intent-filter android:priority="1000">
+                <action android:name="android.settings.SYSTEM_UPDATE_SETTINGS" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+        <service android:name=".UpdateService" android:exported="false" android:foregroundServiceType="dataSync" />
+    </application>
+</manifest>

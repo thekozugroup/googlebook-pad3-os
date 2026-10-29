@@ -1,0 +1,466 @@
+{
+  "schema": 1,
+  "repository": "LineageOS/android_hardware_oplus",
+  "commit": "c78b87c9efb89049b35a184d60095f26c7cb29aa",
+  "crdroid_equivalent_commit": "7216c0bce9c4de3be19d3ae53d5cee46f4c03475",
+  "license": "Apache-2.0; original per-file SPDX headers retained",
+  "files": [
+    {
+      "path": "interfaces/aidl_api/vendor.oplus.hardware.touch/2/.hash",
+      "sha256": "933f058af452c76a6e6e5f4231a896c609e0118fa8fe86c9abd0382a1876a68d",
+      "git_blob_sha1": "11e278184bc6dd5945587de2afb5b2d791d4772c",
+      "bytes": 41,
+      "url": "https://raw.githubusercontent.com/LineageOS/android_hardware_oplus/c78b87c9efb89049b35a184d60095f26c7cb29aa/interfaces/aidl_api/vendor.oplus.hardware.touch/2/.hash",
+      "matches_previous_audit": true
+    },
+    {
+      "path": "interfaces/aidl_api/vendor.oplus.hardware.touch/2/vendor/oplus/hardware/touch/IOplusTouch.aidl",
+      "sha256": "529946d5542b73e055e808d8ca03d8479398059ea71c8f5e255894d275e68d63",
+      "git_blob_sha1": "f533a0ad655900ec6b4d55f62d7aff003f42ffd9",
+      "bytes": 2044,
+      "url": "https://raw.githubusercontent.com/LineageOS/android_hardware_oplus/c78b87c9efb89049b35a184d60095f26c7cb29aa/interfaces/aidl_api/vendor.oplus.hardware.touch/2/vendor/oplus/hardware/touch/IOplusTouch.aidl",
+      "matches_previous_audit": true
+    },
+    {
+      "path": "interfaces/aidl_api/vendor.oplus.hardware.touch/2/vendor/oplus/hardware/touch/IOplusTouchEventCallback.aidl",
+      "sha256": "9f9d39d7a75ac199b757177739f6c616fbf20528e7c812caa5b34e322a0981a7",
+      "git_blob_sha1": "277c3ea0bb075c1551f585e6212890c06298970a",
+      "bytes": 1470,
+      "url": "https://raw.githubusercontent.com/LineageOS/android_hardware_oplus/c78b87c9efb89049b35a184d60095f26c7cb29aa/interfaces/aidl_api/vendor.oplus.hardware.touch/2/vendor/oplus/hardware/touch/IOplusTouchEventCallback.aidl",
+      "matches_previous_audit": true
+    },
+    {
+      "path": "interfaces/aidl_api/vendor.oplus.hardware.touch/2/vendor/oplus/hardware/touch/OplusTouchInfo.aidl",
+      "sha256": "a5b765ab40a476afcf21b9736ab6959eba932b898ac0d8e3ac31867e89e79e20",
+      "git_blob_sha1": "91d7b698b8d8ce4329a7bed85d4ec0c24b757b2f",
+      "bytes": 1334,
+      "url": "https://raw.githubusercontent.com/LineageOS/android_hardware_oplus/c78b87c9efb89049b35a184d60095f26c7cb29aa/interfaces/aidl_api/vendor.oplus.hardware.touch/2/vendor/oplus/hardware/touch/OplusTouchInfo.aidl",
+      "matches_previous_audit": true
+    },
+    {
+      "path": "interfaces/aidl_api/vendor.oplus.hardware.touch/2/vendor/oplus/hardware/touch/OplusTouchStatus.aidl",
+      "sha256": "deecab445761166fe3b8feaeb54ed6718fe48e569f8400fdc7c5116ca2599c39",
+      "git_blob_sha1": "fd9cf45b82e26ca6c11771bba1183ee30e82ab07",
+      "bytes": 1303,
+      "url": "https://raw.githubusercontent.com/LineageOS/android_hardware_oplus/c78b87c9efb89049b35a184d60095f26c7cb29aa/interfaces/aidl_api/vendor.oplus.hardware.touch/2/vendor/oplus/hardware/touch/OplusTouchStatus.aidl",
+      "matches_previous_audit": true
+    },
+    {
+      "path": "packages/Pen/Android.bp",
+      "sha256": "aff7a86823bcfccbb552612d08a0ce378a09a085c1ba29ccc18a954b06fbaf8e",
+      "git_blob_sha1": "7cefa60c77c397231b03c7fefc1bac40bb552c25",
+      "bytes": 713,
+      "url": "https://raw.githubusercontent.com/LineageOS/android_hardware_oplus/c78b87c9efb89049b35a184d60095f26c7cb29aa/packages/Pen/Android.bp",
+      "matches_previous_audit": true
+    },
+    {
+      "path": "packages/Pen/AndroidManifest.xml",
+      "sha256": "fcc181f2cd31c035c16e7c5fdb678627edad0badc45528b399de71878f0f55d6",
+      "git_blob_sha1": "c81b8d52ca04dde33716ed881ea5b2b9c9520ff1",
+      "bytes": 1371,
+      "url": "https://raw.githubusercontent.com/LineageOS/android_hardware_oplus/c78b87c9efb89049b35a184d60095f26c7cb29aa/packages/Pen/AndroidManifest.xml",
+      "matches_previous_audit": true
+    },
+    {
+      "path": "packages/Pen/default-permissions_org.lineageos.pen.xml",
+      "sha256": "b47d73b9b47c0bf77c99170ec9b4cb4c417ebdffe2a24eddec965c90030023ce",
+      "git_blob_sha1": "1370ba33b2a1e66698163070579b058abdfab1d5",
+      "bytes": 490,
+      "url": "https://raw.githubusercontent.com/LineageOS/android_hardware_oplus/c78b87c9efb89049b35a184d60095f26c7cb29aa/packages/Pen/default-permissions_org.lineageos.pen.xml",
+      "matches_previous_audit": true
+    },
+    {
+      "path": "packages/Pen/proguard.flags",
+      "sha256": "cdd59bf711a40c63f385e0163d2e11f4b45a951d6b5a3771c573b6035881623e",
+      "git_blob_sha1": "dc05a24ad4730d8a71b86909e0ca913d3328567f",
+      "bytes": 41,
+      "url": "https://raw.githubusercontent.com/LineageOS/android_hardware_oplus/c78b87c9efb89049b35a184d60095f26c7cb29aa/packages/Pen/proguard.flags",
+      "matches_previous_audit": null
+    },
+    {
+      "path": "packages/Pen/res/drawable/ic_stylus.xml",
+      "sha256": "8249cd7e56a7fc1510788be21e008142c0a0bd4cbce26e04e86cd016fc12a395",
+      "git_blob_sha1": "c27a46f7427c0012261e162493178be59c1489e8",
+      "bytes": 745,
+      "url": "https://raw.githubusercontent.com/LineageOS/android_hardware_oplus/c78b87c9efb89049b35a184d60095f26c7cb29aa/packages/Pen/res/drawable/ic_stylus.xml",
+      "matches_previous_audit": null
+    },
+    {
+      "path": "packages/Pen/res/values-az/strings.xml",
+      "sha256": "ece902dc41ef5416030cb879ff7839813cedff24d6748f1987fc42aff076a6d1",
+      "git_blob_sha1": "b19de2b94edf73053a8f592b763f225e32c11d64",
+      "bytes": 297,
+      "url": "https://raw.githubusercontent.com/LineageOS/android_hardware_oplus/c78b87c9efb89049b35a184d60095f26c7cb29aa/packages/Pen/res/values-az/strings.xml",
+      "matches_previous_audit": null
+    },
+    {
+      "path": "packages/Pen/res/values-bg/strings.xml",
+      "sha256": "b3a1c5b00c120160a47c857b15ac094656665cb175fd4ea65f7551e161ccf79c",
+      "git_blob_sha1": "4b47b9d682e107f11de9568c0b228caff8c94b36",
+      "bytes": 343,
+      "url": "https://raw.githubusercontent.com/LineageOS/android_hardware_oplus/c78b87c9efb89049b35a184d60095f26c7cb29aa/packages/Pen/res/values-bg/strings.xml",
+      "matches_previous_audit": null
+    },
+    {
+      "path": "packages/Pen/res/values-ca/strings.xml",
+      "sha256": "3596aaadbd3891a7dcca9be69440fad3b3eb2a5f7f4f298c1367a7d156e7c7cb",
+      "git_blob_sha1": "d9ab801847b2b9e2026679ffd018856224f3f31e",
+      "bytes": 290,
+      "url": "https://raw.githubusercontent.com/LineageOS/android_hardware_oplus/c78b87c9efb89049b35a184d60095f26c7cb29aa/packages/Pen/res/values-ca/strings.xml",
+      "matches_previous_audit": null
+    },
+    {
+      "path": "packages/Pen/res/values-ckb/strings.xml",
+      "sha256": "4840fd674e8e132c6836d2c2122604df34abaad425c95e57239af5c3c434a121",
+      "git_blob_sha1": "a8841d4516541af7f998688e58c941b8a9e65e71",
+      "bytes": 335,
+      "url": "https://raw.githubusercontent.com/LineageOS/android_hardware_oplus/c78b87c9efb89049b35a184d60095f26c7cb29aa/packages/Pen/res/values-ckb/strings.xml",
+      "matches_previous_audit": null
+    },
+    {
+      "path": "packages/Pen/res/values-cs/strings.xml",
+      "sha256": "d8e5f725b4fa35d4527dc4624a107263effb8915fc304339e6fb48da12ace774",
+      "git_blob_sha1": "50f95d677a7db8e6dcf2c31ec290052c300cdab8",
+      "bytes": 289,
+      "url": "https://raw.githubusercontent.com/LineageOS/android_hardware_oplus/c78b87c9efb89049b35a184d60095f26c7cb29aa/packages/Pen/res/values-cs/strings.xml",
+      "matches_previous_audit": null
+    },
+    {
+      "path": "packages/Pen/res/values-cy/strings.xml",
+      "sha256": "645d28e5c7abcf82e07b0e944e295c2e6e6ce4b751eb1b84915efa23d3474994",
+      "git_blob_sha1": "0b6c75120fac15fc02a4bbc390983da1b319d55a",
+      "bytes": 287,
+      "url": "https://raw.githubusercontent.com/LineageOS/android_hardware_oplus/c78b87c9efb89049b35a184d60095f26c7cb29aa/packages/Pen/res/values-cy/strings.xml",
+      "matches_previous_audit": null
+    },
+    {
+      "path": "packages/Pen/res/values-de/strings.xml",
+      "sha256": "1f395f31620a5cba71433a8d6de51725867f4403feae668387b3995ac7c38c33",
+      "git_blob_sha1": "df43c6b063618f1e5fa6accdf04b27545b41ab63",
+      "bytes": 292,
+      "url": "https://raw.githubusercontent.com/LineageOS/android_hardware_oplus/c78b87c9efb89049b35a184d60095f26c7cb29aa/packages/Pen/res/values-de/strings.xml",
+      "matches_previous_audit": null
+    },
+    {
+      "path": "packages/Pen/res/values-el/strings.xml",
+      "sha256": "537e5b79350dbdcf4bca24777e74de35cf4b053d333f7b990a78c1d8cd66aac8",
+      "git_blob_sha1": "04272b1b0ce9e76b17aaf67dd8b47553c8a217fd",
+      "bytes": 332,
+      "url": "https://raw.githubusercontent.com/LineageOS/android_hardware_oplus/c78b87c9efb89049b35a184d60095f26c7cb29aa/packages/Pen/res/values-el/strings.xml",
+      "matches_previous_audit": null
+    },
+    {
+      "path": "packages/Pen/res/values-en-rAU/strings.xml",
+      "sha256": "ecf0df3b2d081b0db3fd55f83c4a2af4834709964115095e2361ab7bd0a9128f",
+      "git_blob_sha1": "cc74b80c9170d4b685bb7348f538e3721f780550",
+      "bytes": 280,
+      "url": "https://raw.githubusercontent.com/LineageOS/android_hardware_oplus/c78b87c9efb89049b35a184d60095f26c7cb29aa/packages/Pen/res/values-en-rAU/strings.xml",
+      "matches_previous_audit": null
+    },
+    {
+      "path": "packages/Pen/res/values-en-rCA/strings.xml",
+      "sha256": "ecf0df3b2d081b0db3fd55f83c4a2af4834709964115095e2361ab7bd0a9128f",
+      "git_blob_sha1": "cc74b80c9170d4b685bb7348f538e3721f780550",
+      "bytes": 280,
+      "url": "https://raw.githubusercontent.com/LineageOS/android_hardware_oplus/c78b87c9efb89049b35a184d60095f26c7cb29aa/packages/Pen/res/values-en-rCA/strings.xml",
+      "matches_previous_audit": null
+    },
+    {
+      "path": "packages/Pen/res/values-en-rGB/strings.xml",
+      "sha256": "ecf0df3b2d081b0db3fd55f83c4a2af4834709964115095e2361ab7bd0a9128f",
+      "git_blob_sha1": "cc74b80c9170d4b685bb7348f538e3721f780550",
+      "bytes": 280,
+      "url": "https://raw.githubusercontent.com/LineageOS/android_hardware_oplus/c78b87c9efb89049b35a184d60095f26c7cb29aa/packages/Pen/res/values-en-rGB/strings.xml",
+      "matches_previous_audit": null
+    },
+    {
+      "path": "packages/Pen/res/values-en-rIN/strings.xml",
+      "sha256": "ecf0df3b2d081b0db3fd55f83c4a2af4834709964115095e2361ab7bd0a9128f",
+      "git_blob_sha1": "cc74b80c9170d4b685bb7348f538e3721f780550",
+      "bytes": 280,
+      "url": "https://raw.githubusercontent.com/LineageOS/android_hardware_oplus/c78b87c9efb89049b35a184d60095f26c7cb29aa/packages/Pen/res/values-en-rIN/strings.xml",
+      "matches_previous_audit": null
+    },
+    {
+      "path": "packages/Pen/res/values-es/strings.xml",
+      "sha256": "b4c641fa5634763211ca0d9df987fc8c7970ac0beca449e510e3c5745b4f611c",
+      "git_blob_sha1": "31286f6c128ebb865b9848051ac430c6184b697b",
+      "bytes": 290,
+      "url": "https://raw.githubusercontent.com/LineageOS/android_hardware_oplus/c78b87c9efb89049b35a184d60095f26c7cb29aa/packages/Pen/res/values-es/strings.xml",
+      "matches_previous_audit": null
+    },
+    {
+      "path": "packages/Pen/res/values-fa/strings.xml",
+      "sha256": "37547be2d85b6566b795b6ec0979763714e97f111e4a77bfd42e341b85b8605a",
+      "git_blob_sha1": "0b8bfdb5f8c23007e7b9bb16d98f328d917ebeac",
+      "bytes": 313,
+      "url": "https://raw.githubusercontent.com/LineageOS/android_hardware_oplus/c78b87c9efb89049b35a184d60095f26c7cb29aa/packages/Pen/res/values-fa/strings.xml",
+      "matches_previous_audit": null
+    },
+    {
+      "path": "packages/Pen/res/values-fr/strings.xml",
+      "sha256": "888b617c48b6e775cd1fc0ed66b3cabe3c3e8cc2aee0c9325548b1e27e043629",
+      "git_blob_sha1": "8e38dfff1280ebe6dde294146e8d4c428cf75b2b",
+      "bytes": 290,
+      "url": "https://raw.githubusercontent.com/LineageOS/android_hardware_oplus/c78b87c9efb89049b35a184d60095f26c7cb29aa/packages/Pen/res/values-fr/strings.xml",
+      "matches_previous_audit": null
+    },
+    {
+      "path": "packages/Pen/res/values-ga-rIE/strings.xml",
+      "sha256": "66e7c19a80888e929eee5fd03d71f3678af23ccdae093f529f2880fb10c20894",
+      "git_blob_sha1": "95ea9b0d63735d2466b3f0ea08d610950ff423cd",
+      "bytes": 290,
+      "url": "https://raw.githubusercontent.com/LineageOS/android_hardware_oplus/c78b87c9efb89049b35a184d60095f26c7cb29aa/packages/Pen/res/values-ga-rIE/strings.xml",
+      "matches_previous_audit": null
+    },
+    {
+      "path": "packages/Pen/res/values-hu/strings.xml",
+      "sha256": "4d712c8e1e3ee9b1ab534eb2075d5464096f08b63bfad4d2f3eb3d32449e8d0f",
+      "git_blob_sha1": "e542f6d6d7bd82227737219b21f9c11c0d23e09c",
+      "bytes": 303,
+      "url": "https://raw.githubusercontent.com/LineageOS/android_hardware_oplus/c78b87c9efb89049b35a184d60095f26c7cb29aa/packages/Pen/res/values-hu/strings.xml",
+      "matches_previous_audit": null
+    },
+    {
+      "path": "packages/Pen/res/values-in/strings.xml",
+      "sha256": "36b0ca62e94bd8e1bba9813f9354633350d5c278507a46159d8cb5a9de3f8346",
+      "git_blob_sha1": "8637cf6a458164c67af893ef4c90867160acd0fb",
+      "bytes": 293,
+      "url": "https://raw.githubusercontent.com/LineageOS/android_hardware_oplus/c78b87c9efb89049b35a184d60095f26c7cb29aa/packages/Pen/res/values-in/strings.xml",
+      "matches_previous_audit": null
+    },
+    {
+      "path": "packages/Pen/res/values-it/strings.xml",
+      "sha256": "f32bd0ad8c55d5ea2574142bfacc93a2f2644db96b4096c1ff91ce544165c062",
+      "git_blob_sha1": "f9d6408a7887fd12b3f3b1de023564b8614a654e",
+      "bytes": 289,
+      "url": "https://raw.githubusercontent.com/LineageOS/android_hardware_oplus/c78b87c9efb89049b35a184d60095f26c7cb29aa/packages/Pen/res/values-it/strings.xml",
+      "matches_previous_audit": null
+    },
+    {
+      "path": "packages/Pen/res/values-iw/strings.xml",
+      "sha256": "95815f6466d2ca74972d8a36c7e45a51ffe079dc1536b1f2560d446925c955fa",
+      "git_blob_sha1": "e30fa2de5d8397ef5915ac8efaac046c41a9761d",
+      "bytes": 296,
+      "url": "https://raw.githubusercontent.com/LineageOS/android_hardware_oplus/c78b87c9efb89049b35a184d60095f26c7cb29aa/packages/Pen/res/values-iw/strings.xml",
+      "matches_previous_audit": null
+    },
+    {
+      "path": "packages/Pen/res/values-ja/strings.xml",
+      "sha256": "7c68caf01ff249e60f265729cd07333784bcacb9bcb682b107dc25df61e14592",
+      "git_blob_sha1": "90c9148f9076329c529afc8d7e492cb3da111e32",
+      "bytes": 302,
+      "url": "https://raw.githubusercontent.com/LineageOS/android_hardware_oplus/c78b87c9efb89049b35a184d60095f26c7cb29aa/packages/Pen/res/values-ja/strings.xml",
+      "matches_previous_audit": null
+    },
+    {
+      "path": "packages/Pen/res/values-ka/strings.xml",
+      "sha256": "c084568691745fb09547d02f02607d2dbd1ce7a6b2c4464a23b7ac20daf386d4",
+      "git_blob_sha1": "514dcfb9561636587227bdc48bc9b22eb1de4ca8",
+      "bytes": 355,
+      "url": "https://raw.githubusercontent.com/LineageOS/android_hardware_oplus/c78b87c9efb89049b35a184d60095f26c7cb29aa/packages/Pen/res/values-ka/strings.xml",
+      "matches_previous_audit": null
+    },
+    {
+      "path": "packages/Pen/res/values-ko/strings.xml",
+      "sha256": "005867612b857c51cbb4f93d9835a9f065393433fa6f059961d3d7bc6c7efa5c",
+      "git_blob_sha1": "bd15c76e777b9c6db43c2b0855eb04e26b9fe2fa",
+      "bytes": 283,
+      "url": "https://raw.githubusercontent.com/LineageOS/android_hardware_oplus/c78b87c9efb89049b35a184d60095f26c7cb29aa/packages/Pen/res/values-ko/strings.xml",
+      "matches_previous_audit": null
+    },
+    {
+      "path": "packages/Pen/res/values-nn-rNO/strings.xml",
+      "sha256": "5966e9829792dba9a73528e05e34d2ac8269759f65fa613b47f61daf14662158",
+      "git_blob_sha1": "8491b01753ed5ffe5af54a80edad544f63741237",
+      "bytes": 286,
+      "url": "https://raw.githubusercontent.com/LineageOS/android_hardware_oplus/c78b87c9efb89049b35a184d60095f26c7cb29aa/packages/Pen/res/values-nn-rNO/strings.xml",
+      "matches_previous_audit": null
+    },
+    {
+      "path": "packages/Pen/res/values-pl/strings.xml",
+      "sha256": "390dd2cea67060c590db9b3808440f75b2d691810e4a3eeb5e14fe6dfe4a4a82",
+      "git_blob_sha1": "e30134873fac9d110de10933e28066810e94392a",
+      "bytes": 296,
+      "url": "https://raw.githubusercontent.com/LineageOS/android_hardware_oplus/c78b87c9efb89049b35a184d60095f26c7cb29aa/packages/Pen/res/values-pl/strings.xml",
+      "matches_previous_audit": null
+    },
+    {
+      "path": "packages/Pen/res/values-pt-rBR/strings.xml",
+      "sha256": "152ff4637442c30b6fb5878ff8cd4cf0d08f19f482d1823c6dac208f79e21aad",
+      "git_blob_sha1": "50e993b9f3e273711b817ad00ae7e0456463a70a",
+      "bytes": 287,
+      "url": "https://raw.githubusercontent.com/LineageOS/android_hardware_oplus/c78b87c9efb89049b35a184d60095f26c7cb29aa/packages/Pen/res/values-pt-rBR/strings.xml",
+      "matches_previous_audit": null
+    },
+    {
+      "path": "packages/Pen/res/values-pt-rPT/strings.xml",
+      "sha256": "152ff4637442c30b6fb5878ff8cd4cf0d08f19f482d1823c6dac208f79e21aad",
+      "git_blob_sha1": "50e993b9f3e273711b817ad00ae7e0456463a70a",
+      "bytes": 287,
+      "url": "https://raw.githubusercontent.com/LineageOS/android_hardware_oplus/c78b87c9efb89049b35a184d60095f26c7cb29aa/packages/Pen/res/values-pt-rPT/strings.xml",
+      "matches_previous_audit": null
+    },
+    {
+      "path": "packages/Pen/res/values-ro/strings.xml",
+      "sha256": "fc0fd23c38eace9ce24b9f6d68dead369c6edd8d72bfdea75ea065445dc52170",
+      "git_blob_sha1": "b96283193a34cd5750ae7cb8d9e484fa335f6820",
+      "bytes": 294,
+      "url": "https://raw.githubusercontent.com/LineageOS/android_hardware_oplus/c78b87c9efb89049b35a184d60095f26c7cb29aa/packages/Pen/res/values-ro/strings.xml",
+      "matches_previous_audit": null
+    },
+    {
+      "path": "packages/Pen/res/values-ru/strings.xml",
+      "sha256": "0a71dd46c642a40072ab1da075c7832f62a4db251139a8d281c2aa8c0c7faed9",
+      "git_blob_sha1": "884beb45937e0ece2350f58d9d821623eea7a7e2",
+      "bytes": 326,
+      "url": "https://raw.githubusercontent.com/LineageOS/android_hardware_oplus/c78b87c9efb89049b35a184d60095f26c7cb29aa/packages/Pen/res/values-ru/strings.xml",
+      "matches_previous_audit": null
+    },
+    {
+      "path": "packages/Pen/res/values-sc-rIT/strings.xml",
+      "sha256": "6ae14315d82b3c81c1cf274046f28a8777b21db51d3597b4c4990a5b3e61648d",
+      "git_blob_sha1": "e859294348e8ac0f670509b71beba9b3f6be1ca9",
+      "bytes": 291,
+      "url": "https://raw.githubusercontent.com/LineageOS/android_hardware_oplus/c78b87c9efb89049b35a184d60095f26c7cb29aa/packages/Pen/res/values-sc-rIT/strings.xml",
+      "matches_previous_audit": null
+    },
+    {
+      "path": "packages/Pen/res/values-sl/strings.xml",
+      "sha256": "e40345f476b98c2f4675217b93ff95be86938a82384d9dad9ee72456eeb637f3",
+      "git_blob_sha1": "4898e6a8de5b61c34a6058cfd1473c7e969d173b",
+      "bytes": 292,
+      "url": "https://raw.githubusercontent.com/LineageOS/android_hardware_oplus/c78b87c9efb89049b35a184d60095f26c7cb29aa/packages/Pen/res/values-sl/strings.xml",
+      "matches_previous_audit": null
+    },
+    {
+      "path": "packages/Pen/res/values-sq/strings.xml",
+      "sha256": "0463a5480857cd4886d68f03a1ee7654b1393a348f9b3ed7ff3978fcee110e89",
+      "git_blob_sha1": "5a0cea17b96ae695c676b8fac36a1ca3e8463427",
+      "bytes": 302,
+      "url": "https://raw.githubusercontent.com/LineageOS/android_hardware_oplus/c78b87c9efb89049b35a184d60095f26c7cb29aa/packages/Pen/res/values-sq/strings.xml",
+      "matches_previous_audit": null
+    },
+    {
+      "path": "packages/Pen/res/values-ta/strings.xml",
+      "sha256": "a08f6bbba56b2917e03a679f8c63c614b657743dc6e2098cb1803037b798675d",
+      "git_blob_sha1": "69630526d0c06f3012d7061e25e7e8361d4c7c24",
+      "bytes": 367,
+      "url": "https://raw.githubusercontent.com/LineageOS/android_hardware_oplus/c78b87c9efb89049b35a184d60095f26c7cb29aa/packages/Pen/res/values-ta/strings.xml",
+      "matches_previous_audit": null
+    },
+    {
+      "path": "packages/Pen/res/values-ug/strings.xml",
+      "sha256": "ba3c395b46dfa0cdf8e725822a5fd78379249c0c6ec3d41c8c491e27043fc6ad",
+      "git_blob_sha1": "9724ab629179bfa2f5284113c5488994b0754d88",
+      "bytes": 312,
+      "url": "https://raw.githubusercontent.com/LineageOS/android_hardware_oplus/c78b87c9efb89049b35a184d60095f26c7cb29aa/packages/Pen/res/values-ug/strings.xml",
+      "matches_previous_audit": null
+    },
+    {
+      "path": "packages/Pen/res/values-vi/strings.xml",
+      "sha256": "d0f4db771c3e342bf7de92cab02bc2d7f6e780fda28d9882095ae1bd45c17820",
+      "git_blob_sha1": "e4c1e8ba82c41a94b23ad763343437705248ed10",
+      "bytes": 293,
+      "url": "https://raw.githubusercontent.com/LineageOS/android_hardware_oplus/c78b87c9efb89049b35a184d60095f26c7cb29aa/packages/Pen/res/values-vi/strings.xml",
+      "matches_previous_audit": null
+    },
+    {
+      "path": "packages/Pen/res/values-zh-rCN/strings.xml",
+      "sha256": "283c415b060d32efa5514a313d83d2a75eddc6282f3bd63748cbf6a1494b7281",
+      "git_blob_sha1": "a4fb5c6b2522de6d94e2a7192a1cd7c37d5fe40d",
+      "bytes": 281,
+      "url": "https://raw.githubusercontent.com/LineageOS/android_hardware_oplus/c78b87c9efb89049b35a184d60095f26c7cb29aa/packages/Pen/res/values-zh-rCN/strings.xml",
+      "matches_previous_audit": null
+    },
+    {
+      "path": "packages/Pen/res/values/config.xml",
+      "sha256": "a23cc67d5cd7f27310e79341f42edf624c3731a031e27af7bba5c7979efd8c85",
+      "git_blob_sha1": "b212ae92d03bf42a00810aa97acd719d6bd7fea8",
+      "bytes": 441,
+      "url": "https://raw.githubusercontent.com/LineageOS/android_hardware_oplus/c78b87c9efb89049b35a184d60095f26c7cb29aa/packages/Pen/res/values/config.xml",
+      "matches_previous_audit": true
+    },
+    {
+      "path": "packages/Pen/res/values/strings.xml",
+      "sha256": "468bb94a28927c556e6f0fd3411fb09a58aa11b663783a2a82057d9bda9083b7",
+      "git_blob_sha1": "108a34ea52101fd68dd45d6633e20389d0626e8a",
+      "bytes": 347,
+      "url": "https://raw.githubusercontent.com/LineageOS/android_hardware_oplus/c78b87c9efb89049b35a184d60095f26c7cb29aa/packages/Pen/res/values/strings.xml",
+      "matches_previous_audit": null
+    },
+    {
+      "path": "packages/Pen/src/org/lineageos/pen/BootCompletedReceiver.kt",
+      "sha256": "796f2d4780f0016b09f6f7e03a11b9165b160c99ed2714592214a8f2e3364d24",
+      "git_blob_sha1": "15e45ee1e03eafaaef79109b938791e7ace6408c",
+      "bytes": 586,
+      "url": "https://raw.githubusercontent.com/LineageOS/android_hardware_oplus/c78b87c9efb89049b35a184d60095f26c7cb29aa/packages/Pen/src/org/lineageos/pen/BootCompletedReceiver.kt",
+      "matches_previous_audit": true
+    },
+    {
+      "path": "packages/Pen/src/org/lineageos/pen/PenGattSession.kt",
+      "sha256": "87d1827a1f659d4e93f16cb93344ea37a083f89b85a04cdb4d71a7aac35ed0a6",
+      "git_blob_sha1": "27def05badbae7a2d02dc6dddb62836876d48aaa",
+      "bytes": 10418,
+      "url": "https://raw.githubusercontent.com/LineageOS/android_hardware_oplus/c78b87c9efb89049b35a184d60095f26c7cb29aa/packages/Pen/src/org/lineageos/pen/PenGattSession.kt",
+      "matches_previous_audit": true
+    },
+    {
+      "path": "packages/Pen/src/org/lineageos/pen/PenProtocol.kt",
+      "sha256": "148993fd519df7c5727ed6db3f9a662203127f136772fd0220aa37e8cebb5eb5",
+      "git_blob_sha1": "e660b9ac69b4895d43ce03107c3faaffcf6ff063",
+      "bytes": 2071,
+      "url": "https://raw.githubusercontent.com/LineageOS/android_hardware_oplus/c78b87c9efb89049b35a184d60095f26c7cb29aa/packages/Pen/src/org/lineageos/pen/PenProtocol.kt",
+      "matches_previous_audit": true
+    },
+    {
+      "path": "packages/Pen/src/org/lineageos/pen/PenRelay.kt",
+      "sha256": "9ed21a10c80bd5aa517c5e6da31c90dcf08f21105e17c2bc88d1ce323694103a",
+      "git_blob_sha1": "25a3e53765b9c39c3bc9d95ae77f14c99a44c647",
+      "bytes": 4541,
+      "url": "https://raw.githubusercontent.com/LineageOS/android_hardware_oplus/c78b87c9efb89049b35a184d60095f26c7cb29aa/packages/Pen/src/org/lineageos/pen/PenRelay.kt",
+      "matches_previous_audit": true
+    },
+    {
+      "path": "packages/Pen/src/org/lineageos/pen/PenService.kt",
+      "sha256": "d027d7e095d64da6879c22d5cecf8d57663286d73d3134780408accfb8417576",
+      "git_blob_sha1": "2a9120bbe5017ecf98677e2ee849c761a34a0f69",
+      "bytes": 9540,
+      "url": "https://raw.githubusercontent.com/LineageOS/android_hardware_oplus/c78b87c9efb89049b35a184d60095f26c7cb29aa/packages/Pen/src/org/lineageos/pen/PenService.kt",
+      "matches_previous_audit": true
+    },
+    {
+      "path": "packages/Pen/src/org/lineageos/pen/TouchHal.kt",
+      "sha256": "e5afc973f0a25db8b29a9dd6af4171434aa0bae8a2a1878d08733452874bf4b6",
+      "git_blob_sha1": "82d5819215b180934ff750318952ecc51ae768ef",
+      "bytes": 3765,
+      "url": "https://raw.githubusercontent.com/LineageOS/android_hardware_oplus/c78b87c9efb89049b35a184d60095f26c7cb29aa/packages/Pen/src/org/lineageos/pen/TouchHal.kt",
+      "matches_previous_audit": true
+    },
+    {
+      "path": "sepolicy/qti/private/pen_app.te",
+      "sha256": "f534506499c4312680170b87ca88ca370496c032463aae75ccb3aae5d78c8991",
+      "git_blob_sha1": "8349977ff578bb4899f98cf9c3e2f281590afd29",
+      "bytes": 265,
+      "url": "https://raw.githubusercontent.com/LineageOS/android_hardware_oplus/c78b87c9efb89049b35a184d60095f26c7cb29aa/sepolicy/qti/private/pen_app.te",
+      "matches_previous_audit": true
+    },
+    {
+      "path": "sepolicy/qti/private/seapp_contexts",
+      "sha256": "2e799a05fa22cfe02f99f34739f495cd4d2d79369b61e0fa55f8edb83eefc846",
+      "git_blob_sha1": "e445d2c07d1c59118d8541021734153dcc29e4a5",
+      "bytes": 357,
+      "url": "https://raw.githubusercontent.com/LineageOS/android_hardware_oplus/c78b87c9efb89049b35a184d60095f26c7cb29aa/sepolicy/qti/private/seapp_contexts",
+      "matches_previous_audit": true
+    }
+  ],
+  "license_text": {
+    "path": "LICENSE",
+    "url": "https://www.apache.org/licenses/LICENSE-2.0.txt",
+    "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+  },
+  "patch": {
+    "path": "patches/googlebook.patch",
+    "sha256": "78788ee908b63581cafa2b4ee3a9f8f3d364d8bd5b8c8f147cc597bcfab9e592"
+  }
+}

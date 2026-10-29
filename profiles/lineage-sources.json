@@ -1,0 +1,11 @@
+{
+  "branch": "lineage-24.0",
+  "current_kernel_source": "acb4c5815254d4ca0815d8740794ad40303197d5",
+  "heads": {
+    "device_erhai": "3005381974b1dbe0fc5835d4393b83b134bfda46",
+    "devicetrees": "2f46fad8ad309266de2405666016f8e0679883d5",
+    "kernel": "6350e8af3f4c452d087fbd6fe1aabe03cbc0af75",
+    "modules": "e05c031ce1512477f2d5db7bfa26a859adfcfbc7",
+    "sm8750_common": "96d2864971ddf3bf9c6114007d743d9254482028"
+  }
+}

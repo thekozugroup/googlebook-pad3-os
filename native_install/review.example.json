@@ -1,0 +1,12 @@
+{
+  "plan_sha256": "REPLACE_WITH_SHA256",
+  "layout_and_firmware": false,
+  "filesystem_and_recovery": false,
+  "avb_flags_and_rollback_indices": false,
+  "public_image_secret_audit": false,
+  "manager_bootstrap_and_selinux": false,
+  "factory_reset_and_data_backup": false,
+  "platform_signer_and_headless_user": false,
+  "updater_device_and_signature_checks": false,
+  "initial_installer_and_merge_before_wipe": false
+}

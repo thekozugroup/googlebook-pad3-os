@@ -1,0 +1,79 @@
+{
+  "schema": 1,
+  "java_home": "build-inputs/jdk-21",
+  "kotlin_version": "2.4.21",
+  "sdk_platform": "android-37.2",
+  "build_tools": "36.0.0",
+  "dependencies": {
+    "compiler": {
+      "coordinate": "org.jetbrains.kotlin:kotlin-compiler-embeddable:2.4.21",
+      "path": "build-inputs/kotlin/kotlin-compiler-embeddable-2.4.21.jar",
+      "sha256": "ef19419c765e7ac8404465fa026ca8fc4dbb8a822de0fc79aa53c8dce29f1d02"
+    },
+    "build_tools_api": {
+      "coordinate": "org.jetbrains.kotlin:kotlin-build-tools-api:2.4.21",
+      "path": "build-inputs/kotlin/kotlin-build-tools-api-2.4.21.jar",
+      "sha256": "c5cd6a49bd072b529ae10809111c16a7aa0f92147e95d288354017fd65799461"
+    },
+    "stdlib": {
+      "coordinate": "org.jetbrains.kotlin:kotlin-stdlib:2.4.21",
+      "path": "build-inputs/kotlin/kotlin-stdlib-2.4.21.jar",
+      "sha256": "bd8250210584cb659847dce9cda660f8e9906e5def7fbebcea93dc6dcb6a88a3"
+    },
+    "script_runtime": {
+      "coordinate": "org.jetbrains.kotlin:kotlin-script-runtime:2.4.21",
+      "path": "build-inputs/kotlin/kotlin-script-runtime-2.4.21.jar",
+      "sha256": "a658cf5902a1525a06c264a5e42b437e97a6679ddeef8ca641246f270cf6a013"
+    },
+    "reflect": {
+      "coordinate": "org.jetbrains.kotlin:kotlin-reflect:1.6.10",
+      "path": "build-inputs/kotlin/kotlin-reflect-1.6.10.jar",
+      "sha256": "3277ac102ae17aad10a55abec75ff5696c8d109790396434b496e75087854203"
+    },
+    "daemon": {
+      "coordinate": "org.jetbrains.kotlin:kotlin-daemon-embeddable:2.4.21",
+      "path": "build-inputs/kotlin/kotlin-daemon-embeddable-2.4.21.jar",
+      "sha256": "7b3ef24674e5bcffcadfc4e43202ea314194939ecbcdd90a4770b2f1b04e0d07"
+    },
+    "coroutines": {
+      "coordinate": "org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm:1.8.0",
+      "path": "build-inputs/kotlin/kotlinx-coroutines-core-jvm-1.8.0.jar",
+      "sha256": "9860906a1937490bf5f3b06d2f0e10ef451e65b95b269f22daf68a3d1f5065c5"
+    },
+    "annotations": {
+      "coordinate": "org.jetbrains:annotations:13.0",
+      "path": "build-inputs/kotlin/annotations-13.0.jar",
+      "sha256": "ace2a10dc8e2d5fd34925ecac03e4988b2c0f851650c94b8cef49ba1bd111478"
+    }
+  },
+  "tools": {
+    "android_jar": {
+      "path": "build-inputs/android-sdk/platforms/android-37.2/android.jar",
+      "sha256": "1db2419dbd45457f83b90ef8a7ef41e118174782c9a5c2185b55899df022767f"
+    },
+    "aidl": {
+      "path": "build-inputs/android-sdk/build-tools/36.0.0/aidl",
+      "sha256": "c422770a410e509659423b290aedd5ea8997c04033df3db2b86d9d6cd1688da3"
+    },
+    "aapt2": {
+      "path": "build-inputs/android-sdk/build-tools/36.0.0/aapt2",
+      "sha256": "a8844d4089b442b034aed8953deee1893253053c900e03141ae7173e3edd8157"
+    },
+    "d8": {
+      "path": "build-inputs/android-sdk/build-tools/36.0.0/d8",
+      "sha256": "b773a721be3d4988dea9660815a9e441b76100e5b0f5c72b5893cfadadc76c6f"
+    },
+    "r8_jar": {
+      "path": "build-inputs/android-sdk/build-tools/36.0.0/lib/d8.jar",
+      "sha256": "4097ff9c46c185c6e7214da7fe9b1befb5adeea5cc9ca349270e0249904f9240"
+    },
+    "zipalign": {
+      "path": "build-inputs/android-sdk/build-tools/36.0.0/zipalign",
+      "sha256": "0427144f4a3fd242c5a159e7088637082539ae556bc1d2bbc2032bb775d47cea"
+    },
+    "apksigner": {
+      "path": "build-inputs/android-sdk/build-tools/36.0.0/apksigner",
+      "sha256": "b47549e373b895ce6ca620d0c7887e674d9615ffa837a86ac601dcfd04adb0f0"
+    }
+  }
+}

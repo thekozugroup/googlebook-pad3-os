@@ -1,0 +1,63 @@
+{
+  "schema": 1,
+  "package": "org.lineageos.pen",
+  "install_as": "system_ext privileged system app, own UID, own signing certificate",
+  "runtime_default_grants": [
+    "android.permission.BLUETOOTH_CONNECT",
+    "android.permission.BLUETOOTH_SCAN",
+    "android.permission.POST_NOTIFICATIONS"
+  ],
+  "normal_manifest_permissions": [
+    "android.permission.BLUETOOTH",
+    "android.permission.RECEIVE_BOOT_COMPLETED"
+  ],
+  "privileged_grants": [],
+  "not_requested": [
+    "android.permission.RESTRICT_DISPLAY_MODES",
+    "android.permission.MODIFY_USER_PREFERRED_DISPLAY_MODE",
+    "android.permission.BLUETOOTH_PRIVILEGED",
+    "android.permission.INJECT_EVENTS"
+  ],
+  "hidden_api_whitelist_required_for_this_donor": false,
+  "hidden_api_condition": "Preinstalled (or updated system) app and usesNonSdkApi=true. Donor ApplicationInfo permits this without the platform signer or a whitelist. A user-installed APK does not meet this condition.",
+  "donor_hidden_api_evidence": {
+    "framework_sha256": "18419dba5cd7bc48e67c5ace4c162a817ef9126ea628276def8ff5535a51ce49",
+    "method": "android.content.pm.ApplicationInfo.isAllowedToUseHiddenApis()/getHiddenApiEnforcementPolicy()",
+    "jadx_result": "success",
+    "excerpt": "    private boolean isAllowedToUseHiddenApis() {\n        if (isSignedWithPlatformKey()) {\n            return true;\n        }\n        if (isSystemApp() || isUpdatedSystemApp()) {\n            return usesNonSdkApi() || isPackageWhitelistedForHiddenApis();\n        }\n        return false;\n    }\n\n    public int getHiddenApiEnforcementPolicy() {\n        if (isAllowedToUseHiddenApis()) {\n            return 0;\n        }\n        if (this.mHiddenApiPolicy != -1) {\n            return this.mHiddenApiPolicy;\n        }\n        return 2;\n    }"
+  },
+  "policy_source": {
+    "image": "build-inputs/pad3-base-images/system_ext.img",
+    "image_path": "/etc/selinux/system_ext_sepolicy.cil",
+    "sha256": "f084917951637b823362fdaba923f67729d16d3753cd775036a6663f55ac56f3",
+    "upstream_te": "sepolicy/qti/private/pen_app.te",
+    "guard_aliases": {
+      "base_typeattr_1346": "pen_app_source_guard_0",
+      "base_typeattr_1347": "pen_app_source_guard_1",
+      "base_typeattr_1348": "pen_app_source_guard_2",
+      "base_typeattr_1349": "pen_app_source_guard_3",
+      "base_typeattr_1350": "pen_app_source_guard_4"
+    }
+  },
+  "policy_merge_status": "Component template only. No parent policy files modified and no merged policy compiled. Parent must run strict linkage/neverallow checks; do not use -N to conceal violations.",
+  "headless_users": "Headless system user 0 is refused; normal full user 0 and full user 10 require both Bluetooth grants and an unlocked user. Unlock is needed for the private per-user credential-encrypted journal. Missing Bluetooth grants stop the service safely, without touching lazy resources or auto-granting.",
+  "refresh_rate": "Automatic per-user peak_refresh_rate cap to 120.0 only with Settings.System.canWrite. Reuses native pencilStatus and vendor/MAC fallback. Never raises a finite owner cap <=120. Private committed journal restores exact previous value or unset only while the public value is still our cap. Observed owner changes win and suppress recapping for that active session. Failed/denied restore retains the desired value for a later permitted retry. Active ACK still uses actual display refresh, not Settings.",
+  "protected_start_actions": [
+    "android.intent.action.BOOT_COMPLETED",
+    "android.intent.action.USER_UNLOCKED",
+    "android.intent.action.USER_FOREGROUND"
+  ],
+  "permission_revocation": "Recheck before queued work and each Bluetooth Binder boundary. Catch SecurityException only when rechecking confirms access was lost; unexpected security failures with intact permissions propagate. Cleanup attempts are idempotent; no secret-bearing exception/address/payload logs.",
+  "appop_preinstalled_permissions": [
+    "android.permission.WRITE_SETTINGS"
+  ],
+  "manifest_permissions": [
+    "android.permission.BLUETOOTH",
+    "android.permission.BLUETOOTH_CONNECT",
+    "android.permission.BLUETOOTH_SCAN",
+    "android.permission.POST_NOTIFICATIONS",
+    "android.permission.RECEIVE_BOOT_COMPLETED",
+    "android.permission.WRITE_SETTINGS"
+  ],
+  "write_settings_contract": "write-settings-contract.json"
+}

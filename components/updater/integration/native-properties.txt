@@ -1,0 +1,8 @@
+# Merge through the native image builder; this is not an on-device property script.
+software_update_preference_visibility=false
+ro.googlebook.pad3.native=1
+ro.googlebook.pad3.device=erhai
+ro.googlebook.pad3.base_profile=erhai-crdroid-20261025
+ro.build.ab_update=true
+ro.virtual_ab.enabled=true
+# Builder must also set ro.googlebook.pad3.release_sequence to this installed release's positive integer.

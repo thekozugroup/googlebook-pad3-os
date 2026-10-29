@@ -1,0 +1,437 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Pinned Pad 3 native plan, currently EROFS route only",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "repository",
+    "target_slot",
+    "timestamp",
+    "sequence",
+    "expires_utc",
+    "release_tag",
+    "version",
+    "pre_build_fingerprints",
+    "system_as_root",
+    "super_bytes",
+    "metadata_reserved_bytes",
+    "avb_mode",
+    "capture",
+    "partition_sizes",
+    "images",
+    "dynamic_groups"
+  ],
+  "properties": {
+    "schema": {
+      "const": 1
+    },
+    "repository": {
+      "const": "thekozugroup/googlebook-pad3-os"
+    },
+    "target_slot": {
+      "const": "a"
+    },
+    "timestamp": {
+      "type": "integer",
+      "minimum": 1792932356
+    },
+    "sequence": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "expires_utc": {
+      "type": "integer"
+    },
+    "release_tag": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"
+    },
+    "version": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "pre_build_fingerprints": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 16,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 1024
+      }
+    },
+    "system_as_root": {
+      "const": true
+    },
+    "super_bytes": {
+      "type": "integer",
+      "minimum": 1,
+      "multipleOf": 4096
+    },
+    "metadata_reserved_bytes": {
+      "const": 405504
+    },
+    "avb_mode": {
+      "enum": [
+        "preserve-native-disabled",
+        "verified"
+      ]
+    },
+    "capture": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "device",
+        "slot",
+        "dsu_running",
+        "page_size",
+        "kernel",
+        "build_utc",
+        "snapshot_state",
+        "virtual_ab",
+        "hardware",
+        "lpdump_text_0",
+        "lpdump_text_1",
+        "kernel_config",
+        "update_engine",
+        "update_engine_rc"
+      ],
+      "properties": {
+        "device": {
+          "enum": [
+            "erhai",
+            "OP6190L1",
+            "OPD2415"
+          ]
+        },
+        "slot": {
+          "const": "b"
+        },
+        "dsu_running": {
+          "type": "boolean"
+        },
+        "page_size": {
+          "const": 4096
+        },
+        "kernel": {
+          "const": "6.6.144-4k-gacb4c5815254"
+        },
+        "build_utc": {
+          "const": 1792932356
+        },
+        "snapshot_state": {
+          "type": "string"
+        },
+        "virtual_ab": {
+          "const": true
+        },
+        "hardware": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "vendor",
+            "odm",
+            "vendor_dlkm",
+            "system_dlkm",
+            "boot",
+            "init_boot",
+            "vendor_boot",
+            "dtbo",
+            "recovery",
+            "vbmeta",
+            "vbmeta_system",
+            "vbmeta_vendor"
+          ],
+          "properties": {
+            "vendor": {
+              "$ref": "#/$defs/file"
+            },
+            "odm": {
+              "$ref": "#/$defs/file"
+            },
+            "vendor_dlkm": {
+              "$ref": "#/$defs/file"
+            },
+            "system_dlkm": {
+              "$ref": "#/$defs/file"
+            },
+            "boot": {
+              "$ref": "#/$defs/file"
+            },
+            "init_boot": {
+              "$ref": "#/$defs/file"
+            },
+            "vendor_boot": {
+              "$ref": "#/$defs/file"
+            },
+            "dtbo": {
+              "$ref": "#/$defs/file"
+            },
+            "recovery": {
+              "$ref": "#/$defs/file"
+            },
+            "vbmeta": {
+              "$ref": "#/$defs/file"
+            },
+            "vbmeta_system": {
+              "$ref": "#/$defs/file"
+            },
+            "vbmeta_vendor": {
+              "$ref": "#/$defs/file"
+            }
+          }
+        },
+        "lpdump_text_0": {
+          "$ref": "#/$defs/file"
+        },
+        "lpdump_text_1": {
+          "$ref": "#/$defs/file"
+        },
+        "kernel_config": {
+          "$ref": "#/$defs/file"
+        },
+        "slot_and_firmware_review": {
+          "$ref": "#/$defs/file"
+        },
+        "update_engine": {
+          "$ref": "#/$defs/file"
+        },
+        "update_engine_rc": {
+          "$ref": "#/$defs/file"
+        }
+      }
+    },
+    "partition_sizes": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "system",
+        "system_ext",
+        "product",
+        "vendor",
+        "odm",
+        "vendor_dlkm",
+        "system_dlkm",
+        "boot",
+        "init_boot",
+        "vendor_boot",
+        "dtbo",
+        "recovery",
+        "vbmeta",
+        "vbmeta_system",
+        "vbmeta_vendor"
+      ],
+      "properties": {
+        "system": {
+          "type": "integer",
+          "minimum": 4096,
+          "multipleOf": 4096
+        },
+        "system_ext": {
+          "type": "integer",
+          "minimum": 4096,
+          "multipleOf": 4096
+        },
+        "product": {
+          "type": "integer",
+          "minimum": 4096,
+          "multipleOf": 4096
+        },
+        "vendor": {
+          "type": "integer",
+          "minimum": 4096,
+          "multipleOf": 4096
+        },
+        "odm": {
+          "type": "integer",
+          "minimum": 4096,
+          "multipleOf": 4096
+        },
+        "vendor_dlkm": {
+          "type": "integer",
+          "minimum": 4096,
+          "multipleOf": 4096
+        },
+        "system_dlkm": {
+          "type": "integer",
+          "minimum": 4096,
+          "multipleOf": 4096
+        },
+        "boot": {
+          "type": "integer",
+          "minimum": 4096,
+          "multipleOf": 4096
+        },
+        "init_boot": {
+          "type": "integer",
+          "minimum": 4096,
+          "multipleOf": 4096
+        },
+        "vendor_boot": {
+          "type": "integer",
+          "minimum": 4096,
+          "multipleOf": 4096
+        },
+        "dtbo": {
+          "type": "integer",
+          "minimum": 4096,
+          "multipleOf": 4096
+        },
+        "recovery": {
+          "type": "integer",
+          "minimum": 4096,
+          "multipleOf": 4096
+        },
+        "vbmeta": {
+          "type": "integer",
+          "minimum": 4096,
+          "multipleOf": 4096
+        },
+        "vbmeta_system": {
+          "type": "integer",
+          "minimum": 4096,
+          "multipleOf": 4096
+        },
+        "vbmeta_vendor": {
+          "type": "integer",
+          "minimum": 4096,
+          "multipleOf": 4096
+        }
+      }
+    },
+    "images": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "system",
+        "system_ext",
+        "product",
+        "vendor",
+        "odm",
+        "vendor_dlkm",
+        "system_dlkm",
+        "boot",
+        "init_boot",
+        "vendor_boot",
+        "dtbo",
+        "recovery",
+        "vbmeta",
+        "vbmeta_system",
+        "vbmeta_vendor"
+      ],
+      "properties": {
+        "system": {
+          "$ref": "#/$defs/file"
+        },
+        "system_ext": {
+          "$ref": "#/$defs/file"
+        },
+        "product": {
+          "$ref": "#/$defs/file"
+        },
+        "vendor": {
+          "$ref": "#/$defs/file"
+        },
+        "odm": {
+          "$ref": "#/$defs/file"
+        },
+        "vendor_dlkm": {
+          "$ref": "#/$defs/file"
+        },
+        "system_dlkm": {
+          "$ref": "#/$defs/file"
+        },
+        "boot": {
+          "$ref": "#/$defs/file"
+        },
+        "init_boot": {
+          "$ref": "#/$defs/file"
+        },
+        "vendor_boot": {
+          "$ref": "#/$defs/file"
+        },
+        "dtbo": {
+          "$ref": "#/$defs/file"
+        },
+        "recovery": {
+          "$ref": "#/$defs/file"
+        },
+        "vbmeta": {
+          "$ref": "#/$defs/file"
+        },
+        "vbmeta_system": {
+          "$ref": "#/$defs/file"
+        },
+        "vbmeta_vendor": {
+          "$ref": "#/$defs/file"
+        }
+      }
+    },
+    "dynamic_groups": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "name",
+          "maximum_size",
+          "partitions"
+        ],
+        "properties": {
+          "name": {
+            "const": "oneplus_dynamic_partitions"
+          },
+          "maximum_size": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "partitions": {
+            "type": "array",
+            "uniqueItems": true,
+            "minItems": 7,
+            "maxItems": 7,
+            "items": {
+              "enum": [
+                "system",
+                "system_ext",
+                "product",
+                "vendor",
+                "odm",
+                "vendor_dlkm",
+                "system_dlkm"
+              ]
+            }
+          }
+        }
+      }
+    },
+    "initial_install_procedure": {
+      "$ref": "#/$defs/file"
+    }
+  },
+  "$defs": {
+    "file": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "sha256"
+      ],
+      "properties": {
+        "path": {
+          "type": "string",
+          "pattern": "^/"
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        }
+      }
+    }
+  },
+  "$comment": "Runtime validation also reads raw files/LP extents, hashes, fstab/AVB, public sanitization, embedded trust/manager/native engine and target state. expires_utc must exceed timestamp. Factory reset approval is a separate false-by-default review."
+}

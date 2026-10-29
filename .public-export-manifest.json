@@ -1,0 +1,1047 @@
+{
+  "exporter": "googlebook-pad3-public-export/v1",
+  "files": {
+    ".gitignore": {
+      "bytes": 248,
+      "executable": false,
+      "sha256": "ae532335c27774d31594e93fb12865423775410667932ad86fe1933decc21cb6"
+    },
+    "BUILDING.md": {
+      "bytes": 1840,
+      "executable": false,
+      "sha256": "701b81110a0ea5673a82fef78879795f0afe15024cda167c60391c2460022862"
+    },
+    "PUBLIC_RELEASE.md": {
+      "bytes": 16780,
+      "executable": false,
+      "sha256": "343b9f03d24539d10cffaa58c9dd795e9fead3cd8e70dfd14abb99ba8d7095b6"
+    },
+    "README.md": {
+      "bytes": 952,
+      "executable": false,
+      "sha256": "247082baa94bb1028b0a4bbd1573acb85aa271dc2d2ef1124ae21b7ca8d8fa8d"
+    },
+    "TESTING.md": {
+      "bytes": 804,
+      "executable": false,
+      "sha256": "b7a56fba9d9f4892aa984ccc370075d7347430f3c3fb0b2cbd43f9f23f6c1407"
+    },
+    "UPDATING.md": {
+      "bytes": 658,
+      "executable": false,
+      "sha256": "7725324461fef8b1e6c61d24ef31b1c2f389ca99f4f83f4593ffaa43d948ea21"
+    },
+    "UpdateDsuImages.java": {
+      "bytes": 6832,
+      "executable": false,
+      "sha256": "4b3c22b59f5e718cc87bb9a06d9616b2ed7772e8c25f62ba32d4c1d4fd8dd0a1"
+    },
+    "VerifyDsuImages.java": {
+      "bytes": 4033,
+      "executable": false,
+      "sha256": "d8665f3b738859e2535b47a01d8cbcea333a419f4fc2d255990c6eac4f7d9a2d"
+    },
+    "android_disk.py": {
+      "bytes": 7101,
+      "executable": false,
+      "sha256": "c776a4dc8b5a19a553b0acec193d8ec790aa58a2d7bae7e68c5c11c6153f17d0"
+    },
+    "assemble_port.py": {
+      "bytes": 3178,
+      "executable": false,
+      "sha256": "ff8627c3c8bc209e661d01ccbcb8bafc4d80e42f7bebd37972c9391d9151089f"
+    },
+    "bootanimation_geometry.py": {
+      "bytes": 4239,
+      "executable": false,
+      "sha256": "8b5ab14eabdc1aec7bcc4a827588bd1e4524b61be8736ba66ff7b67aaabb2e69"
+    },
+    "build.sh": {
+      "bytes": 1232,
+      "executable": false,
+      "sha256": "74b626d8d17f2816257bede43cf715a3f8f7602a6897d716e07ac7f657712762"
+    },
+    "build_dsu_diagnostic.py": {
+      "bytes": 28456,
+      "executable": false,
+      "sha256": "db5431cb3b3d6cfd43cf615224ac98dde9a025e9b4b3bf7eec791e73a836abbd"
+    },
+    "build_face_overlay.py": {
+      "bytes": 11206,
+      "executable": false,
+      "sha256": "6e1241695fc296984aa58d407811e0d21ac00cc7fe1552bb70af19eac709d6c9"
+    },
+    "build_native_rom.py": {
+      "bytes": 31651,
+      "executable": false,
+      "sha256": "132c6f06b32be3b70022f5005f3601c644516f4d30ac69afc87973ecf520f4f8"
+    },
+    "build_native_userspace.py": {
+      "bytes": 23883,
+      "executable": false,
+      "sha256": "fc10a422734ef5beda4566f31688658eac67ccad84bc38eaedb332fb084d11dd"
+    },
+    "build_oplus_pen.py": {
+      "bytes": 19616,
+      "executable": false,
+      "sha256": "18a65b39594a75d63fd2bffa8fc2d519a985aad0412e2d37f0caea15daf52140"
+    },
+    "build_pen_dsu.py": {
+      "bytes": 17062,
+      "executable": false,
+      "sha256": "6fc133aade2a31b9256d8a8af98292b8b6907f9256251138c6501f70e79ca6fc"
+    },
+    "build_secilc.sh": {
+      "bytes": 6747,
+      "executable": true,
+      "sha256": "ab2bcb5cf65d6ddbdcc735e1be0ddc792d9c795eae72c6f901b8d42e6f63c011"
+    },
+    "build_updater.py": {
+      "bytes": 13631,
+      "executable": false,
+      "sha256": "aaf3b9ad89baf3d7a8952bba1a52f29984f513857aa9dae6a39ede8a2e81b70a"
+    },
+    "check_policy.py": {
+      "bytes": 3223,
+      "executable": false,
+      "sha256": "f366dd26e2d470ab6358eca6ad5af5e33cde7ad4ffbb642d991492042f1f6b7a"
+    },
+    "check_sukisu_layout.py": {
+      "bytes": 7219,
+      "executable": false,
+      "sha256": "6d30182f6128b2b6d52b0397146229b87bf2064e7df3d9590896bd9c9ff49b66"
+    },
+    "check_updates.py": {
+      "bytes": 7075,
+      "executable": false,
+      "sha256": "4a42aa3ad3a363efabd4574a28ed0479eef749f8bd462261ce4b1fadddae7252"
+    },
+    "cold_build_dsu.py": {
+      "bytes": 4055,
+      "executable": false,
+      "sha256": "06a1c71f8fb0df4fb8acccee60bc4a95a327b4684976b08850472880a873d4db"
+    },
+    "components/face-preview-overlay/AndroidManifest.xml": {
+      "bytes": 408,
+      "executable": false,
+      "sha256": "bc6f4830386d289c37aab36026186ef649dfde71543c431bdf8ff4be9608ef1b"
+    },
+    "components/face-preview-overlay/README.md": {
+      "bytes": 4142,
+      "executable": false,
+      "sha256": "bda5e1aee64e69e72dbaaa0b485a72c5e8d8c18cd8edff28752d71c7ff7cc493"
+    },
+    "components/face-preview-overlay/overlay-config-entry.xml": {
+      "bytes": 85,
+      "executable": false,
+      "sha256": "0cf8d4429fd902f0715660e9fb9783b59ac1f4274c7d56d37557b564dba88376"
+    },
+    "components/face-preview-overlay/res/values/bools.xml": {
+      "bytes": 98,
+      "executable": false,
+      "sha256": "110932f6c72c03c5d170cabaf618ebcd0982acc08da324817e6c301b8a514916"
+    },
+    "components/face-preview-overlay/res/xml/overlays.xml": {
+      "bytes": 156,
+      "executable": false,
+      "sha256": "01e038ffb10585a4b060d14e980392976a5a188d2c98b3b7731eee541499f9ba"
+    },
+    "components/oplus-pen/LICENSE": {
+      "bytes": 11358,
+      "executable": false,
+      "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+    },
+    "components/oplus-pen/README.md": {
+      "bytes": 777,
+      "executable": false,
+      "sha256": "3878afb9595c4e6221f56bc54dd98e43fc4020d475850cda35af17db59c8d732"
+    },
+    "components/oplus-pen/build-support/CompileApi.java": {
+      "bytes": 3368,
+      "executable": false,
+      "sha256": "cefad7850c1d2831051e20ba6d7e98cde13473562d98bf0de1cc5c48fb725342"
+    },
+    "components/oplus-pen/build-support/compile-api.txt": {
+      "bytes": 1157,
+      "executable": false,
+      "sha256": "2dd7104f1ec67b603f2357ce3c13ecfb839e5b12dad6ebad3b75e4904114afe6"
+    },
+    "components/oplus-pen/build-support/dex_api.py": {
+      "bytes": 5691,
+      "executable": false,
+      "sha256": "6b7e379a8df3707e19fff583feab7ae528ac4da24b2b567c3990bf61bce1bc7a"
+    },
+    "components/oplus-pen/donor-inputs.json": {
+      "bytes": 2007,
+      "executable": false,
+      "sha256": "63a68b236d12eb828996beff3c7cf8085f9a4eea01bc520cda8f6a6b578c89a5"
+    },
+    "components/oplus-pen/integration/default-permissions_org.lineageos.pen.xml": {
+      "bytes": 490,
+      "executable": false,
+      "sha256": "b47d73b9b47c0bf77c99170ec9b4cb4c417ebdffe2a24eddec965c90030023ce"
+    },
+    "components/oplus-pen/integration/pen_app.cil": {
+      "bytes": 3454,
+      "executable": false,
+      "sha256": "e281c01332b36e0715d43222e42eb14ffc6c7b483dc6af0e7dc9ae481ddd9325"
+    },
+    "components/oplus-pen/integration/requirements.json": {
+      "bytes": 4323,
+      "executable": false,
+      "sha256": "83da261b1d283f391c92946621517819e7d792831ff189efd956eac2102a4150"
+    },
+    "components/oplus-pen/integration/system_ext_mac_permissions.xml.template": {
+      "bytes": 315,
+      "executable": false,
+      "sha256": "9068c484c2950d9453a4bf322760fc0d6944660e8207db2f63da1acbccc2e0bb"
+    },
+    "components/oplus-pen/integration/system_ext_seapp_contexts.template": {
+      "bytes": 216,
+      "executable": false,
+      "sha256": "b012043bb90e1bf8611866a578b6617253ffd85622921ff5c1c987ecda199a1e"
+    },
+    "components/oplus-pen/integration/write-settings-contract.json": {
+      "bytes": 3803,
+      "executable": false,
+      "sha256": "0d1b35b71d93abcb548bf00593b5bb61de130eee6830f3bc65083e5d7f696a05"
+    },
+    "components/oplus-pen/patches/googlebook.patch": {
+      "bytes": 35206,
+      "executable": false,
+      "sha256": "78788ee908b63581cafa2b4ee3a9f8f3d364d8bd5b8c8f147cc597bcfab9e592"
+    },
+    "components/oplus-pen/tests/PeakCapSelfTest.kt": {
+      "bytes": 5972,
+      "executable": false,
+      "sha256": "5c93def72d0ceaf71972cbb05c007ead70d6f5e3e635363053357226d001d0fa"
+    },
+    "components/oplus-pen/tests/PenRuntimeSelfTest.kt": {
+      "bytes": 3545,
+      "executable": false,
+      "sha256": "bed7636cafe73c9e364050227f347e19928dea34999716e76ccd4102fcd85189"
+    },
+    "components/oplus-pen/tests/ProtocolSelfTest.kt": {
+      "bytes": 1588,
+      "executable": false,
+      "sha256": "0217f79309ea8af56726c06a4f596c05f5509c6733ad195e5673fd6f311e08a9"
+    },
+    "components/oplus-pen/toolchain.json": {
+      "bytes": 3409,
+      "executable": false,
+      "sha256": "7581ee75e9dc3528c8d9f67505ef09f16c14e536ba0a0cda801e12f5e3c50e50"
+    },
+    "components/oplus-pen/upstream-manifest.json": {
+      "bytes": 25951,
+      "executable": false,
+      "sha256": "958c4e40df17f358bcd9a63edfc80e308a8553f310dba8e9170bec3990059ba2"
+    },
+    "components/oplus-pen/upstream/interfaces/aidl_api/vendor.oplus.hardware.touch/2/.hash": {
+      "bytes": 41,
+      "executable": false,
+      "sha256": "933f058af452c76a6e6e5f4231a896c609e0118fa8fe86c9abd0382a1876a68d"
+    },
+    "components/oplus-pen/upstream/interfaces/aidl_api/vendor.oplus.hardware.touch/2/vendor/oplus/hardware/touch/IOplusTouch.aidl": {
+      "bytes": 2044,
+      "executable": false,
+      "sha256": "529946d5542b73e055e808d8ca03d8479398059ea71c8f5e255894d275e68d63"
+    },
+    "components/oplus-pen/upstream/interfaces/aidl_api/vendor.oplus.hardware.touch/2/vendor/oplus/hardware/touch/IOplusTouchEventCallback.aidl": {
+      "bytes": 1470,
+      "executable": false,
+      "sha256": "9f9d39d7a75ac199b757177739f6c616fbf20528e7c812caa5b34e322a0981a7"
+    },
+    "components/oplus-pen/upstream/interfaces/aidl_api/vendor.oplus.hardware.touch/2/vendor/oplus/hardware/touch/OplusTouchInfo.aidl": {
+      "bytes": 1334,
+      "executable": false,
+      "sha256": "a5b765ab40a476afcf21b9736ab6959eba932b898ac0d8e3ac31867e89e79e20"
+    },
+    "components/oplus-pen/upstream/interfaces/aidl_api/vendor.oplus.hardware.touch/2/vendor/oplus/hardware/touch/OplusTouchStatus.aidl": {
+      "bytes": 1303,
+      "executable": false,
+      "sha256": "deecab445761166fe3b8feaeb54ed6718fe48e569f8400fdc7c5116ca2599c39"
+    },
+    "components/oplus-pen/upstream/packages/Pen/Android.bp": {
+      "bytes": 713,
+      "executable": false,
+      "sha256": "aff7a86823bcfccbb552612d08a0ce378a09a085c1ba29ccc18a954b06fbaf8e"
+    },
+    "components/oplus-pen/upstream/packages/Pen/AndroidManifest.xml": {
+      "bytes": 1371,
+      "executable": false,
+      "sha256": "fcc181f2cd31c035c16e7c5fdb678627edad0badc45528b399de71878f0f55d6"
+    },
+    "components/oplus-pen/upstream/packages/Pen/default-permissions_org.lineageos.pen.xml": {
+      "bytes": 490,
+      "executable": false,
+      "sha256": "b47d73b9b47c0bf77c99170ec9b4cb4c417ebdffe2a24eddec965c90030023ce"
+    },
+    "components/oplus-pen/upstream/packages/Pen/proguard.flags": {
+      "bytes": 41,
+      "executable": false,
+      "sha256": "cdd59bf711a40c63f385e0163d2e11f4b45a951d6b5a3771c573b6035881623e"
+    },
+    "components/oplus-pen/upstream/packages/Pen/res/drawable/ic_stylus.xml": {
+      "bytes": 745,
+      "executable": false,
+      "sha256": "8249cd7e56a7fc1510788be21e008142c0a0bd4cbce26e04e86cd016fc12a395"
+    },
+    "components/oplus-pen/upstream/packages/Pen/res/values-az/strings.xml": {
+      "bytes": 297,
+      "executable": false,
+      "sha256": "ece902dc41ef5416030cb879ff7839813cedff24d6748f1987fc42aff076a6d1"
+    },
+    "components/oplus-pen/upstream/packages/Pen/res/values-bg/strings.xml": {
+      "bytes": 343,
+      "executable": false,
+      "sha256": "b3a1c5b00c120160a47c857b15ac094656665cb175fd4ea65f7551e161ccf79c"
+    },
+    "components/oplus-pen/upstream/packages/Pen/res/values-ca/strings.xml": {
+      "bytes": 290,
+      "executable": false,
+      "sha256": "3596aaadbd3891a7dcca9be69440fad3b3eb2a5f7f4f298c1367a7d156e7c7cb"
+    },
+    "components/oplus-pen/upstream/packages/Pen/res/values-ckb/strings.xml": {
+      "bytes": 335,
+      "executable": false,
+      "sha256": "4840fd674e8e132c6836d2c2122604df34abaad425c95e57239af5c3c434a121"
+    },
+    "components/oplus-pen/upstream/packages/Pen/res/values-cs/strings.xml": {
+      "bytes": 289,
+      "executable": false,
+      "sha256": "d8e5f725b4fa35d4527dc4624a107263effb8915fc304339e6fb48da12ace774"
+    },
+    "components/oplus-pen/upstream/packages/Pen/res/values-cy/strings.xml": {
+      "bytes": 287,
+      "executable": false,
+      "sha256": "645d28e5c7abcf82e07b0e944e295c2e6e6ce4b751eb1b84915efa23d3474994"
+    },
+    "components/oplus-pen/upstream/packages/Pen/res/values-de/strings.xml": {
+      "bytes": 292,
+      "executable": false,
+      "sha256": "1f395f31620a5cba71433a8d6de51725867f4403feae668387b3995ac7c38c33"
+    },
+    "components/oplus-pen/upstream/packages/Pen/res/values-el/strings.xml": {
+      "bytes": 332,
+      "executable": false,
+      "sha256": "537e5b79350dbdcf4bca24777e74de35cf4b053d333f7b990a78c1d8cd66aac8"
+    },
+    "components/oplus-pen/upstream/packages/Pen/res/values-en-rAU/strings.xml": {
+      "bytes": 280,
+      "executable": false,
+      "sha256": "ecf0df3b2d081b0db3fd55f83c4a2af4834709964115095e2361ab7bd0a9128f"
+    },
+    "components/oplus-pen/upstream/packages/Pen/res/values-en-rCA/strings.xml": {
+      "bytes": 280,
+      "executable": false,
+      "sha256": "ecf0df3b2d081b0db3fd55f83c4a2af4834709964115095e2361ab7bd0a9128f"
+    },
+    "components/oplus-pen/upstream/packages/Pen/res/values-en-rGB/strings.xml": {
+      "bytes": 280,
+      "executable": false,
+      "sha256": "ecf0df3b2d081b0db3fd55f83c4a2af4834709964115095e2361ab7bd0a9128f"
+    },
+    "components/oplus-pen/upstream/packages/Pen/res/values-en-rIN/strings.xml": {
+      "bytes": 280,
+      "executable": false,
+      "sha256": "ecf0df3b2d081b0db3fd55f83c4a2af4834709964115095e2361ab7bd0a9128f"
+    },
+    "components/oplus-pen/upstream/packages/Pen/res/values-es/strings.xml": {
+      "bytes": 290,
+      "executable": false,
+      "sha256": "b4c641fa5634763211ca0d9df987fc8c7970ac0beca449e510e3c5745b4f611c"
+    },
+    "components/oplus-pen/upstream/packages/Pen/res/values-fa/strings.xml": {
+      "bytes": 313,
+      "executable": false,
+      "sha256": "37547be2d85b6566b795b6ec0979763714e97f111e4a77bfd42e341b85b8605a"
+    },
+    "components/oplus-pen/upstream/packages/Pen/res/values-fr/strings.xml": {
+      "bytes": 290,
+      "executable": false,
+      "sha256": "888b617c48b6e775cd1fc0ed66b3cabe3c3e8cc2aee0c9325548b1e27e043629"
+    },
+    "components/oplus-pen/upstream/packages/Pen/res/values-ga-rIE/strings.xml": {
+      "bytes": 290,
+      "executable": false,
+      "sha256": "66e7c19a80888e929eee5fd03d71f3678af23ccdae093f529f2880fb10c20894"
+    },
+    "components/oplus-pen/upstream/packages/Pen/res/values-hu/strings.xml": {
+      "bytes": 303,
+      "executable": false,
+      "sha256": "4d712c8e1e3ee9b1ab534eb2075d5464096f08b63bfad4d2f3eb3d32449e8d0f"
+    },
+    "components/oplus-pen/upstream/packages/Pen/res/values-in/strings.xml": {
+      "bytes": 293,
+      "executable": false,
+      "sha256": "36b0ca62e94bd8e1bba9813f9354633350d5c278507a46159d8cb5a9de3f8346"
+    },
+    "components/oplus-pen/upstream/packages/Pen/res/values-it/strings.xml": {
+      "bytes": 289,
+      "executable": false,
+      "sha256": "f32bd0ad8c55d5ea2574142bfacc93a2f2644db96b4096c1ff91ce544165c062"
+    },
+    "components/oplus-pen/upstream/packages/Pen/res/values-iw/strings.xml": {
+      "bytes": 296,
+      "executable": false,
+      "sha256": "95815f6466d2ca74972d8a36c7e45a51ffe079dc1536b1f2560d446925c955fa"
+    },
+    "components/oplus-pen/upstream/packages/Pen/res/values-ja/strings.xml": {
+      "bytes": 302,
+      "executable": false,
+      "sha256": "7c68caf01ff249e60f265729cd07333784bcacb9bcb682b107dc25df61e14592"
+    },
+    "components/oplus-pen/upstream/packages/Pen/res/values-ka/strings.xml": {
+      "bytes": 355,
+      "executable": false,
+      "sha256": "c084568691745fb09547d02f02607d2dbd1ce7a6b2c4464a23b7ac20daf386d4"
+    },
+    "components/oplus-pen/upstream/packages/Pen/res/values-ko/strings.xml": {
+      "bytes": 283,
+      "executable": false,
+      "sha256": "005867612b857c51cbb4f93d9835a9f065393433fa6f059961d3d7bc6c7efa5c"
+    },
+    "components/oplus-pen/upstream/packages/Pen/res/values-nn-rNO/strings.xml": {
+      "bytes": 286,
+      "executable": false,
+      "sha256": "5966e9829792dba9a73528e05e34d2ac8269759f65fa613b47f61daf14662158"
+    },
+    "components/oplus-pen/upstream/packages/Pen/res/values-pl/strings.xml": {
+      "bytes": 296,
+      "executable": false,
+      "sha256": "390dd2cea67060c590db9b3808440f75b2d691810e4a3eeb5e14fe6dfe4a4a82"
+    },
+    "components/oplus-pen/upstream/packages/Pen/res/values-pt-rBR/strings.xml": {
+      "bytes": 287,
+      "executable": false,
+      "sha256": "152ff4637442c30b6fb5878ff8cd4cf0d08f19f482d1823c6dac208f79e21aad"
+    },
+    "components/oplus-pen/upstream/packages/Pen/res/values-pt-rPT/strings.xml": {
+      "bytes": 287,
+      "executable": false,
+      "sha256": "152ff4637442c30b6fb5878ff8cd4cf0d08f19f482d1823c6dac208f79e21aad"
+    },
+    "components/oplus-pen/upstream/packages/Pen/res/values-ro/strings.xml": {
+      "bytes": 294,
+      "executable": false,
+      "sha256": "fc0fd23c38eace9ce24b9f6d68dead369c6edd8d72bfdea75ea065445dc52170"
+    },
+    "components/oplus-pen/upstream/packages/Pen/res/values-ru/strings.xml": {
+      "bytes": 326,
+      "executable": false,
+      "sha256": "0a71dd46c642a40072ab1da075c7832f62a4db251139a8d281c2aa8c0c7faed9"
+    },
+    "components/oplus-pen/upstream/packages/Pen/res/values-sc-rIT/strings.xml": {
+      "bytes": 291,
+      "executable": false,
+      "sha256": "6ae14315d82b3c81c1cf274046f28a8777b21db51d3597b4c4990a5b3e61648d"
+    },
+    "components/oplus-pen/upstream/packages/Pen/res/values-sl/strings.xml": {
+      "bytes": 292,
+      "executable": false,
+      "sha256": "e40345f476b98c2f4675217b93ff95be86938a82384d9dad9ee72456eeb637f3"
+    },
+    "components/oplus-pen/upstream/packages/Pen/res/values-sq/strings.xml": {
+      "bytes": 302,
+      "executable": false,
+      "sha256": "0463a5480857cd4886d68f03a1ee7654b1393a348f9b3ed7ff3978fcee110e89"
+    },
+    "components/oplus-pen/upstream/packages/Pen/res/values-ta/strings.xml": {
+      "bytes": 367,
+      "executable": false,
+      "sha256": "a08f6bbba56b2917e03a679f8c63c614b657743dc6e2098cb1803037b798675d"
+    },
+    "components/oplus-pen/upstream/packages/Pen/res/values-ug/strings.xml": {
+      "bytes": 312,
+      "executable": false,
+      "sha256": "ba3c395b46dfa0cdf8e725822a5fd78379249c0c6ec3d41c8c491e27043fc6ad"
+    },
+    "components/oplus-pen/upstream/packages/Pen/res/values-vi/strings.xml": {
+      "bytes": 293,
+      "executable": false,
+      "sha256": "d0f4db771c3e342bf7de92cab02bc2d7f6e780fda28d9882095ae1bd45c17820"
+    },
+    "components/oplus-pen/upstream/packages/Pen/res/values-zh-rCN/strings.xml": {
+      "bytes": 281,
+      "executable": false,
+      "sha256": "283c415b060d32efa5514a313d83d2a75eddc6282f3bd63748cbf6a1494b7281"
+    },
+    "components/oplus-pen/upstream/packages/Pen/res/values/config.xml": {
+      "bytes": 441,
+      "executable": false,
+      "sha256": "a23cc67d5cd7f27310e79341f42edf624c3731a031e27af7bba5c7979efd8c85"
+    },
+    "components/oplus-pen/upstream/packages/Pen/res/values/strings.xml": {
+      "bytes": 347,
+      "executable": false,
+      "sha256": "468bb94a28927c556e6f0fd3411fb09a58aa11b663783a2a82057d9bda9083b7"
+    },
+    "components/oplus-pen/upstream/packages/Pen/src/org/lineageos/pen/BootCompletedReceiver.kt": {
+      "bytes": 586,
+      "executable": false,
+      "sha256": "796f2d4780f0016b09f6f7e03a11b9165b160c99ed2714592214a8f2e3364d24"
+    },
+    "components/oplus-pen/upstream/packages/Pen/src/org/lineageos/pen/PenGattSession.kt": {
+      "bytes": 10418,
+      "executable": false,
+      "sha256": "87d1827a1f659d4e93f16cb93344ea37a083f89b85a04cdb4d71a7aac35ed0a6"
+    },
+    "components/oplus-pen/upstream/packages/Pen/src/org/lineageos/pen/PenProtocol.kt": {
+      "bytes": 2071,
+      "executable": false,
+      "sha256": "148993fd519df7c5727ed6db3f9a662203127f136772fd0220aa37e8cebb5eb5"
+    },
+    "components/oplus-pen/upstream/packages/Pen/src/org/lineageos/pen/PenRelay.kt": {
+      "bytes": 4541,
+      "executable": false,
+      "sha256": "9ed21a10c80bd5aa517c5e6da31c90dcf08f21105e17c2bc88d1ce323694103a"
+    },
+    "components/oplus-pen/upstream/packages/Pen/src/org/lineageos/pen/PenService.kt": {
+      "bytes": 9540,
+      "executable": false,
+      "sha256": "d027d7e095d64da6879c22d5cecf8d57663286d73d3134780408accfb8417576"
+    },
+    "components/oplus-pen/upstream/packages/Pen/src/org/lineageos/pen/TouchHal.kt": {
+      "bytes": 3765,
+      "executable": false,
+      "sha256": "e5afc973f0a25db8b29a9dd6af4171434aa0bae8a2a1878d08733452874bf4b6"
+    },
+    "components/oplus-pen/upstream/sepolicy/qti/private/pen_app.te": {
+      "bytes": 265,
+      "executable": false,
+      "sha256": "f534506499c4312680170b87ca88ca370496c032463aae75ccb3aae5d78c8991"
+    },
+    "components/oplus-pen/upstream/sepolicy/qti/private/seapp_contexts": {
+      "bytes": 357,
+      "executable": false,
+      "sha256": "2e799a05fa22cfe02f99f34739f495cd4d2d79369b61e0fa55f8edb83eefc846"
+    },
+    "components/taskmanager-compat/.gitignore": {
+      "bytes": 11,
+      "executable": false,
+      "sha256": "48c44c861b58bc623e9603882c09c61cb2bf31ab1c48774d6918f8807185019c"
+    },
+    "components/taskmanager-compat/README.md": {
+      "bytes": 5187,
+      "executable": false,
+      "sha256": "6191c0b1bac680ea8591457e480fa50e7c62331f9e2c2c468f47b539c6adffce"
+    },
+    "components/taskmanager-compat/build-support/GraftClient.java": {
+      "bytes": 13806,
+      "executable": false,
+      "sha256": "c8bfd0109fe61f8b7c29e2ec246f9e467220f66f9235eb7cd7da51e7fef28b39"
+    },
+    "components/taskmanager-compat/compile-api/vendor/google/libraries/desktop/serviceability/ServiceabilityManager.java": {
+      "bytes": 2576,
+      "executable": false,
+      "sha256": "87d0d0fb925b0ec1f4912f76aada911950ae7c71f696e34f1ed95ba7642f920c"
+    },
+    "components/taskmanager-compat/src/vendor/google/libraries/desktop/serviceability/TaskManagerCompat.java": {
+      "bytes": 15035,
+      "executable": false,
+      "sha256": "1feefbcad24af4165b08d55a38bba76dcab2a0ab9ea9430dfcd11bd8296970ef"
+    },
+    "components/taskmanager-compat/tests/vendor/google/libraries/desktop/serviceability/MetricsSelfTest.java": {
+      "bytes": 9680,
+      "executable": false,
+      "sha256": "527748e17d99a5dd1acb628b6e9b42b1c38552c340d1d96cd16c3b8adbea1c48"
+    },
+    "components/updater/AndroidManifest.xml": {
+      "bytes": 1427,
+      "executable": false,
+      "sha256": "191cba596d1aa24ee838224e708636312f1e545fdf4d025831573751cc148124"
+    },
+    "components/updater/README.md": {
+      "bytes": 1261,
+      "executable": false,
+      "sha256": "c43edf2e739ec1b777626a815e3b4b04f68ec1e2e379393998cd7034a5b2688c"
+    },
+    "components/updater/build-support/android/os/SELinux.java": {
+      "bytes": 332,
+      "executable": false,
+      "sha256": "97ab6171f5803249fade7775dfc8425ab55d726e2a17a41ccb64a09d5deaaa24"
+    },
+    "components/updater/build-support/android/os/SystemProperties.java": {
+      "bytes": 149,
+      "executable": false,
+      "sha256": "deaa64441716ed0fe376e2d5f930eba5955e16b79f583f2bc96e5db58171b604"
+    },
+    "components/updater/build-support/android/os/UpdateEngine.java": {
+      "bytes": 674,
+      "executable": false,
+      "sha256": "2f06cd64192fdc1686727b76986b4dc4f7ff419b2570ee6862e57ecd59893950"
+    },
+    "components/updater/build-support/android/os/UpdateEngineCallback.java": {
+      "bytes": 205,
+      "executable": false,
+      "sha256": "505d3cdf6190cbadf966775abebb06be2ca78be76543a52c5103c62866ae9264"
+    },
+    "components/updater/donor-api.json": {
+      "bytes": 6434,
+      "executable": false,
+      "sha256": "8c483cd0761fdd366b761613d50857a637a40be47b7af9b632781fd46aab6fae"
+    },
+    "components/updater/feed-empty.json": {
+      "bytes": 3,
+      "executable": false,
+      "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+    },
+    "components/updater/integration/native-properties.txt": {
+      "bytes": 400,
+      "executable": false,
+      "sha256": "a266fc843a666515cb0f5f53e216b0789c0ac416bd7d5cbd7ab355413b3c15d2"
+    },
+    "components/updater/integration/required-access.te": {
+      "bytes": 1092,
+      "executable": false,
+      "sha256": "3be0e619973470145991ce8d8b76d071a275bc7c8775d92351af0db5ea42d9d7"
+    },
+    "components/updater/src/org/googlebook/pad3/updater/ActiveProfile.java": {
+      "bytes": 4693,
+      "executable": false,
+      "sha256": "2c6b1469035f32a766004cdf85e5df22676db2814a5201c6109cf628317c6bba"
+    },
+    "components/updater/src/org/googlebook/pad3/updater/MainActivity.java": {
+      "bytes": 3779,
+      "executable": false,
+      "sha256": "be8b1d48c7b575242e647d6f36db636bc08afc64dc2900daa41c15bd7780aea4"
+    },
+    "components/updater/src/org/googlebook/pad3/updater/ManifestCodec.java": {
+      "bytes": 3762,
+      "executable": false,
+      "sha256": "20e8feadca209e7b4aeba9367808e4db026dc04b61b8279f79ac5ce1c8ab65c2"
+    },
+    "components/updater/src/org/googlebook/pad3/updater/NativeIdentity.java": {
+      "bytes": 2076,
+      "executable": false,
+      "sha256": "f3a392ce7ef0cad3521c3b7b4bd45c6d5b5f76711a6db64a677246b06b3baddf"
+    },
+    "components/updater/src/org/googlebook/pad3/updater/RootInstaller.java": {
+      "bytes": 12149,
+      "executable": false,
+      "sha256": "8eb077e0e0a403075521e586b80733db734d5f8e59c34bfbe9ba7774b5f5a0bc"
+    },
+    "components/updater/src/org/googlebook/pad3/updater/UpdateCore.java": {
+      "bytes": 21275,
+      "executable": false,
+      "sha256": "bd08dc35523aef43e7e90741d2d971744a7055e4de1dbb2f694fb1d66b919e46"
+    },
+    "components/updater/src/org/googlebook/pad3/updater/UpdateService.java": {
+      "bytes": 8507,
+      "executable": false,
+      "sha256": "7b9838827a4ee16557a8ed46f6707a84dc7e7e682b7ee4a1ae2f1d079c35e766"
+    },
+    "components/updater/tests/FeedOrderTest.java": {
+      "bytes": 896,
+      "executable": false,
+      "sha256": "f3a94a0807a76f5aef73eeafd6a9fd1bf05b947bccf1ced2ee86abc19fa956cf"
+    },
+    "components/updater/tests/ProducerConsumerTest.java": {
+      "bytes": 2491,
+      "executable": false,
+      "sha256": "c59dda4af38f871997ed9208b133cd4cfdb7ad35f41907b94f1e986afbc1d9e9"
+    },
+    "components/updater/tests/UpdateCoreTest.java": {
+      "bytes": 17749,
+      "executable": false,
+      "sha256": "c57104186bf12579d436ff5f5f6c9d1f4827e0afae6aa7d580652da55cd0b8c4"
+    },
+    "components/updater/toolchain.json": {
+      "bytes": 1011,
+      "executable": false,
+      "sha256": "3c59ffb7e6f6f44401cf5cc6bb585ce728ded27c6d8c0628f10242c52f97e85a"
+    },
+    "desktop_repair_gate.py": {
+      "bytes": 6081,
+      "executable": false,
+      "sha256": "170b4de5791f3602f3cc9d331fbe4237308cb2321a97ce5b9180a0512de41638"
+    },
+    "erofs_overlay.py": {
+      "bytes": 13599,
+      "executable": false,
+      "sha256": "985631d227e0c98d4cb3451b2255d694de425190f9422448a65d5e59870b1ef2"
+    },
+    "erofs_sanitize.py": {
+      "bytes": 9204,
+      "executable": false,
+      "sha256": "e3c0549a7c759e061a1687360665789df5a5662515b01bb1733a65651fda246c"
+    },
+    "export_public.py": {
+      "bytes": 72533,
+      "executable": false,
+      "sha256": "ae5813586795b08722c9992d32b81139028a909e6b7c7c532a2d81e21b6cc898"
+    },
+    "ext4_source.py": {
+      "bytes": 2262,
+      "executable": false,
+      "sha256": "631028faf9a137513d4bd86220a622cacc675dc437b6e447a3c52ac017a40635"
+    },
+    "flash_test.py": {
+      "bytes": 4362,
+      "executable": false,
+      "sha256": "aaac48660e2f0107c7bd2034e9eee1757b334eb9c979540e8733525c28c831d9"
+    },
+    "inputs.json": {
+      "bytes": 2078,
+      "executable": false,
+      "sha256": "296c1c9444b8cd01f1574a61bbd2c9aa90334efb67d335b2014ba326f86e4487"
+    },
+    "native_install/INITIAL_INSTALL.md": {
+      "bytes": 2229,
+      "executable": false,
+      "sha256": "ed3ade3cc4d96b7c5d852966ab0a80a2a7e426ad173c5afa6293b0f170c835f1"
+    },
+    "native_install/README.md": {
+      "bytes": 1988,
+      "executable": false,
+      "sha256": "2809bbfcbb57097e9e94f3b7944216f070bea0df660a866a715414041e534b9b"
+    },
+    "native_install/avb.py": {
+      "bytes": 7070,
+      "executable": false,
+      "sha256": "a36150d75dedcafb69f1d0d14787673e11cfdcc61dd0770eb1ad63fcf51b2171"
+    },
+    "native_install/bootcontrol/NativeBootControlProbe.java": {
+      "bytes": 3118,
+      "executable": false,
+      "sha256": "44f002efa4beb0b48af59a77ef0cc809cf51eae87991e220f04745166ca2dcde"
+    },
+    "native_install/bootcontrol/README.md": {
+      "bytes": 988,
+      "executable": false,
+      "sha256": "28dd0778af1e1ebe5ed1ddb5b2ee5d8c3341a81c73ab7ee55dff3b6a66331dd2"
+    },
+    "native_install/bootcontrol/aidl/android/hardware/boot/IBootControl.aidl": {
+      "bytes": 2306,
+      "executable": false,
+      "sha256": "b94e0de5aa02b9733513311e018a0a89f4951d0b746c64ec8686d75b7491d70d"
+    },
+    "native_install/bootcontrol/aidl/android/hardware/boot/MergeStatus.aidl": {
+      "bytes": 1856,
+      "executable": false,
+      "sha256": "3ccb02d10ae3430e28b30f5b1248076917e20e3887ddcba7dd64be0e9e72ccdd"
+    },
+    "native_install/bootcontrol/build_probe.py": {
+      "bytes": 2650,
+      "executable": false,
+      "sha256": "5687e3649190ef06fd79a3f167edf833099f9006012031eccbd607e68f25f6a7"
+    },
+    "native_install/fstab.py": {
+      "bytes": 12226,
+      "executable": false,
+      "sha256": "7a4d8f03efe5949d4ca02b4f92f6b645a89278ea16d00ad2a27b52be41a6f8c6"
+    },
+    "native_install/initial_install.py": {
+      "bytes": 13263,
+      "executable": false,
+      "sha256": "f8e5e70b01493b1a397659bccae00fde10d00b0627bdbcf41cebaa509a6645c7"
+    },
+    "native_install/install-sukisu-manager.sh": {
+      "bytes": 1232,
+      "executable": false,
+      "sha256": "5d4f0db2cafc61e396daaa03477ec39aea6bd042ccee200b2c1b08b0a5f41dcf"
+    },
+    "native_install/layout.py": {
+      "bytes": 6903,
+      "executable": false,
+      "sha256": "3569f80bf91d42ff00eb57bce953c86c3908d370e830a9cac30fab437266a096"
+    },
+    "native_install/manager/ManagerDecision.java": {
+      "bytes": 587,
+      "executable": false,
+      "sha256": "0b4882730fe1c0abf36c1063d7aec951249ed50fe60688d48f1901563f47c154"
+    },
+    "native_install/manager/README.md": {
+      "bytes": 1288,
+      "executable": false,
+      "sha256": "dc2416c253dbb33c526ae6336b38bdb56e4083893fe25205b35d2336aa0922b4"
+    },
+    "native_install/manager/SukiSUManagerCheck.java": {
+      "bytes": 2412,
+      "executable": false,
+      "sha256": "c09564aad6befdff0431d46068c8f8d69063866fbc193790ae5219597ddc42cc"
+    },
+    "native_install/manager/build_checker.py": {
+      "bytes": 1944,
+      "executable": false,
+      "sha256": "e29455ba54a2ce2174f178e4c4ac5e51bc277d492bd4921951f39d3b1ebd4df3"
+    },
+    "native_install/payload.py": {
+      "bytes": 6445,
+      "executable": false,
+      "sha256": "281e52abd308a8aba58c56220b0fa079e00d036657bee1727c8452c66b3b8749"
+    },
+    "native_install/plan.example.json": {
+      "bytes": 5323,
+      "executable": false,
+      "sha256": "7eb49d54e671acf2b052d1c03ae3b3694396b73e3b1015d130b4acdb29cfa7e5"
+    },
+    "native_install/plan.schema.json": {
+      "bytes": 9787,
+      "executable": false,
+      "sha256": "2574efc140abd3973199ccda488668b6dd470a6e7295555a7039d4475d975859"
+    },
+    "native_install/public_image.py": {
+      "bytes": 3467,
+      "executable": false,
+      "sha256": "6bc1462595c599969acca9a2d1895e752679c506dc5d31fbd6889c9dcf099f5b"
+    },
+    "native_install/review.example.json": {
+      "bytes": 422,
+      "executable": false,
+      "sha256": "31f794f2bec1deb06ac22630e0f628af912d67b56d7691d85f9bc8f39014dab8"
+    },
+    "native_install/review.schema.json": {
+      "bytes": 1420,
+      "executable": false,
+      "sha256": "c77d754580d916f904762f39aafdcbb5e08fec6e676bf252f188b1c89147b958"
+    },
+    "native_install/slot-state.example.json": {
+      "bytes": 1222,
+      "executable": false,
+      "sha256": "53302e93444a0d3f9402c4b317efa4eae4b21ed88f58ff9de48a84c794dda355"
+    },
+    "native_install/slot-state.schema.json": {
+      "bytes": 6434,
+      "executable": false,
+      "sha256": "5560364c3af6323736efcb81a4e826781726d084ce6d3b7d26843f214fbf1d03"
+    },
+    "native_install/source-pins.json": {
+      "bytes": 4615,
+      "executable": false,
+      "sha256": "60638cf38bdebc95938593f8639de29d2a49af98cce3053b62b7458f86c25ccd"
+    },
+    "native_install/sukisu-layout-baseline.json": {
+      "bytes": 21611,
+      "executable": false,
+      "sha256": "d106803e73edc7bec632e45ddfff17954edc11f47905fdb40d3af4f485aaa2d5"
+    },
+    "native_install/tools.example.json": {
+      "bytes": 903,
+      "executable": false,
+      "sha256": "5c6b2f7e68cd8f215b330f9f8f5f6928940230f2fe6fc1b5880a4f7a967a0b9e"
+    },
+    "native_install/tools/avbtool.py": {
+      "bytes": 207502,
+      "executable": false,
+      "sha256": "e5a664a38db623da00f080219bc0ee60a640a9dc4a872803616fae4938ac749b"
+    },
+    "package_port.py": {
+      "bytes": 3989,
+      "executable": false,
+      "sha256": "56a75ad93cc664ae705ae928c2947bd7992b9d3c19eb90303c6945cf7a78e871"
+    },
+    "patch_taskmanager.py": {
+      "bytes": 18281,
+      "executable": false,
+      "sha256": "eabc981d104b8e45af23d0055c05f6687da1503cb3f9f21f23a5709170188854"
+    },
+    "pen_policy.py": {
+      "bytes": 10421,
+      "executable": false,
+      "sha256": "cc00680ddc00b3eb6475d3186235d9e87740ca690b968ee16e693504653ad5cb"
+    },
+    "port_changes.py": {
+      "bytes": 16727,
+      "executable": false,
+      "sha256": "6b486f16e2649686812c8c654ae289cd32d844f100688ef16b4dc5cb0be7fd0a"
+    },
+    "prepare_inputs.py": {
+      "bytes": 3430,
+      "executable": false,
+      "sha256": "b84bfaf38ac12800336a2abb2efd979b12ee7083c7d56d2334ef0a7419eabe25"
+    },
+    "profiles/build-seed.json": {
+      "bytes": 278,
+      "executable": false,
+      "sha256": "f0953924b40004be199d69789e8cd5ea0e06c155c9778efadcf2b705b01dbbe7"
+    },
+    "profiles/erhai-crdroid-20261025/README.md": {
+      "bytes": 353,
+      "executable": false,
+      "sha256": "0c20d874b8d01b8d49f83581ad139b58d912736795b7e8d6e8086580ee8436f9"
+    },
+    "profiles/erhai-crdroid-20261025/policy/odm/odm_sepolicy.cil": {
+      "bytes": 1,
+      "executable": false,
+      "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+    },
+    "profiles/erhai-crdroid-20261025/policy/vendor/genfs_labels_version.txt": {
+      "bytes": 7,
+      "executable": false,
+      "sha256": "9ccf1380024ff3eada859a5835f3358166aa75c36cb0b2c16dcfccad7131940a"
+    },
+    "profiles/erhai-crdroid-20261025/policy/vendor/plat_pub_versioned.cil": {
+      "bytes": 628575,
+      "executable": false,
+      "sha256": "91bba5c4d4dcb10eec12ed5c8060c25c6d65f7538c21d213f630fce4b6ca75a5"
+    },
+    "profiles/erhai-crdroid-20261025/policy/vendor/plat_sepolicy_vers.txt": {
+      "bytes": 7,
+      "executable": false,
+      "sha256": "9ccf1380024ff3eada859a5835f3358166aa75c36cb0b2c16dcfccad7131940a"
+    },
+    "profiles/erhai-crdroid-20261025/policy/vendor/vendor_sepolicy.cil": {
+      "bytes": 2040755,
+      "executable": false,
+      "sha256": "221712b49c6cded83c08b74b5b2ed5d015517527e6cdaca5a657ddcd1f128e17"
+    },
+    "profiles/erhai-crdroid-20261025/profile.json": {
+      "bytes": 1074,
+      "executable": false,
+      "sha256": "9eed7ff169e1f075d92b1c43c4d7703e5177b27050014866695560bbca11c3fe"
+    },
+    "profiles/lineage-sources.json": {
+      "bytes": 428,
+      "executable": false,
+      "sha256": "9d3e14df08da5c1c9ab8c465ef3d837652f6f5b6300ad625d781c3ab6085003b"
+    },
+    "profiles/pad3-components/README.md": {
+      "bytes": 433,
+      "executable": false,
+      "sha256": "8229f19847316059e0298505c83a6543afcca7d62f3421d1bbb0194976e89710"
+    },
+    "qa/serve_probe.py": {
+      "bytes": 10281,
+      "executable": false,
+      "sha256": "f7d6770f95fca7ffc4a6d831f232cfcf60d9a5240cbb7e86b42601665960f211"
+    },
+    "qa/tablet-probe.html": {
+      "bytes": 23427,
+      "executable": false,
+      "sha256": "4ef62cc449f1ef385a3204a4fc37e8b8d6962a0f17b4510b3e7bf0f7fb2ba1a8"
+    },
+    "qa/test_serve_probe.py": {
+      "bytes": 11982,
+      "executable": false,
+      "sha256": "8cf5ce08b2705de5375acbb1384c82dd2c4bafc35383964a52b2ce9d0da3b7f9"
+    },
+    "stability_probe.py": {
+      "bytes": 14657,
+      "executable": false,
+      "sha256": "c0bcf46b2e7e6e9916391dc92eea832e2b8db10d544ca506b1e763fedf8f6874"
+    },
+    "test_android_disk.py": {
+      "bytes": 1049,
+      "executable": false,
+      "sha256": "9f45bcbb8a81d61d1af9dc71e64e9e2f63b4aa8e3c7cd6183ca44d41d33f809e"
+    },
+    "test_bootanimation_geometry.py": {
+      "bytes": 6966,
+      "executable": false,
+      "sha256": "18a2df793c0e681ce0ba33f0ebcc052935d03feef2c6bfa5c0c1d49fdfbdb2c8"
+    },
+    "test_build_dsu_diagnostic.py": {
+      "bytes": 12401,
+      "executable": false,
+      "sha256": "bc6f98aece139e620c0285f176b501e5e1e4d42e4cdaed1848ce76e71ee41e54"
+    },
+    "test_build_face_overlay.py": {
+      "bytes": 8081,
+      "executable": false,
+      "sha256": "487a8dfbb850f2d1d55699f36bb290d72895421df16cf5ab6fab440e6c004b9b"
+    },
+    "test_build_native_rom.py": {
+      "bytes": 39504,
+      "executable": false,
+      "sha256": "269267d1bd0908266d67d129a2a602285fe7f1dfb3023c1aebb0287e62897153"
+    },
+    "test_build_native_userspace.py": {
+      "bytes": 22717,
+      "executable": false,
+      "sha256": "32ba3f7972abada55635049a6e6b0a42628dc39f5db4d00b10fce3292343d02b"
+    },
+    "test_build_oplus_pen.py": {
+      "bytes": 9209,
+      "executable": false,
+      "sha256": "f63cd24a9da93d37e11cbf775c6eb05bc27a4dc5cf41524385c86dd1afbf0d7f"
+    },
+    "test_build_pen_dsu.py": {
+      "bytes": 8546,
+      "executable": false,
+      "sha256": "b94de783cb73357ace33828b49af352d1116d89415dc38d4a7cd2aba88eab6c7"
+    },
+    "test_build_updater.py": {
+      "bytes": 6987,
+      "executable": false,
+      "sha256": "cd013e26dbae660aefd29a14a1d0b0ed3e81925737af830361a8424f967ce550"
+    },
+    "test_check_sukisu_layout.py": {
+      "bytes": 1205,
+      "executable": false,
+      "sha256": "5dcfd4cd4402d7292b0a13fb9781ffb01b79f69781ab253723752830ee31907d"
+    },
+    "test_check_updates.py": {
+      "bytes": 11060,
+      "executable": false,
+      "sha256": "007fe52363ee9f5e4c4d1da2e67ca0f9b8b44c2394e1087a5eedd15021bbe90f"
+    },
+    "test_cold_build_dsu.py": {
+      "bytes": 5554,
+      "executable": false,
+      "sha256": "108adcbd4cc4f8ca2acc0798f5f6e03e2ccc5111c93a9e5b53c32880c870dae4"
+    },
+    "test_desktop_repair_gate.py": {
+      "bytes": 5495,
+      "executable": false,
+      "sha256": "794a8879d85254c90a312e52b525d2d4fee5fa1f5311610d0f0ba110611be55a"
+    },
+    "test_erofs_overlay.py": {
+      "bytes": 14925,
+      "executable": false,
+      "sha256": "767f9bf640fdb72b41d4d5deb4eda1142579687985581005d0db0afe56bc9daf"
+    },
+    "test_erofs_sanitize.py": {
+      "bytes": 5481,
+      "executable": false,
+      "sha256": "4bb87fb47df003fca8a93f17000ac204ed0da83591ecde46c78971347ba75ed8"
+    },
+    "test_export_public.py": {
+      "bytes": 30116,
+      "executable": false,
+      "sha256": "77a8e88eca2cbd8cbed6768401db27362b8c67c49f6b861d6a0b0f370abd0ee3"
+    },
+    "test_flash_test.py": {
+      "bytes": 4968,
+      "executable": false,
+      "sha256": "aa6a74fc4f9459e5adb4b7f47a4b8c0bc81fb7762fc2b84e2878ad49e3f92422"
+    },
+    "test_initial_install.py": {
+      "bytes": 11058,
+      "executable": false,
+      "sha256": "67524af2883e5ea2f015fe5984ea579ce8bf81b4846b9d4a3bc80c7935c08fa8"
+    },
+    "test_patch_taskmanager.py": {
+      "bytes": 7977,
+      "executable": false,
+      "sha256": "3521ecf9974f48fda68953c9172d660df72157fbc22ea948680c099937bc0ba9"
+    },
+    "test_pen_policy.py": {
+      "bytes": 13136,
+      "executable": false,
+      "sha256": "9a710e8829cf074fe8af771ff66e9fd951ce23ccec0965eadce789406c518f98"
+    },
+    "test_port_changes.py": {
+      "bytes": 25907,
+      "executable": false,
+      "sha256": "0f5425471c82f0ff31a663d2eced91682024cb91eccb0c476ce5e08760ee5347"
+    },
+    "test_prepare_inputs.py": {
+      "bytes": 1454,
+      "executable": false,
+      "sha256": "4444cb0035dd7df501e2edd831435ede1ac6cf53f8fc6b3edb529d40f0754c26"
+    },
+    "test_stability_probe.py": {
+      "bytes": 11566,
+      "executable": false,
+      "sha256": "f8bea05eae4d4a177b5fb48b0639f8ccbc8873f33eb20891cbccace7615769d7"
+    },
+    "validate_candidate.py": {
+      "bytes": 4536,
+      "executable": false,
+      "sha256": "34584b4bc1ab15423fcafb786e75d81c9c4906d0ad985db4e684d1eb3ab351c8"
+    }
+  },
+  "history_copied": false,
+  "schema": 1
+}

@@ -1,0 +1,954 @@
+--- a/AndroidManifest.xml
++++ b/AndroidManifest.xml
+@@ -12,7 +12,7 @@
+                      android:usesPermissionFlags="neverForLocation" />
+     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+-    <uses-permission android:name="android.permission.RESTRICT_DISPLAY_MODES" />
++    <uses-permission android:name="android.permission.WRITE_SETTINGS" />
+ 
+     <application
+         android:label="@string/app_name"
+@@ -23,6 +23,8 @@
+             android:name=".BootCompletedReceiver">
+             <intent-filter>
+                 <action android:name="android.intent.action.BOOT_COMPLETED" />
++                <action android:name="android.intent.action.USER_UNLOCKED" />
++                <action android:name="android.intent.action.USER_FOREGROUND" />
+                 <category android:name="android.intent.category.DEFAULT" />
+             </intent-filter>
+         </receiver>
+--- a/res/values/config.xml
++++ b/res/values/config.xml
+@@ -5,7 +5,7 @@
+ -->
+ <resources>
+     <!-- Max supported refresh rate when using pen. -->
+-    <string name="config_penSupportedRefreshRate" translatable="false"></string>
++    <string name="config_penSupportedRefreshRate" translatable="false">120.0</string>
+ 
+     <!-- Whether to relay pen pressure between the BLE pen and the touch HAL. -->
+     <bool name="config_penPressureRelay">true</bool>
+--- a/src/org/lineageos/pen/BootCompletedReceiver.kt
++++ b/src/org/lineageos/pen/BootCompletedReceiver.kt
+@@ -12,7 +12,11 @@
+ 
+ class BootCompletedReceiver : BroadcastReceiver() {
+     override fun onReceive(context: Context, intent: Intent) {
+-        Log.d(TAG, "Received boot completed intent")
++        if (!PenRuntime.acceptsAction(intent.action)) return
++        if (!PenAccess.allowed(context)) {
++            Log.i(TAG, "Pen startup refused for current user or missing Bluetooth permission")
++            return
++        }
+         context.startService(Intent(context, PenService::class.java))
+     }
+ 
+--- /dev/null
++++ b/src/org/lineageos/pen/PeakCap.kt
+@@ -0,0 +1,87 @@
++/* SPDX-License-Identifier: Apache-2.0 */
++package org.lineageos.pen
++
++// A successful read with a null value is distinct from an unavailable Settings provider.
++data class PeakValue(val raw: String?)
++data class PeakState(val previous: PeakValue? = null, val overridden: Boolean = false)
++
++interface PeakCapStore {
++    fun canWrite(): Boolean
++    fun readPeak(): PeakValue?
++    fun writePeak(expected: PeakValue, value: PeakValue): Boolean
++    fun loadState(): PeakState?
++    fun saveState(state: PeakState): Boolean
++}
++
++class PeakCap(private val store: PeakCapStore) {
++    private var state = store.loadState()
++
++    fun update(active: Boolean) {
++        val saved = state ?: return
++        val current = store.readPeak() ?: return
++        if (saved.overridden) {
++            if (!active) abandon(false)
++            return
++        }
++        val previous = saved.previous
++        if (previous != null) {
++            if (current != CAP) {
++                abandon(active) // Owner changes take precedence, including a pending pre-write journal.
++                return
++            }
++            if (!active) restore(previous)
++            return
++        }
++        if (!active || !store.canWrite()) return
++        val rate = current.raw?.toFloatOrNull()
++        if (current.raw != null && (rate == null || !rate.isFinite() || rate <= 120f)) return
++        // Commit the owner's exact value, including unset, before changing the public setting.
++        if (!save(PeakState(previous = current))) return
++        if (store.readPeak() != current) {
++            abandon(true)
++            return
++        }
++        if (!store.canWrite()) {
++            abandon(false)
++            return
++        }
++        val written = store.writePeak(current, CAP)
++        val after = store.readPeak()
++        if (!written && after == current) abandon(false)
++        else if (after != null && after != CAP) abandon(true)
++    }
++
++    fun stop() {
++        if (state?.overridden == false) update(false)
++    }
++
++    private fun restore(previous: PeakValue) {
++        if (!store.canWrite()) return
++        val before = store.readPeak() ?: return
++        if (before != CAP) {
++            abandon(false)
++            return
++        }
++        val written = store.writePeak(CAP, previous)
++        val after = store.readPeak()
++        if (written && after == previous) abandon(false)
++        else if (after != null && after != CAP) abandon(false)
++        // Failed/denied restoration keeps the durable desired value for a later legitimate retry.
++    }
++
++    private fun save(next: PeakState): Boolean {
++        if (!store.saveState(next)) return false
++        state = next
++        return true
++    }
++
++    private fun abandon(active: Boolean) {
++        val next = PeakState(overridden = active)
++        state = next // Respect an observed owner override even if persisting it fails.
++        store.saveState(next)
++    }
++
++    companion object {
++        private val CAP = PeakValue("120.0")
++    }
++}
+--- /dev/null
++++ b/src/org/lineageos/pen/PenAccess.kt
+@@ -0,0 +1,19 @@
++/* SPDX-License-Identifier: Apache-2.0 */
++package org.lineageos.pen
++
++import android.Manifest
++import android.content.Context
++import android.content.pm.PackageManager
++import android.os.UserManager
++
++object PenAccess {
++    fun allowed(context: Context): Boolean {
++        val users = context.getSystemService(UserManager::class.java) ?: return false
++        return PenRuntime.canStart(
++            UserManager.isHeadlessSystemUserMode(), users.isSystemUser,
++            context.checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT) == PackageManager.PERMISSION_GRANTED,
++            context.checkSelfPermission(Manifest.permission.BLUETOOTH_SCAN) == PackageManager.PERMISSION_GRANTED,
++            users.isUserUnlocked,
++        )
++    }
++}
+--- a/src/org/lineageos/pen/PenGattSession.kt
++++ b/src/org/lineageos/pen/PenGattSession.kt
+@@ -20,6 +20,7 @@
+     val device: BluetoothDevice,
+     private val touchHal: TouchHal,
+     private val handler: Handler,
++    private val runtime: PenRuntime,
+     private val onReady: (PenGattSession) -> Unit,
+     private val onClosed: (PenGattSession) -> Unit,
+     private val onPencilStatus: (PenGattSession, Boolean) -> Unit,
+@@ -46,7 +47,7 @@
+             override fun onConnectionStateChange(gatt: BluetoothGatt, status: Int, newState: Int) {
+                 when (newState) {
+                     BluetoothProfile.STATE_CONNECTED -> {
+-                        if (!gatt.discoverServices()) {
++                        if (runtime.bluetooth { gatt.discoverServices() } != true) {
+                             Log.e(TAG, "discoverServices failed")
+                             close()
+                         }
+@@ -67,7 +68,7 @@
+                 if (press != null && ccc != null) {
+                     pressChar = press
+                     speedChar = service.getCharacteristic(PenProtocol.SPEED_CHAR_UUID)
+-                    gatt.setCharacteristicNotification(press, true)
++                    runtime.bluetooth { gatt.setCharacteristicNotification(press, true) } ?: return
+                     pendingCccs.addLast(ccc)
+                 }
+ 
+@@ -78,12 +79,12 @@
+                 val ifaceCcc = iface?.getDescriptor(PenProtocol.CCC_DESCRIPTOR_UUID)
+                 if (iface != null && ifaceCcc != null) {
+                     interfaceChar = iface
+-                    gatt.setCharacteristicNotification(iface, true)
++                    runtime.bluetooth { gatt.setCharacteristicNotification(iface, true) } ?: return
+                     pendingCccs.addLast(ifaceCcc)
+                 }
+ 
+                 if (pendingCccs.isEmpty()) {
+-                    Log.d(TAG, "${device.address} has no pen services")
++                    Log.d(TAG, "No pen services")
+                     close()
+                     return
+                 }
+@@ -115,7 +116,7 @@
+                     }
+                     return
+                 }
+-                if (!gatt.requestMtu(PenProtocol.MTU)) {
++                if (runtime.bluetooth { gatt.requestMtu(PenProtocol.MTU) } != true) {
+                     Log.w(TAG, "requestMtu failed, continuing with default MTU")
+                     markReady()
+                 }
+@@ -167,44 +168,46 @@
+         }
+ 
+     fun open() {
+-        Log.d(TAG, "Probing ${device.address}")
+-        gatt =
++        if (!runtime.available()) return
++        Log.d(TAG, "Probing pen")
++        gatt = runtime.bluetooth {
+             device.connectGatt(
+                 BluetoothGattConnectionSettings.Builder()
+                     .setTransport(BluetoothDevice.TRANSPORT_LE)
+                     .setAutomaticMtuEnabled(false)
+                     .build(),
+-                { handler.post(it) },
++                { action -> handler.post { runtime.runIfAllowed { if (!isClosed) action.run() } } },
+                 callback,
+             )
++        }
+         if (gatt == null) {
+-            Log.e(TAG, "connectGatt failed for ${device.address}")
++            Log.e(TAG, "connectGatt failed")
+             close()
+         }
+     }
+ 
+     fun sendCommand(info: String) {
+-        handler.post {
++        handler.post { runtime.runIfAllowed {
+             if (!isReady) {
+-                return@post
++                return@runIfAllowed
+             }
+             val payload = PenProtocol.decodeCommand(info)
+             if (payload == null) {
+-                Log.e(TAG, "Invalid touch command: $info")
+-                return@post
++                Log.e(TAG, "Invalid touch command")
++                return@runIfAllowed
+             }
+             val target = if (PenProtocol.isSpeedCommand(payload)) speedChar else pressChar
+             target?.let { enqueueWrite(it, payload) }
+-        }
++        } }
+     }
+ 
+     fun sendPencilStatusAck(isActive: Boolean) {
+-        handler.post {
++        handler.post { runtime.runIfAllowed {
+             if (!isReady) {
+-                return@post
++                return@runIfAllowed
+             }
+             interfaceChar?.let { enqueueWrite(it, PenProtocol.pencilStatusAck(isActive)) }
+-        }
++        } }
+     }
+ 
+     fun close() {
+@@ -219,17 +222,18 @@
+                 touchHal.writeNode(PenProtocol.NODE_PENCIL_CONNECTED, "0")
+                 touchHal.unregisterCallback()
+             }
+-            Log.i(TAG, "Pen ${device.address} disconnected")
++            Log.i(TAG, "Pen disconnected")
+         }
+         pendingWrites.clear()
+         pendingCccs.clear()
+-        gatt?.close()
++        val connection = gatt
+         gatt = null
++        if (connection != null) runtime.cleanupBluetooth { connection.close() }
+         onClosed(this)
+     }
+ 
+     private fun markReady() {
+-        if (isReady) {
++        if (isReady || isClosed || !runtime.available()) {
+             return
+         }
+         isReady = true
+@@ -239,13 +243,15 @@
+             touchHal.writeNode(PenProtocol.NODE_PENCIL_CONNECTED, "0")
+             touchHal.writeNode(PenProtocol.NODE_PENCIL_CONNECTED, "1")
+         }
+-        Log.i(TAG, "Pen ${device.address} ready")
++        Log.i(TAG, "Pen ready")
+         onReady(this)
+     }
+ 
+     private fun writeNextCcc(gatt: BluetoothGatt): Boolean {
+         val ccc = pendingCccs.removeFirst()
+-        val ret = gatt.writeDescriptor(ccc, BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE)
++        val ret = runtime.bluetooth {
++            gatt.writeDescriptor(ccc, BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE)
++        } ?: return false
+         if (ret != BluetoothStatusCodes.SUCCESS) {
+             Log.e(TAG, "Failed to enable notifications on ${ccc.characteristic.uuid}: $ret")
+             return false
+@@ -271,7 +277,9 @@
+                 } else {
+                     BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
+                 }
+-            val ret = gatt.writeCharacteristic(characteristic, value, writeType)
++            val ret = runtime.bluetooth {
++                gatt.writeCharacteristic(characteristic, value, writeType)
++            } ?: return
+             if (ret == BluetoothStatusCodes.SUCCESS) {
+                 isWriteInFlight = true
+             } else {
+--- a/src/org/lineageos/pen/PenProtocol.kt
++++ b/src/org/lineageos/pen/PenProtocol.kt
+@@ -15,6 +15,11 @@
+ 
+     val INTERFACE_SERVICE_UUID = UUID.fromString("18092dbc-2a69-11ec-8d3d-0242ac130003")
+     val INTERFACE_CHAR_UUID = UUID.fromString("18093046-2a69-11ec-8d3d-0242ac130003")
++
++    // A requested Settings cap is asynchronous; acknowledge only the observed supported display rate.
++    fun canAckActivePencil(rate: Float, maxRate: Float) =
++        rate.isFinite() && maxRate.isFinite() && rate > 0f && maxRate > 0f &&
++            maxRate <= 120f && rate <= maxRate + 0.5f
+ 
+     const val MTU = 100
+ 
+--- /dev/null
++++ b/src/org/lineageos/pen/PenRefreshRateCap.kt
+@@ -0,0 +1,114 @@
++/* SPDX-License-Identifier: Apache-2.0 */
++package org.lineageos.pen
++
++import android.content.Context
++import android.database.ContentObserver
++import android.os.Handler
++import android.provider.Settings
++import android.util.Log
++
++class PenRefreshRateCap(context: Context, handler: Handler, changed: () -> Unit) {
++    private val resolver = context.contentResolver
++    private val preferences by lazy { context.getSharedPreferences("pen_peak_refresh_cap", Context.MODE_PRIVATE) }
++    private val policy = PeakCap(object : PeakCapStore {
++        override fun canWrite(): Boolean = try {
++            Settings.System.canWrite(context)
++        } catch (_: SecurityException) {
++            Log.w(TAG, "Peak preference write access unavailable")
++            false
++        }
++
++        override fun readPeak(): PeakValue? = try {
++            PeakValue(Settings.System.getString(resolver, KEY))
++        } catch (_: SecurityException) {
++            Log.w(TAG, "Peak preference cannot be read")
++            null
++        } catch (_: IllegalStateException) {
++            Log.w(TAG, "Peak preference provider unavailable")
++            null
++        }
++
++        override fun writePeak(expected: PeakValue, value: PeakValue): Boolean {
++            if (!canWrite() || readPeak() != expected) return false
++            // Settings has no public compare-and-set; recheck immediately before the permitted write.
++            return try {
++                Settings.System.putString(resolver, KEY, value.raw).also {
++                    if (!it) Log.w(TAG, "Peak preference write failed")
++                }
++            } catch (_: SecurityException) {
++                Log.w(TAG, "Peak preference write refused")
++                false
++            } catch (_: IllegalStateException) {
++                Log.w(TAG, "Peak preference provider unavailable")
++                false
++            }
++        }
++
++        override fun loadState(): PeakState? {
++            return try {
++            if (!preferences.contains("version")) PeakState()
++            else if (preferences.getInt("version", 0) != 1) null
++            else {
++                val previous = if (preferences.getBoolean("has_lease", false)) {
++                    if (preferences.getBoolean("had_value", false)) {
++                        val value = preferences.getString("previous", null)
++                        val rate = value?.toFloatOrNull()
++                        if (rate == null || !rate.isFinite() || rate <= 120f) return null
++                        PeakValue(value)
++                    } else PeakValue(null)
++                } else null
++                val overridden = preferences.getBoolean("overridden", false)
++                if (previous != null && overridden) null else PeakState(previous, overridden)
++            }
++        } catch (_: ClassCastException) {
++            Log.w(TAG, "Peak preference journal invalid")
++            null
++        } catch (_: IllegalStateException) {
++            Log.w(TAG, "Private peak preference journal unavailable")
++            null
++        }
++
++        }
++
++        override fun saveState(state: PeakState): Boolean = try {
++            val editor = preferences.edit().clear()
++                .putInt("version", 1)
++                .putBoolean("has_lease", state.previous != null)
++                .putBoolean("had_value", state.previous?.raw != null)
++                .putBoolean("overridden", state.overridden)
++            state.previous?.raw?.let { editor.putString("previous", it) }
++            editor.commit().also { if (!it) Log.w(TAG, "Peak preference journal save failed") }
++        } catch (_: IllegalStateException) {
++            Log.w(TAG, "Private peak preference journal unavailable")
++            false
++        }
++    })
++    private var observing = false
++    private val observer = object : ContentObserver(handler) {
++        override fun onChange(selfChange: Boolean) { changed() }
++    }
++
++    fun start() {
++        try {
++            resolver.registerContentObserver(Settings.System.getUriFor(KEY), false, observer)
++            observing = true
++        } catch (_: SecurityException) {
++            Log.w(TAG, "Peak preference observation unavailable")
++        }
++    }
++
++    fun update(active: Boolean) { policy.update(active) }
++
++    fun stop() {
++        if (observing) {
++            observing = false
++            resolver.unregisterContentObserver(observer)
++        }
++        policy.stop()
++    }
++
++    companion object {
++        private const val KEY = "peak_refresh_rate"
++        private const val TAG = "OplusPenRefreshCap"
++    }
++}
+--- a/src/org/lineageos/pen/PenRelay.kt
++++ b/src/org/lineageos/pen/PenRelay.kt
+@@ -20,6 +20,7 @@
+ 
+ class PenRelay(
+     private val context: Context,
++    private val runtime: PenRuntime,
+     private val onPencilStatusChanged: (Boolean?) -> Unit,
+ ) {
+     private val bluetoothManager by lazy { context.getSystemService(BluetoothManager::class.java) }
+@@ -29,6 +30,9 @@
+ 
+     private val touchHal = TouchHal { info -> session?.sendCommand(info) }
+ 
++    private var threadStarted = false
++    private var receiverRegistered = false
++
+     private val probing = mutableMapOf<String, PenGattSession>()
+ 
+     @Volatile private var session: PenGattSession? = null
+@@ -36,6 +40,7 @@
+     private val receiver =
+         object : BroadcastReceiver() {
+             override fun onReceive(context: Context, intent: Intent) {
++                if (!runtime.available()) return
+                 when (intent.action) {
+                     BluetoothAdapter.ACTION_STATE_CHANGED -> {
+                         val state = intent.getIntExtra(BluetoothAdapter.EXTRA_STATE, -1)
+@@ -59,29 +64,36 @@
+         }
+ 
+     fun start() {
++        if (!runtime.available()) return
+         thread.start()
++        threadStarted = true
+         context.registerReceiver(
+             receiver,
+             IntentFilter().apply {
+                 addAction(BluetoothAdapter.ACTION_STATE_CHANGED)
+                 addAction(BluetoothHidHost.ACTION_CONNECTION_STATE_CHANGED)
+             },
+-            null,
+-            handler,
+-            Context.RECEIVER_EXPORTED,
++            null, handler, Context.RECEIVER_EXPORTED,
+         )
++        receiverRegistered = true
+         handler.post {
+-            bluetoothManager.adapter
+-                ?.bondedDevices
+-                ?.filter { it.isConnected }
+-                ?.forEach { probe(it) }
++            val devices = runtime.bluetooth {
++                bluetoothManager.adapter?.bondedDevices?.filter { it.isConnected }
++            } ?: return@post
++            devices.forEach { probe(it) }
+         }
+     }
+ 
+     fun stop() {
+-        context.unregisterReceiver(receiver)
+-        handler.post { closeAll() }
+-        thread.quitSafely()
++        if (receiverRegistered) {
++            receiverRegistered = false
++            context.unregisterReceiver(receiver)
++        }
++        if (threadStarted) {
++            threadStarted = false
++            if (!handler.post { closeAll() }) closeAll()
++            thread.quitSafely()
++        }
+     }
+ 
+     fun sendPencilStatusAck(isActive: Boolean) {
+@@ -95,7 +107,8 @@
+     }
+ 
+     private fun probe(device: BluetoothDevice) {
+-        if (device.type == BluetoothDevice.DEVICE_TYPE_CLASSIC) {
++        val type = runtime.bluetooth { device.type } ?: return
++        if (type == BluetoothDevice.DEVICE_TYPE_CLASSIC) {
+             return
+         }
+         if (session?.device == device || probing.containsKey(device.address)) {
+@@ -106,6 +119,7 @@
+                 device,
+                 touchHal,
+                 handler,
++                runtime,
+                 ::onSessionReady,
+                 ::onSessionClosed,
+                 ::onPencilStatus,
+--- /dev/null
++++ b/src/org/lineageos/pen/PenRuntime.kt
+@@ -0,0 +1,78 @@
++/* SPDX-License-Identifier: Apache-2.0 */
++package org.lineageos.pen
++
++import java.util.concurrent.atomic.AtomicBoolean
++
++// Lifecycle and Bluetooth permission boundary, independent of Android for host tests.
++class PenRuntime(private val hasAccess: () -> Boolean, private val onRefused: () -> Unit) {
++    private val refused = AtomicBoolean(false)
++    @Volatile private var started = false
++
++    fun start(initialise: () -> Unit): Boolean {
++        if (refused.get() || !hasAccess()) {
++            refuse()
++            return false
++        }
++        if (!started) {
++            started = true
++            initialise()
++        }
++        return !refused.get()
++    }
++
++    fun available(): Boolean {
++        if (refused.get() || !started) return false
++        if (!hasAccess()) {
++            refuse()
++            return false
++        }
++        return true
++    }
++
++    fun runIfAllowed(action: () -> Unit) {
++        if (available()) action()
++    }
++
++    fun <T> bluetooth(action: () -> T): T? {
++        if (!available()) return null
++        return try {
++            action()
++        } catch (error: SecurityException) {
++            if (hasAccess()) throw error
++            refuse()
++            null
++        }
++    }
++
++    // Closing a live GATT/scan must still be attempted after permission revocation.
++    fun cleanupBluetooth(action: () -> Unit) {
++        try {
++            action()
++        } catch (error: SecurityException) {
++            if (hasAccess()) throw error
++            refuse()
++        }
++    }
++
++    fun stop(cleanup: () -> Unit) {
++        refused.set(true)
++        if (started) {
++            started = false
++            cleanup()
++        }
++    }
++
++    private fun refuse() {
++        if (refused.compareAndSet(false, true)) onRefused()
++    }
++
++    companion object {
++        fun userAllowed(headless: Boolean, systemUser: Boolean) = !(headless && systemUser)
++        fun canStart(headless: Boolean, systemUser: Boolean, connect: Boolean, scan: Boolean, unlocked: Boolean) =
++            userAllowed(headless, systemUser) && connect && scan && unlocked
++
++        fun acceptsAction(action: String?) = action == "android.intent.action.BOOT_COMPLETED" ||
++            action == "android.intent.action.USER_UNLOCKED" ||
++            action == "android.intent.action.USER_FOREGROUND"
++    }
++}
+--- a/src/org/lineageos/pen/PenService.kt
++++ b/src/org/lineageos/pen/PenService.kt
+@@ -11,6 +11,7 @@
+ import android.app.PendingIntent
+ import android.app.Service
+ import android.bluetooth.BluetoothManager
++import android.bluetooth.le.BluetoothLeScanner
+ import android.bluetooth.le.ScanCallback
+ import android.bluetooth.le.ScanFilter
+ import android.bluetooth.le.ScanResult
+@@ -34,12 +35,16 @@
+         getString(R.string.config_penSupportedRefreshRate).toFloatOrNull()
+     }
+ 
+-    private val penRelay by lazy {
+-        if (resources.getBoolean(R.bool.config_penPressureRelay)) {
+-            PenRelay(this) { isActive -> handler.post { onPencilStatusChanged(isActive) } }
+-        } else {
+-            null
+-        }
++    private var penRelay: PenRelay? = null
++    private var refreshCap: PenRefreshRateCap? = null
++    private var inputListening = false
++    private var observing = false
++    private var displayListening = false
++    private var activeScanner: BluetoothLeScanner? = null
++    private var activeScanCallback: ScanCallback? = null
++    private val runtime = PenRuntime({ PenAccess.allowed(this) }) {
++        Log.i(TAG, "Pen stopped for current user or missing Bluetooth permission")
++        stopSelf()
+     }
+ 
+     private val handler by lazy { Handler(mainLooper) }
+@@ -59,17 +64,21 @@
+ 
+             override fun onDisplayChanged(displayId: Int) {
+                 if (displayId == Display.DEFAULT_DISPLAY) {
+-                    ackActivePencilIfNeeded()
+-                }
+-            }
+-        }
+-
+-    private val observer =
++                    runtime.runIfAllowed {
++                        updateRefreshRateCap()
++                        ackActivePencilIfNeeded()
++                    }
++                }
++            }
++        }
++
++    private val observer by lazy {
+         object : UEventObserver() {
+             private val lock = Any()
+ 
+             override fun onUEvent(event: UEvent) {
+                 synchronized(lock) {
++                    if (!runtime.available()) return
+                     val pencilStatus = event.get("pencil_status") ?: return
+                     val pencilAddr =
+                         event.get("pencil_addr")?.chunked(2)?.joinToString(":") { it.uppercase() }
+@@ -82,71 +91,76 @@
+                 }
+             }
+         }
+-
+-    private val inputObserver =
+-        object : InputManager.InputDeviceListener {
+-            override fun onInputDeviceAdded(deviceId: Int) {
+-                updateRefreshRateCap()
+-            }
+-
+-            override fun onInputDeviceRemoved(deviceId: Int) {
+-                updateRefreshRateCap()
+-            }
+-
+-            override fun onInputDeviceChanged(deviceId: Int) {
+-                // Do nothing
+-            }
+-        }
++    }
++
++    private val inputObserver = object : InputManager.InputDeviceListener {
++        override fun onInputDeviceAdded(deviceId: Int) { runtime.runIfAllowed { updateRefreshRateCap() } }
++        override fun onInputDeviceRemoved(deviceId: Int) { runtime.runIfAllowed { updateRefreshRateCap() } }
++        override fun onInputDeviceChanged(deviceId: Int) { runtime.runIfAllowed { updateRefreshRateCap() } }
++    }
+ 
+     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
++        if (!runtime.available()) {
++            stopSelf()
++            return START_NOT_STICKY
++        }
+         intent?.getStringExtra(EXTRA_PENCIL_ADDR)?.let { bondBtDevice(it) }
+-
+-        return START_STICKY
++        return if (runtime.available()) START_STICKY else START_NOT_STICKY
+     }
+ 
+     override fun onBind(intent: Intent?): IBinder? = null
+ 
+     override fun onCreate() {
+         super.onCreate()
+-
+-        if (penSupportedRefreshRate != null) {
++        runtime.start {
++            refreshCap = PenRefreshRateCap(this, handler) {
++                runtime.runIfAllowed { updateRefreshRateCap() }
++            }.also { it.start() }
++            inputManager.registerInputDeviceListener(inputObserver, handler)
++            inputListening = true
+             updateRefreshRateCap()
+-            inputManager.registerInputDeviceListener(inputObserver, handler)
+-        }
+-
+-        observer.startObserving("DEVPATH=/devices/virtual/oplus_wireless/pencil")
+-
+-        penRelay?.let {
+-            displayManager.registerDisplayListener(
+-                displayListener,
+-                handler,
+-                DisplayManager.EVENT_TYPE_DISPLAY_REFRESH_RATE,
+-            )
+-            it.start()
++            observer.startObserving("DEVPATH=/devices/virtual/oplus_wireless/pencil")
++            observing = true
++            if (resources.getBoolean(R.bool.config_penPressureRelay)) {
++                val relay = PenRelay(this, runtime) { isActive ->
++                    handler.post { runtime.runIfAllowed { onPencilStatusChanged(isActive) } }
++                }
++                penRelay = relay
++                displayManager.registerDisplayListener(
++                    displayListener, handler, DisplayManager.EVENT_TYPE_DISPLAY_REFRESH_RATE,
++                )
++                displayListening = true
++                relay.start()
++            }
+         }
+     }
+ 
+     override fun onDestroy() {
++        runtime.stop {
++            if (inputListening) {
++                inputListening = false
++                inputManager.unregisterInputDeviceListener(inputObserver)
++            }
++            refreshCap?.stop()
++            refreshCap = null
++            stopScan()
++            penRelay?.stop()
++            penRelay = null
++            if (displayListening) {
++                displayListening = false
++                displayManager.unregisterDisplayListener(displayListener)
++            }
++            if (observing) {
++                observing = false
++                observer.stopObserving()
++            }
++        }
+         super.onDestroy()
+-
+-        if (penSupportedRefreshRate != null) {
+-            inputManager.unregisterInputDeviceListener(inputObserver)
+-            displayManager.requestMaxRefreshRate(Display.DEFAULT_DISPLAY, 0f)
+-        }
+-
+-        observer.stopObserving()
+-
+-        penRelay?.let {
+-            displayManager.unregisterDisplayListener(displayListener)
+-            it.stop()
+-        }
+     }
+ 
+     private fun onPencilStatusChanged(isActive: Boolean?) {
+-        if (pencilStatus != isActive) {
+-            pencilStatus = isActive
+-            updateRefreshRateCap()
+-        }
++        pencilStatus = isActive
++        updateRefreshRateCap()
+         isActiveAckSent = false
+         when (isActive) {
+             true -> ackActivePencilIfNeeded()
+@@ -159,58 +173,18 @@
+         if (pencilStatus != true || isActiveAckSent) {
+             return
+         }
++        updateRefreshRateCap()
+         val rate = displayManager.getDisplay(Display.DEFAULT_DISPLAY)?.refreshRate ?: return
+-        val maxRate = penSupportedRefreshRate ?: Float.POSITIVE_INFINITY
+-        if (rate > maxRate + REFRESH_RATE_TOLERANCE) {
++        val maxRate = penSupportedRefreshRate ?: return
++        if (!PenProtocol.canAckActivePencil(rate, maxRate)) {
++            Log.w(TAG, "Pen waits for an actual display mode at or below 120 Hz")
+             return
+         }
+         isActiveAckSent = true
+         penRelay?.sendPencilStatusAck(true)
+     }
+ 
+-    private fun bondBtDevice(pencilAddr: String) {
+-        val adapter = bluetoothManager.adapter
+-        @Suppress("DEPRECATION") adapter.enable()
+-
+-        val scanner = run {
+-            repeat(50) {
+-                adapter.bluetoothLeScanner?.let {
+-                    return@run it
+-                }
+-                Thread.sleep(100)
+-            }
+-            return@run null
+-        }
+-        scanner?.startScan(
+-            listOf(ScanFilter.Builder().setDeviceAddress(pencilAddr).build()),
+-            ScanSettings.Builder()
+-                .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
+-                .setReportDelay(0L)
+-                .build(),
+-            object : ScanCallback() {
+-                override fun onScanResult(callbackType: Int, result: ScanResult) {
+-                    super.onScanResult(callbackType, result)
+-                    scanner.stopScan(this)
+-
+-                    result.device.createBond()
+-                }
+-
+-                override fun onBatchScanResults(results: MutableList<ScanResult>) {
+-                    super.onBatchScanResults(results)
+-                    scanner.stopScan(this)
+-                }
+-
+-                override fun onScanFailed(errorCode: Int) {
+-                    super.onScanFailed(errorCode)
+-                    scanner.stopScan(this)
+-                }
+-            },
+-        )
+-    }
+-
+     private fun updateRefreshRateCap() {
+-        val maxRefreshRate = penSupportedRefreshRate ?: return
+-
+         val isPenConnected =
+             inputManager.inputDeviceIds.firstOrNull {
+                 val device = inputManager.getInputDevice(it) ?: return@firstOrNull false
+@@ -228,17 +202,65 @@
+                 return@firstOrNull true
+             } != null
+ 
+-        displayManager.requestMaxRefreshRate(
+-            Display.DEFAULT_DISPLAY,
+-            if (pencilStatus ?: isPenConnected) maxRefreshRate else 0f,
+-        )
++        refreshCap?.update(pencilStatus ?: isPenConnected)
++    }
++
++    private fun stopScan() {
++        val scanner = activeScanner
++        val callback = activeScanCallback
++        activeScanner = null
++        activeScanCallback = null
++        if (scanner != null && callback != null) {
++            runtime.cleanupBluetooth { scanner.stopScan(callback) }
++        }
++    }
++
++    private fun bondBtDevice(pencilAddr: String) {
++        if (!runtime.available()) return
++        val adapter = bluetoothManager.adapter ?: return
++        @Suppress("DEPRECATION")
++        runtime.bluetooth { adapter.enable() } ?: return
++        stopScan()
++        val scanner = run {
++            repeat(50) {
++                if (!runtime.available()) return
++                runtime.bluetooth { adapter.bluetoothLeScanner }?.let { return@run it }
++                Thread.sleep(100)
++            }
++            return@run null
++        } ?: return
++        val callback = object : ScanCallback() {
++            override fun onScanResult(callbackType: Int, result: ScanResult) {
++                if (!runtime.available() || activeScanCallback !== this) return
++                stopScan()
++                runtime.bluetooth { result.device.createBond() }
++            }
++            override fun onBatchScanResults(results: MutableList<ScanResult>) {
++                if (activeScanCallback === this) stopScan()
++            }
++            override fun onScanFailed(errorCode: Int) {
++                if (activeScanCallback === this) stopScan()
++            }
++        }
++        activeScanner = scanner
++        activeScanCallback = callback
++        runtime.bluetooth {
++            scanner.startScan(
++                listOf(ScanFilter.Builder().setDeviceAddress(pencilAddr).build()),
++                ScanSettings.Builder().setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY).setReportDelay(0L).build(),
++                callback,
++            )
++        }
+     }
+ 
+     private fun postNotification(pencilAddr: String) {
+-        val adapter = bluetoothManager.adapter
+-
+-        if (adapter.bondedDevices.contains(adapter.getRemoteDevice(pencilAddr))) {
+-            Log.e(TAG, "$pencilAddr already bonded, bailing out")
++        if (!runtime.available()) return
++        val adapter = bluetoothManager.adapter ?: return
++        val bonded = runtime.bluetooth {
++            adapter.bondedDevices.contains(adapter.getRemoteDevice(pencilAddr))
++        } ?: return
++        if (bonded) {
++            Log.d(TAG, "Pen already bonded")
+             return
+         }
+ 
+@@ -281,6 +303,5 @@
+         private const val NOTIFICATION_CHANNEL_ID = "OplusPen"
+         private const val NOTIFICATION_ID = 1000
+ 
+-        private const val REFRESH_RATE_TOLERANCE = 0.5f
+     }
+ }

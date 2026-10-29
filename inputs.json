@@ -1,0 +1,45 @@
+{
+  "donor": {
+    "device": "mica",
+    "build": "16560795",
+    "version": "17.CL3B.260622.276.R2",
+    "published": "2026-10-22",
+    "catalog": "https://dl.google.com/dl/edgedl/device/recovery/production_recovery.json",
+    "url": "https://dl.google.com/device/recovery/mica-user/16560795/recovery.zip",
+    "zip_bytes": 7601781259,
+    "zip_md5": "be97fb4fe368e50bb6102dcede1b2a80",
+    "zip_sha256": "65e29058bfab7caa7061b11d432bed9e81ee3bd7af560d924a3b1746e38efef2",
+    "raw_member": "android-desktop_signed_recovery_image.bin",
+    "raw_bytes": 19230966272,
+    "raw_sha256": "140a89e0faf1a254b0f27a5ac7e73a0d19e41cdba6ec37e3f143c752d0209f5a",
+    "partitions": {
+      "system_a": "263c7af48b33f398d46476dd8034a4e4b0e7942651d46b5e7d2254c19dd23c63",
+      "product_a": "831ccc5a8cca7d902f47d7ac8000b820e038ab6c8ddad8b538e79f8018134394",
+      "system_ext_a": "5bb8e797854325f9bc40b6054a314a8d4144d152820371e52193951f25b9f044"
+    }
+  },
+  "tablet": {
+    "model": "OPD2415",
+    "device": "OP6190L1",
+    "codename": "erhai",
+    "android_sdk": 37,
+    "page_size": 4096,
+    "kernel": "6.6.144-4k-g48baf0c723f8",
+    "vendor_sepolicy_version": "202604",
+    "vendor_target_level": "202404",
+    "super_bytes_from_device_tree": 11711471616,
+    "base_url": "https://downloads.sourceforge.net/project/crdroid/erhai/13.x/crDroidAndroid-17.0-20261017-erhai-v13.0.zip",
+    "base_sha256": "0cec17346aa1bf594456f7882e899764196197f12070bbc6d82a418fccc63503",
+    "partitions": {
+      "vendor": "b23e50da945754a21a35c11025067b1fd389062a60bde57825d00386a3fc6acc",
+      "odm": "5426297c629d27467a572f771b0427976663b78be082661613c34cbdc0f489b1",
+      "system_ext": "a2d842d9f925d10efcb228975f58c0073175c938b4bf6f65c57864afd884a9fb",
+      "vbmeta": "cb3b5ead1abb8231f53bfe97ae24b206ca6136b3a7ff512c2f47dcbbad90fe13"
+    }
+  },
+  "reference_commits": {
+    "skylartaylor/gbos-vm": "3b08ed29a73858644c65f24e06ee2a7cfb7e3774",
+    "linuxkid473/gbos-x86": "f8a5c1a146f7cb16466644cd204c465a8a30e5a0",
+    "paulst8/Googlebook-asus": "91d97ea98f25f92e8c602055d3f36584eb7dec32"
+  }
+}

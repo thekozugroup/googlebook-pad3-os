@@ -1,0 +1,87 @@
+{
+  "schema": 1,
+  "sources": [
+    {
+      "url": "https://android.googlesource.com/platform/system/update_engine/+/dc84c2552b2d4cf00d2a843cb1c091d99d0499f1/update_metadata.proto",
+      "sha256": "09da1556e3edb9197ca88103b22ea07230a634c004605d4aa1efee6a6ed6e60d"
+    },
+    {
+      "url": "https://android.googlesource.com/platform/system/update_engine/+/dc84c2552b2d4cf00d2a843cb1c091d99d0499f1/payload_generator/payload_signer.cc",
+      "sha256": "af517cd4a9133850e4b3ce84203c0cfdac370398196958a32b21a8625cce1c73"
+    },
+    {
+      "url": "https://android.googlesource.com/platform/system/update_engine/+/dc84c2552b2d4cf00d2a843cb1c091d99d0499f1/payload_consumer/payload_verifier.cc",
+      "sha256": "cbb9093bbc37ec64d30735c342cb3e2be8c768a146a662893152edc585b31194"
+    },
+    {
+      "url": "https://android.googlesource.com/platform/external/avb/+/761178607206f4cb2af79ed9eec52d8cbd814adb/avbtool.py",
+      "sha256": "e5a664a38db623da00f080219bc0ee60a640a9dc4a872803616fae4938ac749b",
+      "local": "native_install/tools/avbtool.py"
+    },
+    {
+      "url": "https://github.com/SukiSU-Ultra/SukiSU-Ultra/blob/fd2a85151c8312fd9b4237db9ba827dcea692228/kernel/manager/apk_sign.c",
+      "sha256": "446ae3c5a219bb0b697d1fbb8fa4c80b7632f64a11d6dfa4b1e57ef6575b9642"
+    },
+    {
+      "url": "https://github.com/SukiSU-Ultra/SukiSU-Ultra/blob/fd2a85151c8312fd9b4237db9ba827dcea692228/kernel/manager/throne_tracker.c",
+      "sha256": "f01f26c0a72bd8b1a9da25b0b09b745d97a2f05682128941e9b909804f0a3885"
+    },
+    {
+      "url": "https://github.com/SukiSU-Ultra/SukiSU-Ultra/blob/fd2a85151c8312fd9b4237db9ba827dcea692228/kernel/manager/manager_identity.h",
+      "sha256": "715931d8d257d0d1cbd92cc2c99b43fe51b701eef7a60dc2bb11d5d395dda78f"
+    },
+    {
+      "url": "https://android.googlesource.com/platform/system/update_engine/+/dc84c2552b2d4cf00d2a843cb1c091d99d0499f1/payload_generator/payload_properties.cc",
+      "sha256": "7a9ddd72d2e482d126e221349e2a5428a88d8fc3c2416de781db81de6c9c5c3b"
+    },
+    {
+      "url": "https://android.googlesource.com/platform/system/update_engine/+/dc84c2552b2d4cf00d2a843cb1c091d99d0499f1/payload_consumer/payload_metadata.cc",
+      "sha256": "27c4e46769bb2540464d9ebc97cf18d617a2a675a1f0537706e53bd07a6a5b6c"
+    },
+    {
+      "url": "https://android.googlesource.com/platform/bootable/recovery/+/9565b5ee790a4ae7acd0c6c04a2b3e0c7eeced3c/install/snapshot_utils.cpp",
+      "sha256": "3d4f8b8ef48b239e08712249d2d07e9b6f65a5b78a657fc6b109755c01fc70c5"
+    },
+    {
+      "url": "https://android.googlesource.com/platform/bootable/recovery/+/9565b5ee790a4ae7acd0c6c04a2b3e0c7eeced3c/install/wipe_data.cpp",
+      "sha256": "0d0efa7d02b5f132f9ea387bf72a40ca365aee05e0dbf71d0a88d0343349386e"
+    },
+    {
+      "url": "https://android.googlesource.com/platform/system/core/+/900221fe337e185924d2870d5b123392d5f227c1/fs_mgr/libsnapshot/snapshot.cpp",
+      "sha256": "b8260c424e25e7e3a00381ed3b04e6f47dccfe6857450c694dc317eb44e3ac28"
+    }
+  ],
+  "sukisu_manager": {
+    "version": "v4.2.1",
+    "package": "com.sukisu.ultra",
+    "version_code": 40994,
+    "url": "https://github.com/SukiSU-Ultra/SukiSU-Ultra/releases/download/v4.2.1/SukiSU_v4.2.1_40994-release.apk",
+    "bytes": 17173205,
+    "sha256": "c7f69280cf468e8415c585ff31f963d0147386831217a1e89b822afddc5f40ed",
+    "certificate_sha256": "947ae944f3de4ed4c21a7e4f7953ecf351bfa2b36239da37a34111ad29993eef"
+  },
+  "original_sukisu_reviewed_baseline_sha256": "1f7d74acfbc42cd3e2b30930c592434d29017d37b50da165f76bd85bed1f9831",
+  "filtered_layout_baseline_sha256": "d106803e73edc7bec632e45ddfff17954edc11f47905fdb40d3af4f485aaa2d5",
+  "parent_updater": {
+    "repository": "thekozugroup/googlebook-pad3-os",
+    "feed_url": "https://raw.githubusercontent.com/thekozugroup/googlebook-pad3-os/refs/heads/main/updates/erhai/stable.json",
+    "public_spki_der_sha256": "db616de57f6658b13c1828d92c0e956346a9e5a785fa696e6fda7e992262dec8",
+    "feed_signature": "separate RSA-3072 SHA256 PKCS1 v1.5 key",
+    "payload_rsa_bits_supported_by_pinned_aosp": [
+      2048,
+      4096
+    ],
+    "metadata_size": "24-byte header plus manifest only; excludes metadata signature"
+  },
+  "manager_checker": {
+    "jar_sha256": "4758405679d172ab7d530a18aa4f1c68a7204ec035724848122bc7d1270ac822",
+    "install_path": "/product/etc/googlebook/SukiSUManagerCheck.jar",
+    "query": "IPackageManager.getPackageInfo(String,long,int), GET_SIGNING_CERTIFICATES|MATCH_ANY_USER; current getApkContentsSigners only",
+    "uid_allowlist": [
+      0,
+      2000
+    ],
+    "no_new_selinux_domain": true,
+    "runtime_verified": false
+  }
+}

@@ -1,0 +1,18 @@
+# Requirements for the parent's captured SukiSU domain u:r:ksu:s0.
+# This file is not installed automatically; do not make any domain permissive.
+allow ksu update_engine_service:service_manager find;
+allow ksu activity_service:service_manager find;
+allow ksu package_service:service_manager find;
+allow ksu dynamic_system_service:service_manager find;
+allow ksu gsi_service:service_manager find;
+allow ksu gsid:binder { call transfer };
+allow gsid ksu:binder transfer;
+allow ksu system_server:binder { call transfer };
+allow system_server ksu:binder { call transfer };
+allow ksu update_engine:binder { call transfer };
+allow update_engine ksu:binder { call transfer };
+allow update_engine ksu:fd use;
+allow ksu update_engine_data_file:dir { create add_name remove_name search open read write getattr setattr };
+allow ksu update_engine_data_file:file { create open read write getattr setattr rename unlink lock };
+# The inspected donor already allows update_engine to read/map update_engine_data_file.
+# Parent validates root-owned staging/restorecon access and the combined enforcing policy.

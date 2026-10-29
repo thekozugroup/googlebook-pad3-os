@@ -1,0 +1,27 @@
+{
+  "java_home": "build-inputs/jdk-21",
+  "sdk_platform": "android-37.2",
+  "build_tools": "36.0.0",
+  "tools": {
+    "android_jar": {
+      "path": "build-inputs/android-sdk/platforms/android-37.2/android.jar",
+      "sha256": "1db2419dbd45457f83b90ef8a7ef41e118174782c9a5c2185b55899df022767f"
+    },
+    "aapt2": {
+      "path": "build-inputs/android-sdk/build-tools/36.0.0/aapt2",
+      "sha256": "a8844d4089b442b034aed8953deee1893253053c900e03141ae7173e3edd8157"
+    },
+    "r8_jar": {
+      "path": "build-inputs/android-sdk/build-tools/36.0.0/lib/d8.jar",
+      "sha256": "4097ff9c46c185c6e7214da7fe9b1befb5adeea5cc9ca349270e0249904f9240"
+    },
+    "zipalign": {
+      "path": "build-inputs/android-sdk/build-tools/36.0.0/zipalign",
+      "sha256": "0427144f4a3fd242c5a159e7088637082539ae556bc1d2bbc2032bb775d47cea"
+    },
+    "dexdump": {
+      "path": "build-inputs/android-sdk/build-tools/36.0.0/dexdump",
+      "sha256": "9c4addfdb5373f0923e418a64683976922c1ffdd1a3e9673b9cce5a0838e9692"
+    }
+  }
+}

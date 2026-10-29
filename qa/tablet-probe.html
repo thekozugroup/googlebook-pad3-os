@@ -1,0 +1,327 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<title>Tablet hardware probe</title>
+<style>
+  :root { color-scheme: light; font: 17px/1.5 system-ui, sans-serif; color: #182923; background: #f3f5f3; }
+  * { box-sizing: border-box; }
+  body { margin: 0 auto; padding: 24px; max-width: 1280px; }
+  h1 { margin: 0; font-size: clamp(1.8rem, 4vw, 2.6rem); letter-spacing: -.035em; }
+  h2 { margin: 0 0 12px; font-size: 1.25rem; }
+  p { margin: 8px 0 16px; }
+  header { margin-bottom: 20px; }
+  .grid { display: grid; grid-template-columns: 1.2fr 1fr; gap: 18px; }
+  section { min-width: 0; border: 1px solid #ced8d1; border-radius: 12px; padding: 20px; background: #fff; }
+  .wide { grid-column: 1 / -1; }
+  .controls { display: flex; flex-wrap: wrap; gap: 10px; margin: 12px 0; }
+  button { font: inherit; min-height: 48px; padding: 10px 16px; border: 1px solid #9cafa3; border-radius: 7px; color: inherit; background: #fff; cursor: pointer; }
+  button.primary { background: #156647; border-color: #156647; color: #fff; font-weight: 650; }
+  button:disabled { opacity: .55; cursor: default; }
+  button:focus-visible, canvas:focus-visible { outline: 3px solid #1d67b7; outline-offset: 3px; }
+  #notice { padding: 10px 14px; border-left: 4px solid #156647; background: #e9f3ec; min-height: 48px; }
+  .preview { position: relative; background: #15231d; border-radius: 6px; overflow: hidden; }
+  video { display: block; width: 100%; height: 300px; object-fit: contain; }
+  .preview span { position: absolute; top: 8px; left: 10px; background: #fff; color: #182923; padding: 2px 8px; font-size: 13px; }
+  .readings { font: 14px/1.55 ui-monospace, monospace; white-space: pre-wrap; overflow-wrap: anywhere; margin: 12px 0 0; }
+  .graphics { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .graphics canvas { display: block; width: 100%; aspect-ratio: 5 / 3; border: 1px solid #ced8d1; }
+  .caption { font-size: 14px; color: #435a4c; }
+  #ink { display: block; width: 100%; height: 320px; background: #fafcfb; border: 2px solid #9cafa3; border-radius: 6px; touch-action: none; }
+  meter { width: 100%; height: 24px; }
+  details { margin-top: 18px; }
+  #json { max-height: 360px; overflow: auto; }
+  @media (max-width: 760px) { body { padding: 14px; } .grid { grid-template-columns: 1fr; } section { padding: 16px; } video { height: 260px; } }
+</style>
+<header>
+  <h1>Tablet hardware probe</h1>
+  <p>Camera and microphone stay in this tab. Only numeric and fixed status metrics are saved to this local server.</p>
+  <div class="controls"><button id="save" class="primary">Save metrics locally</button></div>
+  <p id="notice" role="status" aria-live="polite">Ready. Media starts only after you press the consent button.</p>
+</header>
+<main class="grid">
+  <section>
+    <h2>Camera and microphone</h2>
+    <div class="controls">
+      <button id="start" class="primary">Start camera and microphone</button>
+      <button id="stop">Stop camera and microphone</button>
+      <button id="front" disabled>Try front camera</button>
+      <button id="back" disabled>Try back camera</button>
+    </div>
+    <div class="preview"><video id="preview" muted autoplay playsinline aria-label="Local live camera preview"></video><span>TOP · live preview only</span></div>
+    <pre id="cameraMetrics" class="readings"></pre>
+    <p class="caption">Try each camera after consent. Rotate the tablet and check that the physical scene stays upright; the numbers describe the displayed frame and its visible area.</p>
+    <label for="rms">Microphone RMS (0–1)</label><meter id="rms" min="0" max="1" value="0"></meter>
+    <pre id="audioMetrics" class="readings"></pre>
+  </section>
+  <section>
+    <h2>Canvas and WebGL</h2>
+    <div class="graphics"><canvas id="canvas2d" width="300" height="180" aria-label="Moving Canvas 2D circle"></canvas><canvas id="webgl" width="300" height="180" aria-label="Rotating WebGL triangle"></canvas></div>
+    <pre id="graphicsMetrics" class="readings"></pre>
+    <p id="renderer" class="caption">WebGL renderer: untested</p>
+    <p class="caption">The full renderer name is shown here only. Saved results include its family status.</p>
+  </section>
+  <section class="wide">
+    <h2>Physical stylus and pointer events</h2>
+    <p>Draw in the area, vary pressure and tilt, try the stylus buttons, then hover without touching. Pointer coordinates are also measured across this document.</p>
+    <canvas id="ink" width="1200" height="400" tabindex="0" aria-label="Stylus drawing area; draw, press, tilt, use buttons, and hover"></canvas>
+    <div class="controls"><button id="clear">Clear drawing</button></div>
+    <pre id="pointerMetrics" class="readings"></pre>
+  </section>
+</main>
+<details><summary>Compact result JSON</summary><pre id="json" class="readings"></pre></details>
+<script>
+"use strict";
+const $ = id => document.getElementById(id);
+const state = {
+  schema: 1, elapsed_ms: 0, media_status: "untested", camera_status: "untested", mic_status: "untested",
+  front_camera: "untested", back_camera: "untested", device_enumeration: "untested", video_inputs: 0, audio_inputs: 0,
+  facing_mode: "unknown", frame_count_status: "untested", video_frames: 0, video_width: 0, video_height: 0,
+  preview_width: 0, preview_height: 0, visible_width: 0, visible_height: 0, preview_visible: false,
+  preview_orientation: "unknown", screen_orientation: "unknown", orientation_angle: 0,
+  mic_samples: 0, rms_current: 0, rms_min: 0, rms_max: 0, rms_mean: 0, audio_sample_rate: 0, audio_context: "untested",
+  canvas2d_status: "untested", canvas2d_frames: 0, webgl_status: "untested", webgl_frames: 0, webgl_errors: 0, webgl_renderer: "unknown",
+  pointer_events: 0, pointer_down: 0, pointer_move: 0, pointer_up: 0, pointer_cancel: 0,
+  hover_events: 0, pen_hover_events: 0, pen_events: 0, touch_events: 0, mouse_events: 0, pointer_type: "unknown",
+  pressure: 0, pressure_min: 0, pressure_max: 0, tilt_x: 0, tilt_y: 0, tilt_x_min: 0, tilt_x_max: 0, tilt_y_min: 0, tilt_y_max: 0,
+  button: -1, buttons: 0, buttons_seen: 0, hover: false, client_x: 0, client_y: 0, page_x: 0, page_y: 0, canvas_x: 0, canvas_y: 0,
+  canvas_width: 0, canvas_height: 0, document_width: 0, document_height: 0, viewport_width: 0, viewport_height: 0, drawing_segments: 0
+};
+const started = performance.now(), video = $("preview"), ink = $("ink"), inkContext = ink.getContext("2d");
+const ownedTracks = new Set(), points = new Map();
+let audioContext = null, analyser = null, audioSource = null, audioSamples = null, currentVideo = null;
+let generation = 0, frameCallback = 0, frameBase = null, lastRms = 0, lastDisplay = 0;
+const notice = text => { $("notice").textContent = text; };
+const errorStatus = error => ({NotAllowedError: "denied", NotFoundError: "unavailable", NotReadableError: "busy", OverconstrainedError: "unavailable", NotSupportedError: "unsupported"}[error.name] || "error");
+const round = value => Number.isFinite(value) ? Math.round(value * 1000) / 1000 : 0;
+function cameraButtons(disabled) { $("front").disabled = disabled; $("back").disabled = disabled; }
+function cancelFrames() {
+  if (frameCallback && video.cancelVideoFrameCallback) video.cancelVideoFrameCallback(frameCallback);
+  frameCallback = 0;
+}
+async function showCamera(track) {
+  cancelFrames();
+  currentVideo = track;
+  const facing = track.getSettings().facingMode;
+  state.facing_mode = ["user", "environment", "left", "right"].includes(facing) ? facing : "unknown";
+  state.video_frames = 0; frameBase = null;
+  video.srcObject = new MediaStream([track]);
+  await video.play();
+  if (currentVideo !== track || track.readyState !== "live") return;
+  state.camera_status = "ok";
+  if (facing === "user") state.front_camera = "ok";
+  if (facing === "environment") state.back_camera = "ok";
+  track.addEventListener("ended", () => { if (currentVideo === track) state.camera_status = "ended"; });
+  if (video.requestVideoFrameCallback) {
+    state.frame_count_status = "ok";
+    const count = (_now, metadata) => {
+      if (currentVideo !== track || track.readyState !== "live") return;
+      if (frameBase === null) frameBase = metadata.presentedFrames - 1;
+      state.video_frames = Math.max(0, metadata.presentedFrames - frameBase);
+      frameCallback = video.requestVideoFrameCallback(count);
+    };
+    frameCallback = video.requestVideoFrameCallback(count);
+  } else state.frame_count_status = video.getVideoPlaybackQuality ? "fallback" : "unsupported";
+}
+function stopMedia() {
+  generation += 1; cancelFrames();
+  ownedTracks.forEach(track => track.stop()); ownedTracks.clear();
+  currentVideo = null; video.srcObject = null;
+  if (audioSource) audioSource.disconnect();
+  if (analyser) analyser.disconnect();
+  if (audioContext) audioContext.close().catch(() => {});
+  audioContext = null; analyser = null; audioSource = null; audioSamples = null;
+  state.media_status = "stopped"; state.camera_status = "stopped"; state.mic_status = "stopped";
+  state.audio_context = "closed"; state.rms_current = 0; state.preview_visible = false;
+  $("start").disabled = false; cameraButtons(true);
+}
+$("start").addEventListener("click", async () => {
+  if (!window.isSecureContext || !navigator.mediaDevices?.getUserMedia) {
+    state.media_status = "unsupported"; notice("Media capture requires a supported browser on localhost."); return;
+  }
+  const token = ++generation;
+  $("start").disabled = true; state.media_status = "requesting";
+  notice("Waiting for Chrome camera and microphone consent.");
+  try {
+    audioContext = new AudioContext(); await audioContext.resume();
+    if (token !== generation) return;
+    const stream = await navigator.mediaDevices.getUserMedia({video: {facingMode: {ideal: "user"}}, audio: true});
+    if (token !== generation) { stream.getTracks().forEach(track => track.stop()); return; }
+    stream.getTracks().forEach(track => ownedTracks.add(track));
+    await showCamera(stream.getVideoTracks()[0]);
+    if (token !== generation) return;
+    const microphone = stream.getAudioTracks()[0];
+    audioSource = audioContext.createMediaStreamSource(new MediaStream([microphone]));
+    analyser = audioContext.createAnalyser(); analyser.fftSize = 2048;
+    audioSamples = new Float32Array(analyser.fftSize); audioSource.connect(analyser);
+    state.audio_sample_rate = audioContext.sampleRate; state.audio_context = audioContext.state;
+    state.mic_status = "ok"; state.media_status = "ok";
+    microphone.addEventListener("ended", () => { if (ownedTracks.has(microphone)) state.mic_status = "ended"; });
+    cameraButtons(false); notice("Live preview and microphone analyser are active. Try each camera and rotate the tablet.");
+    try {
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      state.video_inputs = devices.filter(device => device.kind === "videoinput").length;
+      state.audio_inputs = devices.filter(device => device.kind === "audioinput").length;
+      state.device_enumeration = "ok";
+    } catch { state.device_enumeration = "error"; }
+  } catch (error) {
+    if (token !== generation) return;
+    stopMedia(); state.media_status = errorStatus(error);
+    notice(`Combined media request: ${state.media_status}. You can retry.`);
+  }
+});
+async function switchCamera(facing) {
+  const field = facing === "user" ? "front_camera" : "back_camera";
+  if (!navigator.mediaDevices.getSupportedConstraints().facingMode) { state[field] = "unsupported"; return; }
+  const token = generation;
+  cameraButtons(true); state[field] = "requesting"; cancelFrames();
+  if (currentVideo) { currentVideo.stop(); ownedTracks.delete(currentVideo); currentVideo = null; }
+  video.srcObject = null; state.camera_status = "requesting";
+  let stream = null;
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({video: {facingMode: {exact: facing}}, audio: false});
+    if (token !== generation) { stream.getTracks().forEach(track => track.stop()); return; }
+    stream.getTracks().forEach(track => ownedTracks.add(track));
+    const track = stream.getVideoTracks()[0]; await showCamera(track);
+    if (token !== generation) return;
+    state[field] = track.getSettings().facingMode === facing ? "ok" : "unconfirmed";
+    notice(`${facing === "user" ? "Front" : "Back"} camera: ${state[field]}. Check the live scene.`);
+  } catch (error) {
+    if (token !== generation) return;
+    if (stream) stream.getTracks().forEach(track => { track.stop(); ownedTracks.delete(track); });
+    state[field] = errorStatus(error); state.camera_status = state[field];
+    notice(`Camera request: ${state[field]}. The microphone can remain active; use Stop when finished.`);
+  } finally { if (token === generation) cameraButtons(false); }
+}
+$("front").addEventListener("click", () => switchCamera("user"));
+$("back").addEventListener("click", () => switchCamera("environment"));
+$("stop").addEventListener("click", () => { stopMedia(); notice("Camera and microphone tracks stopped."); });
+window.addEventListener("pagehide", stopMedia);
+
+const canvas2d = $("canvas2d"), drawing = canvas2d.getContext("2d"), glCanvas = $("webgl");
+state.canvas2d_status = drawing ? "ok" : "unsupported";
+let gl = null, program = null, rotation = null;
+try {
+  gl = glCanvas.getContext("webgl", {antialias: false});
+  if (!gl) throw new Error("unsupported");
+  const debug = gl.getExtension("WEBGL_debug_renderer_info");
+  const renderer = String(gl.getParameter(debug ? debug.UNMASKED_RENDERER_WEBGL : gl.RENDERER));
+  $("renderer").textContent = `WebGL renderer: ${renderer}`;
+  state.webgl_renderer = ["swiftshader", "adreno", "mali", "angle"].find(family => renderer.toLowerCase().includes(family)) || "other";
+  const shader = (type, source) => {
+    const value = gl.createShader(type); gl.shaderSource(value, source); gl.compileShader(value);
+    if (!gl.getShaderParameter(value, gl.COMPILE_STATUS)) throw new Error("shader");
+    return value;
+  };
+  program = gl.createProgram();
+  gl.attachShader(program, shader(gl.VERTEX_SHADER, "attribute vec2 p; uniform float t; void main(){ float c=cos(t),s=sin(t); gl_Position=vec4(c*p.x-s*p.y,s*p.x+c*p.y,0.,1.); }"));
+  gl.attachShader(program, shader(gl.FRAGMENT_SHADER, "precision mediump float; void main(){gl_FragColor=vec4(.08,.48,.31,1.);}"));
+  gl.linkProgram(program); if (!gl.getProgramParameter(program, gl.LINK_STATUS)) throw new Error("link");
+  gl.useProgram(program); const buffer = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-.6,-.45,.6,-.45,0,.65]), gl.STATIC_DRAW);
+  const position = gl.getAttribLocation(program, "p"); gl.enableVertexAttribArray(position); gl.vertexAttribPointer(position, 2, gl.FLOAT, false, 0, 0);
+  rotation = gl.getUniformLocation(program, "t"); state.webgl_status = "ok";
+} catch { state.webgl_status = gl ? "error" : "unsupported"; }
+glCanvas.addEventListener("webglcontextlost", () => { state.webgl_status = "lost"; });
+
+for (const type of ["pointerdown", "pointermove", "pointerup", "pointercancel", "pointerover"]) {
+  document.addEventListener(type, event => {
+    const rect = ink.getBoundingClientRect(), first = state.pointer_events === 0;
+    state.pointer_events += 1;
+    const counter = {pointerdown: "pointer_down", pointermove: "pointer_move", pointerup: "pointer_up", pointercancel: "pointer_cancel"}[type];
+    if (counter) state[counter] += 1;
+    state.pointer_type = ["pen", "touch", "mouse"].includes(event.pointerType) ? event.pointerType : "unknown";
+    if (state.pointer_type !== "unknown") state[`${state.pointer_type}_events`] += 1;
+    state.pressure = event.pressure; state.tilt_x = event.tiltX; state.tilt_y = event.tiltY;
+    for (const field of ["pressure", "tilt_x", "tilt_y"]) {
+      state[`${field}_min`] = first ? state[field] : Math.min(state[`${field}_min`], state[field]);
+      state[`${field}_max`] = first ? state[field] : Math.max(state[`${field}_max`], state[field]);
+    }
+    state.buttons = event.buttons; state.buttons_seen |= event.buttons; state.button = event.button;
+    state.hover = event.buttons === 0 && event.pressure === 0 && ["pointermove", "pointerover"].includes(type) && event.pointerType !== "touch";
+    if (state.hover) { state.hover_events += 1; if (event.pointerType === "pen") state.pen_hover_events += 1; }
+    state.client_x = round(event.clientX); state.client_y = round(event.clientY);
+    state.page_x = round(event.pageX); state.page_y = round(event.pageY);
+    state.canvas_x = round(event.clientX - rect.left); state.canvas_y = round(event.clientY - rect.top);
+    if (event.target !== ink || !inkContext) return;
+    const point = [state.canvas_x * ink.width / rect.width, state.canvas_y * ink.height / rect.height];
+    if (type === "pointerdown") { ink.setPointerCapture(event.pointerId); points.set(event.pointerId, point); }
+    if (type === "pointermove" && event.buttons && points.has(event.pointerId)) {
+      inkContext.beginPath(); inkContext.moveTo(...points.get(event.pointerId)); inkContext.lineTo(...point);
+      inkContext.lineWidth = (1 + event.pressure * 7) * ink.width / rect.width;
+      inkContext.lineCap = "round"; inkContext.strokeStyle = "#156647"; inkContext.stroke();
+      state.drawing_segments += 1; points.set(event.pointerId, point);
+    }
+    if (["pointerup", "pointercancel"].includes(type)) points.delete(event.pointerId);
+  }, true);
+}
+$("clear").addEventListener("click", () => { if (inkContext) inkContext.clearRect(0, 0, ink.width, ink.height); points.clear(); });
+window.addEventListener("blur", () => points.clear());
+
+function dimensions() {
+  state.video_width = video.videoWidth; state.video_height = video.videoHeight;
+  const box = video.getBoundingClientRect(), width = video.videoWidth, height = video.videoHeight;
+  state.preview_width = round(box.width); state.preview_height = round(box.height);
+  state.preview_orientation = width && height ? width > height ? "landscape" : width < height ? "portrait" : "square" : "unknown";
+  const fittedWidth = width && height ? Math.min(box.width, box.height * width / height) : 0;
+  const fittedHeight = width ? fittedWidth * height / width : 0;
+  const left = box.left + (box.width - fittedWidth) / 2, top = box.top + (box.height - fittedHeight) / 2;
+  state.visible_width = round(Math.max(0, Math.min(left + fittedWidth, innerWidth) - Math.max(left, 0)));
+  state.visible_height = round(Math.max(0, Math.min(top + fittedHeight, innerHeight) - Math.max(top, 0)));
+  state.preview_visible = !!(currentVideo?.readyState === "live" && !video.paused && !document.hidden && state.visible_width && state.visible_height);
+  const orientation = screen.orientation;
+  state.screen_orientation = ["portrait-primary", "portrait-secondary", "landscape-primary", "landscape-secondary"].includes(orientation?.type) ? orientation.type : "unknown";
+  state.orientation_angle = orientation?.angle || 0;
+  const rect = ink.getBoundingClientRect(); state.canvas_width = round(rect.width); state.canvas_height = round(rect.height);
+  state.viewport_width = innerWidth; state.viewport_height = innerHeight;
+  state.document_width = document.documentElement.scrollWidth; state.document_height = document.documentElement.scrollHeight;
+}
+function tick(now) {
+  state.elapsed_ms = Math.round(now - started);
+  if (drawing) {
+    drawing.fillStyle = "#eff5f0"; drawing.fillRect(0, 0, 300, 180);
+    drawing.fillStyle = "#156647"; drawing.beginPath(); drawing.arc(150 + Math.sin(now / 600) * 90, 90, 22, 0, Math.PI * 2); drawing.fill();
+    state.canvas2d_frames += 1;
+  }
+  if (state.webgl_status === "ok") {
+    gl.viewport(0, 0, 300, 180); gl.clearColor(.94, .96, .94, 1); gl.clear(gl.COLOR_BUFFER_BIT);
+    gl.uniform1f(rotation, now / 1000); gl.drawArrays(gl.TRIANGLES, 0, 3); state.webgl_frames += 1;
+    if (gl.getError() !== gl.NO_ERROR) { state.webgl_errors += 1; state.webgl_status = "error"; }
+  }
+  if (audioContext) state.audio_context = ["running", "suspended", "closed", "interrupted"].includes(audioContext.state) ? audioContext.state : "unknown";
+  if (analyser && state.mic_status === "ok" && state.audio_context === "running" && now - lastRms >= 100) {
+    analyser.getFloatTimeDomainData(audioSamples); let sum = 0;
+    for (const value of audioSamples) sum += value * value;
+    const rms = Math.min(1, Math.sqrt(sum / audioSamples.length));
+    state.mic_samples += 1; state.rms_current = round(rms);
+    state.rms_min = state.mic_samples === 1 ? rms : Math.min(state.rms_min, rms);
+    state.rms_max = Math.max(state.rms_max, rms); state.rms_mean += (rms - state.rms_mean) / state.mic_samples;
+    lastRms = now;
+  }
+  if (state.frame_count_status === "fallback" && currentVideo) {
+    const count = video.getVideoPlaybackQuality().totalVideoFrames;
+    if (frameBase === null) frameBase = count;
+    state.video_frames = Math.max(0, count - frameBase);
+  }
+  if (now - lastDisplay >= 200) {
+    dimensions(); $("rms").value = state.rms_current;
+    $("cameraMetrics").textContent = `Media: ${state.media_status} · camera: ${state.camera_status}\nFront: ${state.front_camera} · back: ${state.back_camera} · inputs: ${state.video_inputs}\nFacing: ${state.facing_mode} · frame: ${state.video_width} × ${state.video_height}\nPresented frames: ${state.video_frames} (${state.frame_count_status})\nFrame orientation: ${state.preview_orientation}\nScreen: ${state.screen_orientation} · ${state.orientation_angle}°\nVisible area: ${state.visible_width} × ${state.visible_height} · visible: ${state.preview_visible}`;
+    $("audioMetrics").textContent = `Microphone: ${state.mic_status} · AudioContext: ${state.audio_context}\nRMS now/min/max/mean: ${[state.rms_current, state.rms_min, state.rms_max, state.rms_mean].map(round).join(" / ")}\nSamples: ${state.mic_samples} · sample rate: ${state.audio_sample_rate} Hz`;
+    $("graphicsMetrics").textContent = `Canvas 2D: ${state.canvas2d_status} · frames: ${state.canvas2d_frames}\nWebGL: ${state.webgl_status} · frames: ${state.webgl_frames} · errors: ${state.webgl_errors}`;
+    $("pointerMetrics").textContent = `Type: ${state.pointer_type} · events: ${state.pointer_events} · pen/touch/mouse: ${state.pen_events}/${state.touch_events}/${state.mouse_events}\nPressure: ${state.pressure} · min/max: ${state.pressure_min}/${state.pressure_max}\nTilt X/Y: ${state.tilt_x}° / ${state.tilt_y}° · buttons: ${state.buttons} · seen: ${state.buttons_seen}\nHover: ${state.hover} · pen hover events: ${state.pen_hover_events}\nDocument X/Y: ${state.page_x}, ${state.page_y} · client X/Y: ${state.client_x}, ${state.client_y}\nDrawing X/Y: ${state.canvas_x}, ${state.canvas_y} · segments: ${state.drawing_segments}`;
+    $("json").textContent = JSON.stringify(state); lastDisplay = now;
+  }
+  requestAnimationFrame(tick);
+}
+requestAnimationFrame(tick);
+$("save").addEventListener("click", async () => {
+  dimensions(); $("save").disabled = true;
+  try {
+    const response = await fetch("/results", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(state), credentials: "omit", cache: "no-store"});
+    notice(response.ok ? "Numeric and status metrics saved locally. Media remains in this tab only." : `Metrics were rejected (HTTP ${response.status}).`);
+  } catch { notice("Could not reach the local results server."); }
+  finally { $("save").disabled = false; }
+});
+</script>
+</html>

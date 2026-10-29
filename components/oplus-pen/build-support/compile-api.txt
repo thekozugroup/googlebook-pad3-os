@@ -1,0 +1,15 @@
+# Class, method name, JVM descriptor, JVM access flags. Native/abstract bodies are compile-only.
+android/os/ServiceManager waitForDeclaredService (Ljava/lang/String;)Landroid/os/IBinder; 265
+android/os/UEventObserver onUEvent (Landroid/os/UEventObserver$UEvent;)V 1025
+android/os/UEventObserver startObserving (Ljava/lang/String;)V 257
+android/os/UEventObserver stopObserving ()V 257
+android/os/UEventObserver$UEvent get (Ljava/lang/String;)Ljava/lang/String; 257
+android/bluetooth/BluetoothDevice isConnected ()Z 257
+android/hardware/display/DisplayManager registerDisplayListener (Landroid/hardware/display/DisplayManager$DisplayListener;Landroid/os/Handler;J)V 257
+android/os/Binder markVintfStability ()V 257
+android/os/Binder getTransactionName (I)Ljava/lang/String; 257
+android/os/Binder getMaxTransactionId ()I 257
+android/os/Parcelable getStability ()I 1025
+android/os/Parcelable FIELD PARCELABLE_STABILITY_VINTF 25 I 1
+android/bluetooth/BluetoothHidHost FIELD ACTION_CONNECTION_STATE_CHANGED 25 Ljava/lang/String; android.bluetooth.input.profile.action.CONNECTION_STATE_CHANGED
+android/view/InputDevice getBluetoothAddress ()Ljava/lang/String; 257

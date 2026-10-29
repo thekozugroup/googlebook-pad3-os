@@ -1,0 +1,4 @@
+<overlay>
+    <item target="bool/config_face_settings_should_manage_preview"
+        value="@bool/config_face_settings_should_manage_preview" />
+</overlay>

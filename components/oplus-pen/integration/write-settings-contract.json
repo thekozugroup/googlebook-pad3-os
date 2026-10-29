@@ -1,0 +1,24 @@
+{
+  "schema": 1,
+  "permission": "android.permission.WRITE_SETTINGS",
+  "protection_level_hex": "0x040004c2",
+  "protection": [
+    "signature",
+    "appop",
+    "pre23",
+    "preinstalled",
+    "role"
+  ],
+  "privileged_allowlist_required": false,
+  "platform_certificate_required_for_preinstalled_branch": false,
+  "runtime_authority": "Settings.System.canWrite(context), checked on each write; no grant, AppOp setter, root or permission UI launched",
+  "manifest_evidence": "        A: http://schemas.android.com/apk/res/android:label(0x01010001)=@0x01040948\n        A: http://schemas.android.com/apk/res/android:name(0x01010003)=\"android.permission.WRITE_SETTINGS\" (Raw: \"android.permission.WRITE_SETTINGS\")\n        A: http://schemas.android.com/apk/res/android:protectionLevel(0x01010009)=0x040004c2\n        A: http://schemas.android.com/apk/res/android:description(0x01010020)=@0x01040867\n      E: permission (line=4341)\n        A: http://schemas.android.com/apk/res/android:name(0x01010003)=\"android.permission.WRITE_GSERVICES\" (Raw: \"android.permission.WRITE_GSERVICES\")\n        A: http://schemas.android.com/apk/res/android:protectionLevel(0x01010009)=0x00000012\n",
+  "donor_services_jar_sha256": "ae809d471e48995b4fb09bad7329f9b50208b88277e1699f5d4c5bef368bef4c",
+  "donor_policy_method": "com.android.server.permission.access.permission.AppIdPermissionPolicy.shouldGrantPermissionByProtectionFlags",
+  "inspection": "Normal JADX could not reconstruct this one method. Fallback instruction representation confirms protection flag 1024 and PackageState.isSystem() return true; the outer policy ORs signature and protection-flag grants.",
+  "method_entry": "    private final boolean shouldGrantPermissionByProtectionFlags(com.android.server.permission.access.MutateStateScope r12, com.android.server.pm.pkg.PackageState r13, com.android.server.permission.access.permission.Permission r14) {\n            r11 = this;\n            com.android.server.pm.pkg.AndroidPackage r0 = r13.getAndroidPackage()\n            com.android.server.permission.jarjar.kotlin.jvm.internal.Intrinsics.checkNotNull(r0)\n            com.android.server.permission.access.MutableAccessState r1 = r12.getNewState()\n            com.android.server.permission.access.ExternalState r1 = r1.getExternalState()\n            com.android.server.permission.access.immutable.IntMap r1 = r1.getKnownPackages()\n            java.lang.String r2 = r13.getPackageName()\n            r3 = r14\n            r4 = 0\n            r5 = r3\n            r6 = 0\n            android.content.pm.PermissionInfo r7 = r5.getPermissionInfo()\n            int r5 = r7.getProtectionFlags()\n            r6 = 16\n            boolean r3 = com.android.server.permission.access.util.IntExtensionsKt.hasBits(r5, r6)\n            r4 = 0\n            r5 = 1\n            if (r3 != 0) goto L41\n            r3 = r14",
+  "preinstalled_branch": "            r7 = r3\n            r8 = 0\n            android.content.pm.PermissionInfo r9 = r7.getPermissionInfo()\n            int r7 = r9.getProtectionFlags()\n            r8 = 1024(0x400, float:1.435E-42)\n            boolean r3 = com.android.server.permission.access.util.IntExtensionsKt.hasBits(r7, r8)\n            if (r3 == 0) goto L127\n            boolean r3 = r13.isSystem()\n            if (r3 == 0) goto L127\n            return r5\n        L127:",
+  "runtime_grant_or_appop_for_new_apk_queried": false,
+  "owner_policy": "Only request the preinstalled/AppOp permission. Denial/revocation produces no Settings write; manual <=120Hz remains available.",
+  "public_api_limit": "Public Settings has no atomic compare-and-set. The implementation rechecks the exact value immediately before putString and observes external changes; simultaneous same-value writers cannot be distinguished."
+}

@@ -1,0 +1,26 @@
+{
+  "scratch": "/private/tmp/ai-development/REPLACE_WITH_ACTIVE_CLEANOS_TASK",
+  "avbtool": {
+    "path": "/ABSOLUTE/SOURCE/native_install/tools/avbtool.py",
+    "sha256": "e5a664a38db623da00f080219bc0ee60a640a9dc4a872803616fae4938ac749b"
+  },
+  "avb_public_keys": {
+    "vbmeta": {
+      "path": "/ABSOLUTE/PUBLIC_KEYS/vbmeta.pem",
+      "sha256": "REPLACE_WITH_SHA256"
+    },
+    "vbmeta_system": {
+      "path": "/ABSOLUTE/PUBLIC_KEYS/vbmeta_system.pem",
+      "sha256": "REPLACE_WITH_SHA256"
+    },
+    "vendor_boot": {
+      "path": "/ABSOLUTE/PUBLIC_KEYS/vendor_boot.pem",
+      "sha256": "REPLACE_WITH_SHA256"
+    },
+    "recovery": {
+      "path": "/ABSOLUTE/PUBLIC_KEYS/recovery.pem",
+      "sha256": "REPLACE_WITH_SHA256"
+    }
+  },
+  "avb_public_keys_note": "Only changed AVB chain images need PEM key pins in verified mode. Use an empty object for explicit preserve-native-disabled mode."
+}

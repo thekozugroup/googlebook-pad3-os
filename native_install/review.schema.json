@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "plan_sha256",
+    "layout_and_firmware",
+    "filesystem_and_recovery",
+    "avb_flags_and_rollback_indices",
+    "public_image_secret_audit",
+    "manager_bootstrap_and_selinux",
+    "factory_reset_and_data_backup",
+    "platform_signer_and_headless_user",
+    "updater_device_and_signature_checks",
+    "initial_installer_and_merge_before_wipe"
+  ],
+  "properties": {
+    "plan_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "layout_and_firmware": {
+      "type": "boolean"
+    },
+    "filesystem_and_recovery": {
+      "type": "boolean"
+    },
+    "avb_flags_and_rollback_indices": {
+      "type": "boolean"
+    },
+    "public_image_secret_audit": {
+      "type": "boolean"
+    },
+    "manager_bootstrap_and_selinux": {
+      "type": "boolean"
+    },
+    "factory_reset_and_data_backup": {
+      "type": "boolean"
+    },
+    "platform_signer_and_headless_user": {
+      "type": "boolean"
+    },
+    "updater_device_and_signature_checks": {
+      "type": "boolean"
+    },
+    "initial_installer_and_merge_before_wipe": {
+      "type": "boolean"
+    }
+  },
+  "$comment": "Optional review record. No approval boolean is required for offline candidate construction. Final installer must obtain required approvals after the candidate is reviewable."
+}

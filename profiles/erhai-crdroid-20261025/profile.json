@@ -1,0 +1,29 @@
+{
+  "native_build_utc": 1792932356,
+  "native_slot": "b",
+  "kernel": "6.6.144-4k-gacb4c5815254",
+  "compiled_policy_sha256": "bf755eca668fd4f96281899785e10e60a75956ebf7b248194ce82568c86dfce5",
+  "source": "Read from the running October 25 crDroid slot B before DSU tests; only policy compilation inputs are retained.",
+  "files": {
+    "vendor/plat_pub_versioned.cil": {
+      "sha256": "91bba5c4d4dcb10eec12ed5c8060c25c6d65f7538c21d213f630fce4b6ca75a5",
+      "bytes": 628575
+    },
+    "vendor/vendor_sepolicy.cil": {
+      "sha256": "221712b49c6cded83c08b74b5b2ed5d015517527e6cdaca5a657ddcd1f128e17",
+      "bytes": 2040755
+    },
+    "odm/odm_sepolicy.cil": {
+      "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+      "bytes": 1
+    },
+    "vendor/plat_sepolicy_vers.txt": {
+      "sha256": "9ccf1380024ff3eada859a5835f3358166aa75c36cb0b2c16dcfccad7131940a",
+      "bytes": 7
+    },
+    "vendor/genfs_labels_version.txt": {
+      "sha256": "9ccf1380024ff3eada859a5835f3358166aa75c36cb0b2c16dcfccad7131940a",
+      "bytes": 7
+    }
+  }
+}

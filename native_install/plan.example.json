@@ -1,0 +1,191 @@
+{
+  "schema": 1,
+  "repository": "thekozugroup/googlebook-pad3-os",
+  "target_slot": "a",
+  "timestamp": 1793220000,
+  "sequence": 1,
+  "expires_utc": 1795812000,
+  "release_tag": "native-initial-review",
+  "system_as_root": true,
+  "super_bytes": 0,
+  "metadata_reserved_bytes": 0,
+  "partition_sizes": {
+    "system": 0,
+    "system_ext": 0,
+    "product": 0,
+    "vendor": 0,
+    "odm": 0,
+    "vendor_dlkm": 0,
+    "system_dlkm": 0,
+    "boot": 0,
+    "init_boot": 0,
+    "vendor_boot": 0,
+    "dtbo": 0,
+    "recovery": 0,
+    "vbmeta": 0,
+    "vbmeta_system": 0,
+    "vbmeta_vendor": 0
+  },
+  "dynamic_groups": [
+    {
+      "name": "REPLACE_FROM_LPDUMP",
+      "maximum_size": 0,
+      "partitions": [
+        "system",
+        "system_ext",
+        "product",
+        "vendor",
+        "odm",
+        "vendor_dlkm",
+        "system_dlkm"
+      ]
+    }
+  ],
+  "capture": {
+    "device": "erhai",
+    "slot": "b",
+    "dsu_running": false,
+    "page_size": 4096,
+    "kernel": "6.6.144-4k-gacb4c5815254",
+    "build_utc": 1792932356,
+    "snapshot_state": "none",
+    "virtual_ab": null,
+    "hardware": {
+      "boot": {
+        "path": "/ABSOLUTE/CAPTURE/boot_b.img",
+        "sha256": "REPLACE_WITH_SHA256"
+      },
+      "dtbo": {
+        "path": "/ABSOLUTE/CAPTURE/dtbo_b.img",
+        "sha256": "REPLACE_WITH_SHA256"
+      },
+      "init_boot": {
+        "path": "/ABSOLUTE/CAPTURE/init_boot_b.img",
+        "sha256": "REPLACE_WITH_SHA256"
+      },
+      "odm": {
+        "path": "/ABSOLUTE/CAPTURE/odm_b.img",
+        "sha256": "REPLACE_WITH_SHA256"
+      },
+      "recovery": {
+        "path": "/ABSOLUTE/CAPTURE/recovery_b.img",
+        "sha256": "REPLACE_WITH_SHA256"
+      },
+      "system_dlkm": {
+        "path": "/ABSOLUTE/CAPTURE/system_dlkm_b.img",
+        "sha256": "REPLACE_WITH_SHA256"
+      },
+      "vbmeta": {
+        "path": "/ABSOLUTE/CAPTURE/vbmeta_b.img",
+        "sha256": "REPLACE_WITH_SHA256"
+      },
+      "vbmeta_system": {
+        "path": "/ABSOLUTE/CAPTURE/vbmeta_system_b.img",
+        "sha256": "REPLACE_WITH_SHA256"
+      },
+      "vbmeta_vendor": {
+        "path": "/ABSOLUTE/CAPTURE/vbmeta_vendor_b.img",
+        "sha256": "REPLACE_WITH_SHA256"
+      },
+      "vendor": {
+        "path": "/ABSOLUTE/CAPTURE/vendor_b.img",
+        "sha256": "REPLACE_WITH_SHA256"
+      },
+      "vendor_boot": {
+        "path": "/ABSOLUTE/CAPTURE/vendor_boot_b.img",
+        "sha256": "REPLACE_WITH_SHA256"
+      },
+      "vendor_dlkm": {
+        "path": "/ABSOLUTE/CAPTURE/vendor_dlkm_b.img",
+        "sha256": "REPLACE_WITH_SHA256"
+      }
+    },
+    "kernel_config": {
+      "path": "/ABSOLUTE/CAPTURE/kernel-config.txt",
+      "sha256": "REPLACE_WITH_SHA256"
+    },
+    "lpdump_text_0": {
+      "path": "/ABSOLUTE/CAPTURE/super-layout-0.txt",
+      "sha256": "REPLACE_WITH_SHA256"
+    },
+    "lpdump_text_1": {
+      "path": "/ABSOLUTE/CAPTURE/super-layout-1.txt",
+      "sha256": "REPLACE_WITH_SHA256"
+    },
+    "update_engine": {
+      "path": "/ABSOLUTE/CAPTURE/update_engine",
+      "sha256": "REPLACE_WITH_SHA256"
+    },
+    "update_engine_rc": {
+      "path": "/ABSOLUTE/CAPTURE/update_engine.rc",
+      "sha256": "REPLACE_WITH_SHA256"
+    }
+  },
+  "images": {
+    "system": {
+      "path": "/ABSOLUTE/REVIEWED_NATIVE_IMAGES/system.img",
+      "sha256": "REPLACE_WITH_SHA256"
+    },
+    "system_ext": {
+      "path": "/ABSOLUTE/REVIEWED_NATIVE_IMAGES/system_ext.img",
+      "sha256": "REPLACE_WITH_SHA256"
+    },
+    "product": {
+      "path": "/ABSOLUTE/REVIEWED_NATIVE_IMAGES/product.img",
+      "sha256": "REPLACE_WITH_SHA256"
+    },
+    "vendor": {
+      "path": "/ABSOLUTE/REVIEWED_NATIVE_IMAGES/vendor.img",
+      "sha256": "REPLACE_WITH_SHA256"
+    },
+    "odm": {
+      "path": "/ABSOLUTE/REVIEWED_NATIVE_IMAGES/odm.img",
+      "sha256": "REPLACE_WITH_SHA256"
+    },
+    "vendor_dlkm": {
+      "path": "/ABSOLUTE/REVIEWED_NATIVE_IMAGES/vendor_dlkm.img",
+      "sha256": "REPLACE_WITH_SHA256"
+    },
+    "system_dlkm": {
+      "path": "/ABSOLUTE/REVIEWED_NATIVE_IMAGES/system_dlkm.img",
+      "sha256": "REPLACE_WITH_SHA256"
+    },
+    "boot": {
+      "path": "/ABSOLUTE/REVIEWED_NATIVE_IMAGES/boot.img",
+      "sha256": "REPLACE_WITH_SHA256"
+    },
+    "init_boot": {
+      "path": "/ABSOLUTE/REVIEWED_NATIVE_IMAGES/init_boot.img",
+      "sha256": "REPLACE_WITH_SHA256"
+    },
+    "vendor_boot": {
+      "path": "/ABSOLUTE/REVIEWED_NATIVE_IMAGES/vendor_boot.img",
+      "sha256": "REPLACE_WITH_SHA256"
+    },
+    "dtbo": {
+      "path": "/ABSOLUTE/REVIEWED_NATIVE_IMAGES/dtbo.img",
+      "sha256": "REPLACE_WITH_SHA256"
+    },
+    "recovery": {
+      "path": "/ABSOLUTE/REVIEWED_NATIVE_IMAGES/recovery.img",
+      "sha256": "REPLACE_WITH_SHA256"
+    },
+    "vbmeta": {
+      "path": "/ABSOLUTE/REVIEWED_NATIVE_IMAGES/vbmeta.img",
+      "sha256": "REPLACE_WITH_SHA256"
+    },
+    "vbmeta_system": {
+      "path": "/ABSOLUTE/REVIEWED_NATIVE_IMAGES/vbmeta_system.img",
+      "sha256": "REPLACE_WITH_SHA256"
+    },
+    "vbmeta_vendor": {
+      "path": "/ABSOLUTE/REVIEWED_NATIVE_IMAGES/vbmeta_vendor.img",
+      "sha256": "REPLACE_WITH_SHA256"
+    }
+  },
+  "avb_mode": "REPLACE_WITH_EXPLICIT_PARENT_REVIEWED_AVB_MODE",
+  "version": "REPLACE_WITH_REVIEWED_NATIVE_RELEASE_LABEL",
+  "pre_build_fingerprints": [
+    "REPLACE_WITH_EXACT_ALLOWED_INSTALLED_NATIVE_PORT_FINGERPRINT"
+  ]
+}

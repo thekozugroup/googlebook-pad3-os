@@ -1,0 +1,1047 @@
+{
+  "artifact_sha256": "9045a6869ad575c08f5a81ddc9943ab63f1fc73f2c66ea3501cdb2bd112b14d4",
+  "live_layouts": {
+    "list_head": {
+      "type_id": 38,
+      "size": 16,
+      "members": [
+        {
+          "name": "next",
+          "type_id": 39,
+          "bit_offset": 0
+        },
+        {
+          "name": "prev",
+          "type_id": 39,
+          "bit_offset": 64
+        }
+      ]
+    },
+    "inode": {
+      "type_id": 187,
+      "size": 704,
+      "members": [
+        {
+          "name": "i_mode",
+          "type_id": 165,
+          "bit_offset": 0
+        },
+        {
+          "name": "i_opflags",
+          "type_id": 78,
+          "bit_offset": 16
+        },
+        {
+          "name": "i_uid",
+          "type_id": 188,
+          "bit_offset": 32
+        },
+        {
+          "name": "i_gid",
+          "type_id": 192,
+          "bit_offset": 64
+        },
+        {
+          "name": "i_flags",
+          "type_id": 53,
+          "bit_offset": 96
+        },
+        {
+          "name": "i_acl",
+          "type_id": 196,
+          "bit_offset": 128
+        },
+        {
+          "name": "i_default_acl",
+          "type_id": 196,
+          "bit_offset": 192
+        },
+        {
+          "name": "i_op",
+          "type_id": 197,
+          "bit_offset": 256
+        },
+        {
+          "name": "i_sb",
+          "type_id": 252,
+          "bit_offset": 320
+        },
+        {
+          "name": "i_mapping",
+          "type_id": 180,
+          "bit_offset": 384
+        },
+        {
+          "name": "i_security",
+          "type_id": 23,
+          "bit_offset": 448
+        },
+        {
+          "name": "i_ino",
+          "type_id": 14,
+          "bit_offset": 512
+        },
+        {
+          "name": "",
+          "type_id": 183,
+          "bit_offset": 576
+        },
+        {
+          "name": "i_rdev",
+          "type_id": 254,
+          "bit_offset": 608
+        },
+        {
+          "name": "i_size",
+          "type_id": 93,
+          "bit_offset": 640
+        },
+        {
+          "name": "i_atime",
+          "type_id": 1954,
+          "bit_offset": 704
+        },
+        {
+          "name": "i_mtime",
+          "type_id": 1954,
+          "bit_offset": 832
+        },
+        {
+          "name": "__i_ctime",
+          "type_id": 1954,
+          "bit_offset": 960
+        },
+        {
+          "name": "i_lock",
+          "type_id": 128,
+          "bit_offset": 1088
+        },
+        {
+          "name": "i_bytes",
+          "type_id": 78,
+          "bit_offset": 1120
+        },
+        {
+          "name": "i_blkbits",
+          "type_id": 73,
+          "bit_offset": 1136
+        },
+        {
+          "name": "i_write_hint",
+          "type_id": 1512,
+          "bit_offset": 1144
+        },
+        {
+          "name": "i_blocks",
+          "type_id": 1861,
+          "bit_offset": 1152
+        },
+        {
+          "name": "i_state",
+          "type_id": 14,
+          "bit_offset": 1216
+        },
+        {
+          "name": "i_rwsem",
+          "type_id": 390,
+          "bit_offset": 1280
+        },
+        {
+          "name": "dirtied_when",
+          "type_id": 14,
+          "bit_offset": 1792
+        },
+        {
+          "name": "dirtied_time_when",
+          "type_id": 14,
+          "bit_offset": 1856
+        },
+        {
+          "name": "i_hash",
+          "type_id": 44,
+          "bit_offset": 1920
+        },
+        {
+          "name": "i_io_list",
+          "type_id": 38,
+          "bit_offset": 2048
+        },
+        {
+          "name": "i_wb",
+          "type_id": 1775,
+          "bit_offset": 2176
+        },
+        {
+          "name": "i_wb_frn_winner",
+          "type_id": 13,
+          "bit_offset": 2240
+        },
+        {
+          "name": "i_wb_frn_avg_time",
+          "type_id": 76,
+          "bit_offset": 2272
+        },
+        {
+          "name": "i_wb_frn_history",
+          "type_id": 76,
+          "bit_offset": 2288
+        },
+        {
+          "name": "i_lru",
+          "type_id": 38,
+          "bit_offset": 2304
+        },
+        {
+          "name": "i_sb_list",
+          "type_id": 38,
+          "bit_offset": 2432
+        },
+        {
+          "name": "i_wb_list",
+          "type_id": 38,
+          "bit_offset": 2560
+        },
+        {
+          "name": "",
+          "type_id": 184,
+          "bit_offset": 2688
+        },
+        {
+          "name": "i_version",
+          "type_id": 61,
+          "bit_offset": 2816
+        },
+        {
+          "name": "i_sequence",
+          "type_id": 61,
+          "bit_offset": 2880
+        },
+        {
+          "name": "i_count",
+          "type_id": 11,
+          "bit_offset": 2944
+        },
+        {
+          "name": "i_dio_count",
+          "type_id": 11,
+          "bit_offset": 2976
+        },
+        {
+          "name": "i_writecount",
+          "type_id": 11,
+          "bit_offset": 3008
+        },
+        {
+          "name": "i_readcount",
+          "type_id": 11,
+          "bit_offset": 3040
+        },
+        {
+          "name": "",
+          "type_id": 185,
+          "bit_offset": 3072
+        },
+        {
+          "name": "i_flctx",
+          "type_id": 1984,
+          "bit_offset": 3136
+        },
+        {
+          "name": "i_data",
+          "type_id": 181,
+          "bit_offset": 3200
+        },
+        {
+          "name": "i_devices",
+          "type_id": 38,
+          "bit_offset": 5120
+        },
+        {
+          "name": "",
+          "type_id": 186,
+          "bit_offset": 5248
+        },
+        {
+          "name": "i_generation",
+          "type_id": 217,
+          "bit_offset": 5312
+        },
+        {
+          "name": "i_fsnotify_mask",
+          "type_id": 217,
+          "bit_offset": 5344
+        },
+        {
+          "name": "i_fsnotify_marks",
+          "type_id": 1902,
+          "bit_offset": 5376
+        },
+        {
+          "name": "i_crypt_info",
+          "type_id": 1987,
+          "bit_offset": 5440
+        },
+        {
+          "name": "i_verity_info",
+          "type_id": 1988,
+          "bit_offset": 5504
+        },
+        {
+          "name": "i_private",
+          "type_id": 23,
+          "bit_offset": 5568
+        }
+      ],
+      "resolved_anonymous_members": [
+        {
+          "name": "i_fop",
+          "type_id": 1625,
+          "bit_offset": 3072,
+          "via_anonymous_type": 185
+        },
+        {
+          "name": "free_inode",
+          "type_id": 1764,
+          "bit_offset": 3072,
+          "via_anonymous_type": 185
+        }
+      ]
+    },
+    "file": {
+      "type_id": 283,
+      "size": 264,
+      "members": [
+        {
+          "name": "",
+          "type_id": 282,
+          "bit_offset": 0
+        },
+        {
+          "name": "f_lock",
+          "type_id": 128,
+          "bit_offset": 128
+        },
+        {
+          "name": "f_mode",
+          "type_id": 290,
+          "bit_offset": 160
+        },
+        {
+          "name": "f_count",
+          "type_id": 60,
+          "bit_offset": 192
+        },
+        {
+          "name": "f_pos_lock",
+          "type_id": 59,
+          "bit_offset": 256
+        },
+        {
+          "name": "f_pos",
+          "type_id": 93,
+          "bit_offset": 640
+        },
+        {
+          "name": "f_flags",
+          "type_id": 53,
+          "bit_offset": 704
+        },
+        {
+          "name": "f_owner",
+          "type_id": 291,
+          "bit_offset": 768
+        },
+        {
+          "name": "f_cred",
+          "type_id": 1018,
+          "bit_offset": 1024
+        },
+        {
+          "name": "f_ra",
+          "type_id": 1623,
+          "bit_offset": 1088
+        },
+        {
+          "name": "f_path",
+          "type_id": 1624,
+          "bit_offset": 1344
+        },
+        {
+          "name": "f_inode",
+          "type_id": 182,
+          "bit_offset": 1472
+        },
+        {
+          "name": "f_op",
+          "type_id": 1625,
+          "bit_offset": 1536
+        },
+        {
+          "name": "f_version",
+          "type_id": 81,
+          "bit_offset": 1600
+        },
+        {
+          "name": "f_security",
+          "type_id": 23,
+          "bit_offset": 1664
+        },
+        {
+          "name": "private_data",
+          "type_id": 23,
+          "bit_offset": 1728
+        },
+        {
+          "name": "f_ep",
+          "type_id": 623,
+          "bit_offset": 1792
+        },
+        {
+          "name": "f_mapping",
+          "type_id": 180,
+          "bit_offset": 1856
+        },
+        {
+          "name": "f_wb_err",
+          "type_id": 1734,
+          "bit_offset": 1920
+        },
+        {
+          "name": "f_sb_err",
+          "type_id": 1734,
+          "bit_offset": 1952
+        },
+        {
+          "name": "android_kabi_reserved1",
+          "type_id": 81,
+          "bit_offset": 1984
+        },
+        {
+          "name": "android_kabi_reserved2",
+          "type_id": 81,
+          "bit_offset": 2048
+        }
+      ]
+    },
+    "callback_head": {
+      "type_id": 286,
+      "size": 16,
+      "members": [
+        {
+          "name": "next",
+          "type_id": 287,
+          "bit_offset": 0
+        },
+        {
+          "name": "func",
+          "type_id": 288,
+          "bit_offset": 64
+        }
+      ]
+    },
+    "cred": {
+      "type_id": 509,
+      "size": 184,
+      "members": [
+        {
+          "name": "usage",
+          "type_id": 60,
+          "bit_offset": 0
+        },
+        {
+          "name": "uid",
+          "type_id": 188,
+          "bit_offset": 64
+        },
+        {
+          "name": "gid",
+          "type_id": 192,
+          "bit_offset": 96
+        },
+        {
+          "name": "suid",
+          "type_id": 188,
+          "bit_offset": 128
+        },
+        {
+          "name": "sgid",
+          "type_id": 192,
+          "bit_offset": 160
+        },
+        {
+          "name": "euid",
+          "type_id": 188,
+          "bit_offset": 192
+        },
+        {
+          "name": "egid",
+          "type_id": 192,
+          "bit_offset": 224
+        },
+        {
+          "name": "fsuid",
+          "type_id": 188,
+          "bit_offset": 256
+        },
+        {
+          "name": "fsgid",
+          "type_id": 192,
+          "bit_offset": 288
+        },
+        {
+          "name": "securebits",
+          "type_id": 53,
+          "bit_offset": 320
+        },
+        {
+          "name": "cap_inheritable",
+          "type_id": 510,
+          "bit_offset": 384
+        },
+        {
+          "name": "cap_permitted",
+          "type_id": 510,
+          "bit_offset": 448
+        },
+        {
+          "name": "cap_effective",
+          "type_id": 510,
+          "bit_offset": 512
+        },
+        {
+          "name": "cap_bset",
+          "type_id": 510,
+          "bit_offset": 576
+        },
+        {
+          "name": "cap_ambient",
+          "type_id": 510,
+          "bit_offset": 640
+        },
+        {
+          "name": "jit_keyring",
+          "type_id": 75,
+          "bit_offset": 704
+        },
+        {
+          "name": "session_keyring",
+          "type_id": 512,
+          "bit_offset": 768
+        },
+        {
+          "name": "process_keyring",
+          "type_id": 512,
+          "bit_offset": 832
+        },
+        {
+          "name": "thread_keyring",
+          "type_id": 512,
+          "bit_offset": 896
+        },
+        {
+          "name": "request_key_auth",
+          "type_id": 512,
+          "bit_offset": 960
+        },
+        {
+          "name": "security",
+          "type_id": 23,
+          "bit_offset": 1024
+        },
+        {
+          "name": "user",
+          "type_id": 548,
+          "bit_offset": 1088
+        },
+        {
+          "name": "user_ns",
+          "type_id": 551,
+          "bit_offset": 1152
+        },
+        {
+          "name": "ucounts",
+          "type_id": 578,
+          "bit_offset": 1216
+        },
+        {
+          "name": "group_info",
+          "type_id": 1026,
+          "bit_offset": 1280
+        },
+        {
+          "name": "",
+          "type_id": 508,
+          "bit_offset": 1344
+        }
+      ]
+    },
+    "lsm_blob_sizes": {
+      "type_id": 20529,
+      "size": 36,
+      "members": [
+        {
+          "name": "lbs_cred",
+          "type_id": 13,
+          "bit_offset": 0
+        },
+        {
+          "name": "lbs_file",
+          "type_id": 13,
+          "bit_offset": 32
+        },
+        {
+          "name": "lbs_backing_file",
+          "type_id": 13,
+          "bit_offset": 64
+        },
+        {
+          "name": "lbs_inode",
+          "type_id": 13,
+          "bit_offset": 96
+        },
+        {
+          "name": "lbs_superblock",
+          "type_id": 13,
+          "bit_offset": 128
+        },
+        {
+          "name": "lbs_ipc",
+          "type_id": 13,
+          "bit_offset": 160
+        },
+        {
+          "name": "lbs_msg_msg",
+          "type_id": 13,
+          "bit_offset": 192
+        },
+        {
+          "name": "lbs_task",
+          "type_id": 13,
+          "bit_offset": 224
+        },
+        {
+          "name": "lbs_xattr_count",
+          "type_id": 13,
+          "bit_offset": 256
+        }
+      ]
+    },
+    "inode_security_struct": {
+      "type_id": 21396,
+      "size": 40,
+      "members": [
+        {
+          "name": "inode",
+          "type_id": 182,
+          "bit_offset": 0
+        },
+        {
+          "name": "list",
+          "type_id": 38,
+          "bit_offset": 64
+        },
+        {
+          "name": "task_sid",
+          "type_id": 216,
+          "bit_offset": 192
+        },
+        {
+          "name": "sid",
+          "type_id": 216,
+          "bit_offset": 224
+        },
+        {
+          "name": "sclass",
+          "type_id": 76,
+          "bit_offset": 256
+        },
+        {
+          "name": "initialized",
+          "type_id": 75,
+          "bit_offset": 272
+        },
+        {
+          "name": "lock",
+          "type_id": 128,
+          "bit_offset": 288
+        }
+      ]
+    },
+    "task_security_struct": {
+      "type_id": 21408,
+      "size": 24,
+      "members": [
+        {
+          "name": "osid",
+          "type_id": 216,
+          "bit_offset": 0
+        },
+        {
+          "name": "sid",
+          "type_id": 216,
+          "bit_offset": 32
+        },
+        {
+          "name": "exec_sid",
+          "type_id": 216,
+          "bit_offset": 64
+        },
+        {
+          "name": "create_sid",
+          "type_id": 216,
+          "bit_offset": 96
+        },
+        {
+          "name": "keycreate_sid",
+          "type_id": 216,
+          "bit_offset": 128
+        },
+        {
+          "name": "sockcreate_sid",
+          "type_id": 216,
+          "bit_offset": 160
+        }
+      ]
+    }
+  },
+  "related_layout_checks": [
+    [
+      "lsm_blob_sizes",
+      "lbs_inode",
+      12
+    ],
+    [
+      "lsm_blob_sizes",
+      "lbs_backing_file",
+      8
+    ],
+    [
+      "lsm_blob_sizes",
+      "lbs_cred",
+      0
+    ],
+    [
+      "file",
+      "f_inode",
+      184
+    ],
+    [
+      "file",
+      "f_path",
+      168
+    ],
+    [
+      "inode",
+      "i_mode",
+      0
+    ],
+    [
+      "inode",
+      "i_security",
+      56
+    ],
+    [
+      "inode",
+      "i_fop",
+      384
+    ],
+    [
+      "inode_security_struct",
+      "sid",
+      28
+    ],
+    [
+      "inode_security_struct",
+      "list",
+      8
+    ],
+    [
+      "cred",
+      "security",
+      128
+    ],
+    [
+      "task_security_struct",
+      "sid",
+      4
+    ]
+  ],
+  "references": [
+    {
+      "symbol": "selinux_blob_sizes",
+      "target": ".text",
+      "section_offset": 12944,
+      "type": 275,
+      "addend": 8,
+      "rela_file_offset": 190128,
+      "addend_file_offset": 190144,
+      "function": [
+        "ksu_install_file_wrapper"
+      ]
+    },
+    {
+      "symbol": "selinux_blob_sizes",
+      "target": ".text",
+      "section_offset": 12948,
+      "type": 285,
+      "addend": 8,
+      "rela_file_offset": 190152,
+      "addend_file_offset": 190168,
+      "function": [
+        "ksu_install_file_wrapper"
+      ]
+    },
+    {
+      "symbol": "selinux_blob_sizes",
+      "target": ".text",
+      "section_offset": 48660,
+      "type": 275,
+      "addend": 0,
+      "rela_file_offset": 233016,
+      "addend_file_offset": 233032,
+      "function": [
+        "transive_to_domain"
+      ]
+    },
+    {
+      "symbol": "selinux_blob_sizes",
+      "target": ".text",
+      "section_offset": 48668,
+      "type": 285,
+      "addend": 0,
+      "rela_file_offset": 233040,
+      "addend_file_offset": 233056,
+      "function": [
+        "transive_to_domain"
+      ]
+    },
+    {
+      "symbol": "selinux_blob_sizes",
+      "target": ".text",
+      "section_offset": 49400,
+      "type": 275,
+      "addend": 0,
+      "rela_file_offset": 235344,
+      "addend_file_offset": 235360,
+      "function": [
+        "is_task_ksu_domain"
+      ]
+    },
+    {
+      "symbol": "selinux_blob_sizes",
+      "target": ".text",
+      "section_offset": 49408,
+      "type": 285,
+      "addend": 0,
+      "rela_file_offset": 235368,
+      "addend_file_offset": 235384,
+      "function": [
+        "is_task_ksu_domain"
+      ]
+    },
+    {
+      "symbol": "selinux_blob_sizes",
+      "target": ".text",
+      "section_offset": 49636,
+      "type": 275,
+      "addend": 0,
+      "rela_file_offset": 235584,
+      "addend_file_offset": 235600,
+      "function": [
+        "is_ksu_domain"
+      ]
+    },
+    {
+      "symbol": "selinux_blob_sizes",
+      "target": ".text",
+      "section_offset": 49644,
+      "type": 285,
+      "addend": 0,
+      "rela_file_offset": 235608,
+      "addend_file_offset": 235624,
+      "function": [
+        "is_ksu_domain"
+      ]
+    },
+    {
+      "symbol": "selinux_blob_sizes",
+      "target": ".text",
+      "section_offset": 49864,
+      "type": 275,
+      "addend": 0,
+      "rela_file_offset": 235824,
+      "addend_file_offset": 235840,
+      "function": [
+        "is_zygote"
+      ]
+    },
+    {
+      "symbol": "selinux_blob_sizes",
+      "target": ".text",
+      "section_offset": 49872,
+      "type": 285,
+      "addend": 0,
+      "rela_file_offset": 235848,
+      "addend_file_offset": 235864,
+      "function": [
+        "is_zygote"
+      ]
+    },
+    {
+      "symbol": "selinux_blob_sizes",
+      "target": ".text",
+      "section_offset": 50092,
+      "type": 275,
+      "addend": 0,
+      "rela_file_offset": 236064,
+      "addend_file_offset": 236080,
+      "function": [
+        "is_init"
+      ]
+    },
+    {
+      "symbol": "selinux_blob_sizes",
+      "target": ".text",
+      "section_offset": 50100,
+      "type": 285,
+      "addend": 0,
+      "rela_file_offset": 236088,
+      "addend_file_offset": 236104,
+      "function": [
+        "is_init"
+      ]
+    },
+    {
+      "symbol": "selinux_blob_sizes",
+      "target": ".text",
+      "section_offset": 50320,
+      "type": 275,
+      "addend": 0,
+      "rela_file_offset": 236304,
+      "addend_file_offset": 236320,
+      "function": [
+        "is_adbd"
+      ]
+    },
+    {
+      "symbol": "selinux_blob_sizes",
+      "target": ".text",
+      "section_offset": 50328,
+      "type": 285,
+      "addend": 0,
+      "rela_file_offset": 236328,
+      "addend_file_offset": 236344,
+      "function": [
+        "is_adbd"
+      ]
+    },
+    {
+      "symbol": "selinux_blob_sizes",
+      "target": ".text",
+      "section_offset": 74772,
+      "type": 275,
+      "addend": 0,
+      "rela_file_offset": 263544,
+      "addend_file_offset": 263560,
+      "function": [
+        "my_setprocattr"
+      ]
+    },
+    {
+      "symbol": "selinux_blob_sizes",
+      "target": ".text",
+      "section_offset": 74784,
+      "type": 285,
+      "addend": 0,
+      "rela_file_offset": 263568,
+      "addend_file_offset": 263584,
+      "function": [
+        "my_setprocattr"
+      ]
+    },
+    {
+      "symbol": "selinux_blob_sizes",
+      "target": ".text",
+      "section_offset": 74948,
+      "type": 285,
+      "addend": 0,
+      "rela_file_offset": 263688,
+      "addend_file_offset": 263704,
+      "function": [
+        "my_setprocattr"
+      ]
+    },
+    {
+      "symbol": "selinux_blob_sizes",
+      "target": ".text",
+      "section_offset": 76720,
+      "type": 275,
+      "addend": 0,
+      "rela_file_offset": 265656,
+      "addend_file_offset": 265672,
+      "function": [
+        "ptrace_parent_sid"
+      ]
+    },
+    {
+      "symbol": "selinux_blob_sizes",
+      "target": ".text",
+      "section_offset": 76724,
+      "type": 285,
+      "addend": 0,
+      "rela_file_offset": 265680,
+      "addend_file_offset": 265696,
+      "function": [
+        "ptrace_parent_sid"
+      ]
+    },
+    {
+      "symbol": "selinux_blob_sizes",
+      "target": ".text",
+      "section_offset": 78020,
+      "type": 275,
+      "addend": 0,
+      "rela_file_offset": 268992,
+      "addend_file_offset": 269008,
+      "function": [
+        "my_write_context"
+      ]
+    },
+    {
+      "symbol": "selinux_blob_sizes",
+      "target": ".text",
+      "section_offset": 78032,
+      "type": 285,
+      "addend": 0,
+      "rela_file_offset": 269016,
+      "addend_file_offset": 269032,
+      "function": [
+        "my_write_context"
+      ]
+    },
+    {
+      "symbol": "selinux_blob_sizes",
+      "target": ".text",
+      "section_offset": 78384,
+      "type": 275,
+      "addend": 0,
+      "rela_file_offset": 269376,
+      "addend_file_offset": 269392,
+      "function": [
+        "my_write_access"
+      ]
+    },
+    {
+      "symbol": "selinux_blob_sizes",
+      "target": ".text",
+      "section_offset": 78396,
+      "type": 285,
+      "addend": 0,
+      "rela_file_offset": 269400,
+      "addend_file_offset": 269416,
+      "function": [
+        "my_write_access"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,286 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": [
+    "schema",
+    "source_slot",
+    "target_slot",
+    "slot_count",
+    "libsnapshot_update_state",
+    "source_successful",
+    "bootloader_unlocked",
+    "cow_reconciliation_reviewed",
+    "other_firmware_compatibility_reviewed",
+    "hal_snapshot_merge_status",
+    "physical_partition_sizes",
+    "firmware_hashes",
+    "gsi_tool_exit_code",
+    "gsi_tool_status"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema": {
+      "const": 1
+    },
+    "source_slot": {
+      "const": "b"
+    },
+    "target_slot": {
+      "const": "a"
+    },
+    "slot_count": {
+      "const": 2
+    },
+    "libsnapshot_update_state": {
+      "const": "none"
+    },
+    "source_successful": {
+      "const": true
+    },
+    "bootloader_unlocked": {
+      "const": true
+    },
+    "cow_reconciliation_reviewed": {
+      "const": true
+    },
+    "other_firmware_compatibility_reviewed": {
+      "const": true
+    },
+    "hal_snapshot_merge_status": {
+      "const": "NONE"
+    },
+    "physical_partition_sizes": {
+      "type": "object",
+      "required": [
+        "boot",
+        "init_boot",
+        "vendor_boot",
+        "dtbo",
+        "recovery",
+        "vbmeta",
+        "vbmeta_system",
+        "vbmeta_vendor"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "boot": {
+          "type": "object",
+          "required": [
+            "a",
+            "b"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "a": {
+              "type": "integer",
+              "minimum": 4096
+            },
+            "b": {
+              "type": "integer",
+              "minimum": 4096
+            }
+          }
+        },
+        "init_boot": {
+          "type": "object",
+          "required": [
+            "a",
+            "b"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "a": {
+              "type": "integer",
+              "minimum": 4096
+            },
+            "b": {
+              "type": "integer",
+              "minimum": 4096
+            }
+          }
+        },
+        "vendor_boot": {
+          "type": "object",
+          "required": [
+            "a",
+            "b"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "a": {
+              "type": "integer",
+              "minimum": 4096
+            },
+            "b": {
+              "type": "integer",
+              "minimum": 4096
+            }
+          }
+        },
+        "dtbo": {
+          "type": "object",
+          "required": [
+            "a",
+            "b"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "a": {
+              "type": "integer",
+              "minimum": 4096
+            },
+            "b": {
+              "type": "integer",
+              "minimum": 4096
+            }
+          }
+        },
+        "recovery": {
+          "type": "object",
+          "required": [
+            "a",
+            "b"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "a": {
+              "type": "integer",
+              "minimum": 4096
+            },
+            "b": {
+              "type": "integer",
+              "minimum": 4096
+            }
+          }
+        },
+        "vbmeta": {
+          "type": "object",
+          "required": [
+            "a",
+            "b"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "a": {
+              "type": "integer",
+              "minimum": 4096
+            },
+            "b": {
+              "type": "integer",
+              "minimum": 4096
+            }
+          }
+        },
+        "vbmeta_system": {
+          "type": "object",
+          "required": [
+            "a",
+            "b"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "a": {
+              "type": "integer",
+              "minimum": 4096
+            },
+            "b": {
+              "type": "integer",
+              "minimum": 4096
+            }
+          }
+        },
+        "vbmeta_vendor": {
+          "type": "object",
+          "required": [
+            "a",
+            "b"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "a": {
+              "type": "integer",
+              "minimum": 4096
+            },
+            "b": {
+              "type": "integer",
+              "minimum": 4096
+            }
+          }
+        }
+      }
+    },
+    "firmware_hashes": {
+      "type": "object",
+      "required": [
+        "modem",
+        "dsp",
+        "bluetooth"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "modem": {
+          "type": "object",
+          "required": [
+            "a",
+            "b"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "a": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            },
+            "b": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            }
+          }
+        },
+        "dsp": {
+          "type": "object",
+          "required": [
+            "a",
+            "b"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "a": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            },
+            "b": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            }
+          }
+        },
+        "bluetooth": {
+          "type": "object",
+          "required": [
+            "a",
+            "b"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "a": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            },
+            "b": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            }
+          }
+        }
+      }
+    },
+    "gsi_tool_exit_code": {
+      "const": 0
+    },
+    "gsi_tool_status": {
+      "type": "string",
+      "minLength": 1
+    }
+  },
+  "$comment": "Runtime requires A/B byte sizes and firmware digests equal and captured B sizes exact. Populate from parent read-only evidence; do not turn false approvals true without verification."
+}

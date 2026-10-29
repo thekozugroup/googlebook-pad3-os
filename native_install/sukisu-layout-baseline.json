@@ -1,5 +1,5 @@
 {
-  "artifact_sha256": "9045a6869ad575c08f5a81ddc9943ab63f1fc73f2c66ea3501cdb2bd112b14d4",
+  "artifact_sha256": "6e9e1abff6ca15da92fe2cb8a51868b99049320aa65d613c826611eb377d4947",
   "live_layouts": {
     "list_head": {
       "type_id": 38,
@@ -770,11 +770,11 @@
     {
       "symbol": "selinux_blob_sizes",
       "target": ".text",
-      "section_offset": 12944,
+      "section_offset": 16040,
       "type": 275,
       "addend": 8,
-      "rela_file_offset": 190128,
-      "addend_file_offset": 190144,
+      "rela_file_offset": 332048,
+      "addend_file_offset": 332064,
       "function": [
         "ksu_install_file_wrapper"
       ]
@@ -782,11 +782,11 @@
     {
       "symbol": "selinux_blob_sizes",
       "target": ".text",
-      "section_offset": 12948,
+      "section_offset": 16044,
       "type": 285,
       "addend": 8,
-      "rela_file_offset": 190152,
-      "addend_file_offset": 190168,
+      "rela_file_offset": 332072,
+      "addend_file_offset": 332088,
       "function": [
         "ksu_install_file_wrapper"
       ]
@@ -794,11 +794,11 @@
     {
       "symbol": "selinux_blob_sizes",
       "target": ".text",
-      "section_offset": 48660,
+      "section_offset": 62292,
       "type": 275,
       "addend": 0,
-      "rela_file_offset": 233016,
-      "addend_file_offset": 233032,
+      "rela_file_offset": 388592,
+      "addend_file_offset": 388608,
       "function": [
         "transive_to_domain"
       ]
@@ -806,11 +806,11 @@
     {
       "symbol": "selinux_blob_sizes",
       "target": ".text",
-      "section_offset": 48668,
+      "section_offset": 62300,
       "type": 285,
       "addend": 0,
-      "rela_file_offset": 233040,
-      "addend_file_offset": 233056,
+      "rela_file_offset": 388616,
+      "addend_file_offset": 388632,
       "function": [
         "transive_to_domain"
       ]
@@ -818,11 +818,11 @@
     {
       "symbol": "selinux_blob_sizes",
       "target": ".text",
-      "section_offset": 49400,
+      "section_offset": 63032,
       "type": 275,
       "addend": 0,
-      "rela_file_offset": 235344,
-      "addend_file_offset": 235360,
+      "rela_file_offset": 390920,
+      "addend_file_offset": 390936,
       "function": [
         "is_task_ksu_domain"
       ]
@@ -830,11 +830,11 @@
     {
       "symbol": "selinux_blob_sizes",
       "target": ".text",
-      "section_offset": 49408,
+      "section_offset": 63040,
       "type": 285,
       "addend": 0,
-      "rela_file_offset": 235368,
-      "addend_file_offset": 235384,
+      "rela_file_offset": 390944,
+      "addend_file_offset": 390960,
       "function": [
         "is_task_ksu_domain"
       ]
@@ -842,11 +842,11 @@
     {
       "symbol": "selinux_blob_sizes",
       "target": ".text",
-      "section_offset": 49636,
+      "section_offset": 63268,
       "type": 275,
       "addend": 0,
-      "rela_file_offset": 235584,
-      "addend_file_offset": 235600,
+      "rela_file_offset": 391160,
+      "addend_file_offset": 391176,
       "function": [
         "is_ksu_domain"
       ]
@@ -854,11 +854,11 @@
     {
       "symbol": "selinux_blob_sizes",
       "target": ".text",
-      "section_offset": 49644,
+      "section_offset": 63276,
       "type": 285,
       "addend": 0,
-      "rela_file_offset": 235608,
-      "addend_file_offset": 235624,
+      "rela_file_offset": 391184,
+      "addend_file_offset": 391200,
       "function": [
         "is_ksu_domain"
       ]
@@ -866,11 +866,11 @@
     {
       "symbol": "selinux_blob_sizes",
       "target": ".text",
-      "section_offset": 49864,
+      "section_offset": 63496,
       "type": 275,
       "addend": 0,
-      "rela_file_offset": 235824,
-      "addend_file_offset": 235840,
+      "rela_file_offset": 391400,
+      "addend_file_offset": 391416,
       "function": [
         "is_zygote"
       ]
@@ -878,11 +878,11 @@
     {
       "symbol": "selinux_blob_sizes",
       "target": ".text",
-      "section_offset": 49872,
+      "section_offset": 63504,
       "type": 285,
       "addend": 0,
-      "rela_file_offset": 235848,
-      "addend_file_offset": 235864,
+      "rela_file_offset": 391424,
+      "addend_file_offset": 391440,
       "function": [
         "is_zygote"
       ]
@@ -890,11 +890,11 @@
     {
       "symbol": "selinux_blob_sizes",
       "target": ".text",
-      "section_offset": 50092,
+      "section_offset": 63724,
       "type": 275,
       "addend": 0,
-      "rela_file_offset": 236064,
-      "addend_file_offset": 236080,
+      "rela_file_offset": 391640,
+      "addend_file_offset": 391656,
       "function": [
         "is_init"
       ]
@@ -902,11 +902,11 @@
     {
       "symbol": "selinux_blob_sizes",
       "target": ".text",
-      "section_offset": 50100,
+      "section_offset": 63732,
       "type": 285,
       "addend": 0,
-      "rela_file_offset": 236088,
-      "addend_file_offset": 236104,
+      "rela_file_offset": 391664,
+      "addend_file_offset": 391680,
       "function": [
         "is_init"
       ]
@@ -914,11 +914,11 @@
     {
       "symbol": "selinux_blob_sizes",
       "target": ".text",
-      "section_offset": 50320,
+      "section_offset": 63952,
       "type": 275,
       "addend": 0,
-      "rela_file_offset": 236304,
-      "addend_file_offset": 236320,
+      "rela_file_offset": 391880,
+      "addend_file_offset": 391896,
       "function": [
         "is_adbd"
       ]
@@ -926,11 +926,11 @@
     {
       "symbol": "selinux_blob_sizes",
       "target": ".text",
-      "section_offset": 50328,
+      "section_offset": 63960,
       "type": 285,
       "addend": 0,
-      "rela_file_offset": 236328,
-      "addend_file_offset": 236344,
+      "rela_file_offset": 391904,
+      "addend_file_offset": 391920,
       "function": [
         "is_adbd"
       ]
@@ -938,11 +938,11 @@
     {
       "symbol": "selinux_blob_sizes",
       "target": ".text",
-      "section_offset": 74772,
+      "section_offset": 88320,
       "type": 275,
       "addend": 0,
-      "rela_file_offset": 263544,
-      "addend_file_offset": 263560,
+      "rela_file_offset": 416768,
+      "addend_file_offset": 416784,
       "function": [
         "my_setprocattr"
       ]
@@ -950,11 +950,11 @@
     {
       "symbol": "selinux_blob_sizes",
       "target": ".text",
-      "section_offset": 74784,
+      "section_offset": 88332,
       "type": 285,
       "addend": 0,
-      "rela_file_offset": 263568,
-      "addend_file_offset": 263584,
+      "rela_file_offset": 416792,
+      "addend_file_offset": 416808,
       "function": [
         "my_setprocattr"
       ]
@@ -962,11 +962,11 @@
     {
       "symbol": "selinux_blob_sizes",
       "target": ".text",
-      "section_offset": 74948,
+      "section_offset": 88496,
       "type": 285,
       "addend": 0,
-      "rela_file_offset": 263688,
-      "addend_file_offset": 263704,
+      "rela_file_offset": 416912,
+      "addend_file_offset": 416928,
       "function": [
         "my_setprocattr"
       ]
@@ -974,11 +974,11 @@
     {
       "symbol": "selinux_blob_sizes",
       "target": ".text",
-      "section_offset": 76720,
+      "section_offset": 90544,
       "type": 275,
       "addend": 0,
-      "rela_file_offset": 265656,
-      "addend_file_offset": 265672,
+      "rela_file_offset": 419048,
+      "addend_file_offset": 419064,
       "function": [
         "ptrace_parent_sid"
       ]
@@ -986,11 +986,11 @@
     {
       "symbol": "selinux_blob_sizes",
       "target": ".text",
-      "section_offset": 76724,
+      "section_offset": 90548,
       "type": 285,
       "addend": 0,
-      "rela_file_offset": 265680,
-      "addend_file_offset": 265696,
+      "rela_file_offset": 419072,
+      "addend_file_offset": 419088,
       "function": [
         "ptrace_parent_sid"
       ]
@@ -998,11 +998,11 @@
     {
       "symbol": "selinux_blob_sizes",
       "target": ".text",
-      "section_offset": 78020,
+      "section_offset": 91844,
       "type": 275,
       "addend": 0,
-      "rela_file_offset": 268992,
-      "addend_file_offset": 269008,
+      "rela_file_offset": 422384,
+      "addend_file_offset": 422400,
       "function": [
         "my_write_context"
       ]
@@ -1010,11 +1010,11 @@
     {
       "symbol": "selinux_blob_sizes",
       "target": ".text",
-      "section_offset": 78032,
+      "section_offset": 91856,
       "type": 285,
       "addend": 0,
-      "rela_file_offset": 269016,
-      "addend_file_offset": 269032,
+      "rela_file_offset": 422408,
+      "addend_file_offset": 422424,
       "function": [
         "my_write_context"
       ]
@@ -1022,11 +1022,11 @@
     {
       "symbol": "selinux_blob_sizes",
       "target": ".text",
-      "section_offset": 78384,
+      "section_offset": 92208,
       "type": 275,
       "addend": 0,
-      "rela_file_offset": 269376,
-      "addend_file_offset": 269392,
+      "rela_file_offset": 422768,
+      "addend_file_offset": 422784,
       "function": [
         "my_write_access"
       ]
@@ -1034,11 +1034,11 @@
     {
       "symbol": "selinux_blob_sizes",
       "target": ".text",
-      "section_offset": 78396,
+      "section_offset": 92220,
       "type": 285,
       "addend": 0,
-      "rela_file_offset": 269400,
-      "addend_file_offset": 269416,
+      "rela_file_offset": 422792,
+      "addend_file_offset": 422808,
       "function": [
         "my_write_access"
       ]

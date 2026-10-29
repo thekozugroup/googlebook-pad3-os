@@ -423,13 +423,50 @@
     },
     "source_copy_partitions": {
       "enum": [
-        [],
         [
           "boot",
           "dtbo",
           "init_boot",
           "odm",
           "product",
+          "system_dlkm",
+          "vbmeta",
+          "vbmeta_system",
+          "vbmeta_vendor",
+          "vendor",
+          "vendor_boot",
+          "vendor_dlkm"
+        ],
+        [
+          "boot",
+          "dtbo",
+          "odm",
+          "product",
+          "system_dlkm",
+          "vbmeta",
+          "vbmeta_system",
+          "vbmeta_vendor",
+          "vendor",
+          "vendor_boot",
+          "vendor_dlkm"
+        ],
+        [
+          "boot",
+          "dtbo",
+          "init_boot",
+          "odm",
+          "system_dlkm",
+          "vbmeta",
+          "vbmeta_system",
+          "vbmeta_vendor",
+          "vendor",
+          "vendor_boot",
+          "vendor_dlkm"
+        ],
+        [
+          "boot",
+          "dtbo",
+          "odm",
           "system_dlkm",
           "vbmeta",
           "vbmeta_system",
@@ -467,5 +504,5 @@
       }
     }
   },
-  "$comment": "Runtime validation also reads raw files/LP extents, hashes, fstab/AVB, public sanitization, embedded trust/manager/native engine and target state. expires_utc must exceed timestamp. Factory reset approval is a separate false-by-default review."
+  "$comment": "Runtime validation binds files/LP extents, hashes, fstab/AVB, sanitization, trust/manager/native engine and target state. Target init_boot must match the reviewed UAPI 6 pin. Only init_boot and Product may be omitted from the unchanged SOURCE_COPY set: init_boot uses exact REPLACE and Product uses the fixed three-Dell-APK-removal delta from tools.product_source. All other copied partitions remain mandatory. expires_utc must exceed timestamp."
 }

@@ -9,6 +9,7 @@ import subprocess
 import tarfile
 import tempfile
 import unittest
+import xml.etree.ElementTree as ET
 import zipfile
 from unittest.mock import patch
 
@@ -191,16 +192,16 @@ class TextTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "non-directory"):
             userspace.additions_and_changes(entries, {"/etc/googlebook/data": b"payload"})
 
-    def test_taskmanager_policy_preserves_existing_rules_and_binds_mapping(self):
+    def test_native_policy_preserves_existing_rules_and_binds_mapping(self):
         cil, mapping = b"(type pen_app)\n", b";; mapping fixture\n"
         digest = (hashlib.sha256(cil + mapping).hexdigest() + "\n").encode()
-        candidate, updated = userspace.taskmanager_policy(cil, mapping, digest)
-        self.assertEqual(candidate, cil + userspace.TASKMANAGER_POLICY)
+        candidate, updated = userspace.native_policy(cil, mapping, digest)
+        self.assertEqual(candidate, cil + userspace.NATIVE_POLICY)
         self.assertEqual(updated, (hashlib.sha256(candidate + mapping).hexdigest() + "\n").encode())
         for old, mapped, proof in [(cil, mapping + b"changed", digest),
                                    (candidate, mapping, updated)]:
             with self.subTest(old=old), self.assertRaises(ValueError):
-                userspace.taskmanager_policy(old, mapped, proof)
+                userspace.native_policy(old, mapped, proof)
 
     def test_recipe_requires_every_pin_and_rejects_unknown_inputs(self):
         with tempfile.TemporaryDirectory(dir=os.environ.get("EROFS_TEST_SCRATCH")) as directory:
@@ -342,7 +343,7 @@ class AssemblyTests(unittest.TestCase):
         self.assertEqual(content(output / "system_ext.img", userspace.UPDATER), Path(self.recipe["files"]["updater"]["path"]).read_bytes())
         self.assertEqual(content(output / "system_ext.img", userspace.PEN), Path(self.recipe["files"]["pen_apk"]["path"]).read_bytes())
         self.assertEqual(content(output / "system_ext.img", userspace.POLICY),
-                         b"(type existing_pen_app)\n" + userspace.TASKMANAGER_POLICY)
+                         b"(type existing_pen_app)\n" + userspace.NATIVE_POLICY)
         self.assertEqual(content(output / "system.img", userspace.TASKMANAGER), Path(self.recipe["files"]["taskmanager_jar"]["path"]).read_bytes())
         self.assertNotIn(userspace.WATCHDOG_PATH, inventory(output / "system.img"))
         self.assertEqual(content(output / "system.img", "/system/lib64/libprotobuf-cpp-lite.so"), b"original donor DSO")

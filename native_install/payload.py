@@ -2,10 +2,12 @@
 
 Wire format: AOSP update_metadata.proto at dc84c2552b2d4cf00d2a843cb1c091d99d0499f1.
 Defaults to full REPLACE, minor 0; allowlisted unchanged images may use SOURCE_COPY, minor 6.
+Product alone may use a block delta against an explicit installed source image.
 Only RSA/SHA-256 signatures are emitted.
 """
 import base64
 import hashlib
+from pathlib import Path
 import struct
 import subprocess
 
@@ -80,16 +82,102 @@ def verify_digest(digest, signature, public, scratch):
         public_path.unlink(missing_ok=True)
 
 
+def _file_state(path):
+    info = path.stat()
+    return info.st_dev, info.st_ino, info.st_size, info.st_mtime_ns, info.st_ctime_ns
+
+
+def _product_delta(source, target, offset):
+    """Index hashes only; compare candidate bytes before selecting a moved extent."""
+    source_state, target_state = _file_state(source), _file_state(target)
+    require(all(state[2] > 0 and state[2] % BLOCK == 0 for state in (source_state, target_state)),
+            "unaligned raw Product delta input")
+    index, old_digest = {}, hashlib.sha256()
+    with source.open("rb") as stream:
+        block = 0
+        while data := stream.read(BLOCK):
+            old_digest.update(data)
+            index.setdefault(hashlib.sha256(data).digest(), []).append(block)
+            block += 1
+    operations, runs = [], []
+    digest, run_digest = hashlib.sha256(), hashlib.sha256()
+    run_source, run_target, count = None, 0, 0
+    start_offset = offset
+
+    def flush():
+        nonlocal offset, count, run_digest
+        if not count:
+            return
+        extent = field(1, run_target) + field(2, count)
+        size = count * BLOCK
+        if run_source is None:
+            operation = (field(1, 0) + field(2, offset) + field(3, size)
+                         + field(6, extent) + field(8, run_digest.digest()))
+            offset += size
+        else:
+            operation = (field(1, 4) + field(4, field(1, run_source) + field(2, count))
+                         + field(6, extent) + field(9, run_digest.digest()))
+        operations.append(field(8, operation))
+        runs.append((size, run_source is None))
+        count, run_digest = 0, hashlib.sha256()
+
+    with source.open("rb") as old, target.open("rb") as new:
+        block = 0
+        while data := new.read(BLOCK):
+            require(len(data) == BLOCK, "Product target changed while planning")
+            digest.update(data)
+            source_block = None
+            # Prefer continuing a run, including repeated zero blocks, before hash lookup.
+            preferred = run_source + count if count and run_source is not None else block
+            if preferred * BLOCK < source_state[2]:
+                old.seek(preferred * BLOCK)
+                if old.read(BLOCK) == data:
+                    source_block = preferred
+            if source_block is None:
+                for candidate in index.get(hashlib.sha256(data).digest(), ()):
+                    old.seek(candidate * BLOCK)
+                    if old.read(BLOCK) == data:
+                        source_block = candidate
+                        break
+            if count and (count * BLOCK == CHUNK
+                          or (source_block is None) != (run_source is None)
+                          or (source_block is not None and source_block != run_source + count)):
+                flush()
+            if not count:
+                run_source, run_target = source_block, block
+            run_digest.update(data)
+            count += 1
+            block += 1
+        flush()
+    require(_file_state(source) == source_state and _file_state(target) == target_state,
+            "Product delta input changed while planning")
+    return {"operations": b"".join(operations), "runs": runs, "blob_bytes": offset - start_offset,
+            "old_info": field(1, source_state[2]) + field(2, old_digest.digest()),
+            "new_info": field(1, target_state[2]) + field(2, digest.digest()),
+            "source_sha256": old_digest.hexdigest(), "target_sha256": digest.hexdigest(),
+            "source_state": source_state, "target_state": target_state}
+
+
 def write_payload(images, groups, timestamp, virtual_ab, key, certificate, output, scratch,
-                  *, source_copy_partitions=frozenset()):
+                  *, source_copy_partitions=frozenset(), source_images=None):
     """images: ordered {name: Path}; raw byte lengths must be 4 KiB aligned.
 
     Opt-in set/frozenset must be a subset of SOURCE_COPY_ALLOWED. Each installed
     source must equal its target image byte-for-byte; that image pins both.
+    source_images may be empty or {'product': Path}; it must not overlap that set.
+    Product delta operations cover the entire target and copy byte-identical 4 KiB
+    source blocks (including moved blocks); only unmatched target blocks are literal.
     """
     require(isinstance(source_copy_partitions, (set, frozenset))
             and source_copy_partitions <= SOURCE_COPY_ALLOWED, "SOURCE_COPY partition not allowlisted")
     require(source_copy_partitions <= images.keys(), "SOURCE_COPY partition missing from images")
+    if source_images is None:
+        source_images = {}
+    require(isinstance(source_images, dict) and set(source_images) <= {"product"}
+            and all(isinstance(path, Path) and path.is_file() and not path.is_symlink()
+                    for path in source_images.values()), "source_images accepts only Product regular Path input")
+    require(source_images.keys() <= images.keys(), "Product delta target missing from images")
+    require(not source_copy_partitions & source_images.keys(), "Product delta overlaps SOURCE_COPY selection")
     public = public_key(certificate)
     probe = sign_digest(hashlib.sha256(b"native-payload-key-check").digest(), key)
     require(len(probe) in (256, 512), "only RSA-2048 or RSA-4096 payload keys are supported")
@@ -98,7 +186,17 @@ def write_payload(images, groups, timestamp, virtual_ab, key, certificate, outpu
     partitions = []
     blobs_size = 0
     expected = {}
+    deltas = {}
     for name, path in images.items():
+        if name in source_images:
+            delta = _product_delta(source_images[name], path, blobs_size)
+            deltas[name] = delta
+            expected[name] = delta["target_sha256"]
+            blobs_size += delta["blob_bytes"]
+            partitions.append(field(13, field(1, name) + field(2, 0)
+                                    + field(6, delta["old_info"]) + field(7, delta["new_info"])
+                                    + delta["operations"]))
+            continue
         source_copy = name in source_copy_partitions
         size = path.stat().st_size
         require(size > 0 and size % BLOCK == 0, "unaligned raw partition: " + name)
@@ -133,7 +231,7 @@ def write_payload(images, groups, timestamp, virtual_ab, key, certificate, outpu
     # VABC is deliberately disabled; uncompressed snapshot allocation needs parent review.
     dynamic += field(2, int(virtual_ab)) + field(3, 0)
     # Minor 3 adds source hashes; minor 6 also permits 64-bit REPLACE blob offsets.
-    minor = 6 if source_copy_partitions else 0
+    minor = 6 if source_copy_partitions or source_images else 0
     manifest = (field(3, BLOCK) + field(4, blobs_size) + field(5, signature_size)
                 + field(12, minor) + b"".join(partitions) + field(14, timestamp)
                 + field(15, dynamic) + field(16, 0))
@@ -153,15 +251,35 @@ def write_payload(images, groups, timestamp, virtual_ab, key, certificate, outpu
             for name, path in images.items():
                 digest = hashlib.sha256()
                 with path.open("rb") as source:
-                    while data := source.read(CHUNK):
-                        digest.update(data)
-                        if name not in source_copy_partitions:
-                            payload_digest.update(data)
-                            stream.write(data)
+                    if name in deltas:
+                        for size, literal in deltas[name]["runs"]:
+                            data = source.read(size)
+                            require(len(data) == size, "input changed while packaging: " + name)
+                            digest.update(data)
+                            if literal:
+                                payload_digest.update(data)
+                                stream.write(data)
+                        require(not source.read(1), "input changed while packaging: " + name)
+                        require(_file_state(path) == deltas[name]["target_state"],
+                                "input changed while packaging: " + name)
+                    else:
+                        while data := source.read(CHUNK):
+                            digest.update(data)
+                            if name not in source_copy_partitions:
+                                payload_digest.update(data)
+                                stream.write(data)
                 require(digest.hexdigest() == expected[name], "input changed while packaging: " + name)
+            for name, source in source_images.items():
+                require(sha256(source) == deltas[name]["source_sha256"]
+                        and _file_state(source) == deltas[name]["source_state"],
+                        "source input changed while packaging: " + name)
             signature = sign_digest(payload_digest.digest(), key)
             verify_digest(payload_digest.digest(), signature, public, scratch)
             verify_digest(metadata_digest, raw_metadata_signature, public, scratch)
+            for name, delta in deltas.items():
+                require(_file_state(images[name]) == delta["target_state"]
+                        and _file_state(source_images[name]) == delta["source_state"],
+                        "Product delta input changed while signing")
             stream.write(signature_message(signature))
     except BaseException:
         if created:

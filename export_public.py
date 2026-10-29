@@ -47,7 +47,7 @@ COMPONENT = "components/oplus-pen/"
 COMPONENT_FILES = """
 LICENSE upstream-manifest.json donor-inputs.json toolchain.json
 build-support/CompileApi.java build-support/compile-api.txt build-support/dex_api.py
-integration/default-permissions_org.lineageos.pen.xml integration/pen_app.cil
+integration/default-permissions_org.lineageos.pen.xml integration/pen_app.cil integration/pen_attachment.cil
 integration/requirements.json integration/write-settings-contract.json integration/system_ext_mac_permissions.xml.template
 integration/system_ext_seapp_contexts.template patches/googlebook.patch
 tests/ProtocolSelfTest.kt tests/PenRuntimeSelfTest.kt tests/PeakCapSelfTest.kt
@@ -80,7 +80,8 @@ policy/vendor/plat_pub_versioned.cil policy/vendor/plat_sepolicy_vers.txt
 policy/vendor/vendor_sepolicy.cil
 """.split()
 NATIVE_FILES = """
-avb.py fstab.py layout.py payload.py public_image.py initial_install.py engine_libraries.py install-sukisu-manager.sh tools/avbtool.py
+avb.py fstab.py layout.py payload.py public_image.py product_cleanup.py initial_install.py engine_libraries.py install-sukisu-manager.sh tools/avbtool.py
+patch_sukisu_module.py
 source-pins.json sukisu-layout-baseline.json plan.example.json tools.example.json
 review.example.json bootcontrol/build_probe.py bootcontrol/NativeBootControlProbe.java
 plan.schema.json review.schema.json slot-state.example.json slot-state.schema.json
@@ -292,12 +293,14 @@ per-PID counters. Merge its dedicated CIL and file contexts, including the
 system_server read rule, and strictly compile the final assembled policy.
 See `components/taskmanager-compat/native/README.md` for the socket contract.
 
-Public follow-up plans use the exact twelve-name `source_copy_partitions` list
-in plan.example.json. Those partitions require matching installed size/hash and
-contribute zero bytes to the download. System, system_ext and approved production
-recovery use REPLACE. Product remains byte-identical to the installed baseline;
-this update cannot provision a fresh tablet. An empty list creates a full private
-package and requires a separate initial-install review.
+Public follow-up plans copy unchanged partitions with signed source size/hash
+checks. The reviewed root migration transports init_boot. The bounded Product
+delta physically removes the three Dell APKs while copying unchanged blocks
+from the pinned native-2 baseline; its changed bytes require a publication audit.
+Build it with native_install.product_cleanup and provide tools.product_source.
+Later updates can copy the cleaned Product unchanged. System, system_ext and
+production recovery use REPLACE. These packages require the matching installed
+baseline and cannot provision a fresh tablet.
 
 Set plan source_slot and target_slot to opposite A/B slots. The signed feed's
 source_slot is `_a` or `_b` and is checked immediately before apply, together with

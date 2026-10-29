@@ -29,6 +29,7 @@ public final class SukiSUManagerCheck {
                 File source = new File(path);
                 boolean canonical = source.isFile() && source.getCanonicalPath().equals(source.getAbsolutePath());
                 boolean data = path.startsWith("/data/app/") && path.endsWith("/base.apk");
+                // Recognize the unchanged legacy Product preinstall, never the unscanned seed.
                 boolean system = path.equals("/product/app/SukiSU/SukiSU.apk");
                 result = ManagerDecision.decide(true, CERT.equals(digest.toString()), info.getLongVersionCode(), data, system, canonical);
             }

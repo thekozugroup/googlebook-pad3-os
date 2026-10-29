@@ -195,9 +195,7 @@
   "source_copy_partitions": [
     "boot",
     "dtbo",
-    "init_boot",
     "odm",
-    "product",
     "system_dlkm",
     "vbmeta",
     "vbmeta_system",

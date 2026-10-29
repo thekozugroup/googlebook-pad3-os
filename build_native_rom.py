@@ -27,8 +27,8 @@ from native_install.payload import (SOURCE_COPY_ALLOWED, openssl, public_key, re
 ROOT = Path(__file__).resolve().parent
 BOOT_SHA = "15e43ca52b939d9780438d32d302f1575c3e99c2df4836d500fe2940cab64448"
 INIT_BOOT_SHA = "bdc61ad17b24711bca838e51fbdc4fbbed5c7a2bc4ab1bffa043551645764f16"
-MODULE_SHA = "9045a6869ad575c08f5a81ddc9943ab63f1fc73f2c66ea3501cdb2bd112b14d4"
-MANAGER_SHA = "c7f69280cf468e8415c585ff31f963d0147386831217a1e89b822afddc5f40ed"
+MODULE_SHA = "6e9e1abff6ca15da92fe2cb8a51868b99049320aa65d613c826611eb377d4947"
+MANAGER_SHA = "a928eb57ad34b105233f92dcd55e54dd883482e417970276329a7d0f0979e212"
 MANAGER_CERT = "947ae944f3de4ed4c21a7e4f7953ecf351bfa2b36239da37a34111ad29993eef"
 KERNEL = "6.6.144-4k-gacb4c5815254"
 CLEAN_VENDOR_BOOT_SHA = "07cc553918749eea357d775251043321d44db9839b357f01af1b981beba284c2"
@@ -43,10 +43,10 @@ HARDWARE = PARTITIONS - {"system", "system_ext", "product"}
 CERT_PATH = "system/etc/security/otacerts.zip"
 KEY_PATH = "system/etc/update_engine/update-payload-key.pub.pem"
 CONFIG_PATH = "system/etc/googlebook/native-ota.json"
-MANAGER_PATH = "product/app/SukiSU/SukiSU.apk"
-BOOTSTRAP_PATH = "product/etc/googlebook/install-sukisu-manager.sh"
-MANAGER_CHECKER_PATH = "product/etc/googlebook/SukiSUManagerCheck.jar"
-MANAGER_CHECKER_SHA = "4758405679d172ab7d530a18aa4f1c68a7204ec035724848122bc7d1270ac822"
+MANAGER_PATH = "system_ext/etc/googlebook/SukiSU.apk"
+BOOTSTRAP_PATH = "system_ext/etc/googlebook/install-sukisu-manager.sh"
+MANAGER_CHECKER_PATH = "system_ext/etc/googlebook/SukiSUManagerCheck.jar"
+MANAGER_CHECKER_SHA = "e46d45f8eeeb444c33a58573475049e7dfbe6b0340945399de1e5114b8f7816e"
 RELEASE_PART_BYTES = 1024**3
 PUBLIC_REPO = "thekozugroup/googlebook-pad3-os"
 FEED_URL = "https://raw.githubusercontent.com/thekozugroup/googlebook-pad3-os/refs/heads/main/updates/erhai/stable.json"
@@ -112,7 +112,7 @@ def ota_config(repo, certificate):
 
 
 def verify_manager(apk, apksigner, aapt2):
-    require(sha256(regular(apk)) == MANAGER_SHA, "not the pinned official SukiSU 4.2.1 manager")
+    require(sha256(regular(apk)) == MANAGER_SHA, "not the pinned official SukiSU 4.3.0 normal manager")
     result = subprocess.run([str(regular(apksigner)), "verify", "--verbose", "--print-certs", str(apk)],
                             capture_output=True, text=True)
     require(result.returncode == 0 and "Verified using v2 scheme (APK Signature Scheme v2): true" in result.stdout
@@ -120,7 +120,7 @@ def verify_manager(apk, apksigner, aapt2):
             "SukiSU manager v2 signature/certificate mismatch")
     result = subprocess.run([str(regular(aapt2)), "dump", "badging", str(apk)], capture_output=True, text=True)
     require(result.returncode == 0 and
-            "package: name='com.sukisu.ultra' versionCode='40994' versionName='v4.2.1'" in result.stdout,
+            "package: name='com.sukisu.ultra' versionCode='41100' versionName='v4.3.0'" in result.stdout,
             "SukiSU manager package/version mismatch")
 
 
@@ -158,7 +158,7 @@ def trust_overlay(repo, certificate, apk, apksigner, aapt2, output):
             "status": "PUBLIC_TRUST_OVERLAY_ONLY_NOT_ROM_OR_FLASHABLE",
             "files": {p: sha256(output / p) for p in [CERT_PATH, KEY_PATH, CONFIG_PATH, MANAGER_PATH, BOOTSTRAP_PATH, MANAGER_CHECKER_PATH]},
             "metadata_required": "uid=0 gid=0; directories 0755; APK/config/key/cert 0644; bootstrap 0755; explicit Android SELinux labels",
-            "manager_recognition": "4.2.1 scans /data/app; shell UID/domain one-shot after boot, current-certificate/version guard, no downgrade; parent runtime verification required",
+            "manager_recognition": "41100 normal seed outside APK scanning; shell UID/domain one-shot installs /data/app, current-certificate/version guard, no downgrade; UAPI 6 init_boot required; parent runtime verification required",
         }))
     except BaseException:
         shutil.rmtree(output)
@@ -248,6 +248,28 @@ def check_production_boot_chain(hardware, images):
         require(sha256(images[name]) == production, "approved production boot-chain image required: " + name)
 
 
+def check_root_images(hardware, images, copies):
+    """Accept only the reviewed UAPI 6 image; a plan cannot supply its own approval pin."""
+    require(type(copies) is list and copies in
+            [sorted(SOURCE_COPY_ALLOWED - omitted) for omitted in
+             (set(), {"init_boot"}, {"product"}, {"init_boot", "product"})],
+            "only init_boot REPLACE and the reviewed Product delta may omit SOURCE_COPY partitions")
+    require(sha256(hardware["boot"]) == BOOT_SHA and sha256(hardware["init_boot"]) == INIT_BOOT_SHA,
+            "current native B boot/root image pins mismatch")
+    require(sha256(images["boot"]) == BOOT_SHA, "boot/kernel must remain unchanged")
+    root = json.loads((ROOT / "native_install/source-pins.json").read_text())["sukisu_root"]
+    target = root["init_boot_sha256"]
+    require(isinstance(target, str) and re.fullmatch("[0-9a-f]{64}", target)
+            and target != INIT_BOOT_SHA, "parent-reviewed UAPI 6 init_boot pin is pending")
+    require(root["uapi"] == 6 and root["version_code"] == 41100 and root["boot_sha256"] == BOOT_SHA
+            and root["kernel"] == KERNEL, "UAPI 6 root profile differs from the reviewed stack")
+    require(images["init_boot"].stat().st_size == hardware["init_boot"].stat().st_size == 8388608
+            and sha256(images["init_boot"]) == target, "init_boot must match the exact reviewed UAPI 6 image")
+    return {"uapi": 6, "version_code": 41100, "init_boot_sha256": target,
+            "boot_sha256": BOOT_SHA, "kernel": KERNEL,
+            "operation": "SOURCE_COPY" if "init_boot" in copies else "REPLACE"}
+
+
 def validate_plan(plan, certificate, tools):
     require(plan.get("schema") == 1, "unknown native plan schema")
     require(plan["system_as_root"] is True, "pinned GoogleBook system-as-root layout required")
@@ -261,13 +283,15 @@ def validate_plan(plan, certificate, tools):
     require(set(plan["images"]) == PARTITIONS and set(capture["hardware"]) == HARDWARE,
             "native payload must contain only the complete allowed matched-base image set")
     copies = plan["source_copy_partitions"]
-    require(type(copies) is list and copies in ([], sorted(SOURCE_COPY_ALLOWED)),
-            "select full private output or the exact public unchanged-source baseline")
     images = {name: checked(plan["images"][name]) for name in sorted(PARTITIONS)}
     hardware = {name: checked(capture["hardware"][name]) for name in sorted(HARDWARE)}
-    require(sha256(hardware["boot"]) == BOOT_SHA and sha256(hardware["init_boot"]) == INIT_BOOT_SHA,
-            "current native B boot/root image pins mismatch")
-    for name in HARDWARE - {"vendor_boot", "recovery", "vbmeta", "vbmeta_system", "vbmeta_vendor"}:
+    root_image = check_root_images(hardware, images, copies)
+    from native_install import product_cleanup
+    require(sha256(images["product"]) == product_cleanup.TARGET_SHA,
+            "Product must contain the reviewed physical Dell APK removal")
+    if "product" not in copies:
+        product_cleanup.validate(checked(tools["product_source"]), images["product"])
+    for name in HARDWARE - {"init_boot", "vendor_boot", "recovery", "vbmeta", "vbmeta_system", "vbmeta_vendor"}:
         require(sha256(images[name]) == sha256(hardware[name]), "mismatched hardware base: " + name)
     for name, image in images.items():
         size = image.stat().st_size
@@ -356,11 +380,11 @@ def validate_plan(plan, certificate, tools):
             require(archive.namelist() == ["googlebook-native.x509.pem"], "unexpected OTA trust certificates")
             require(archive.read(archive.namelist()[0]) == Path(certificate).read_bytes(), "OTA certificate mismatch")
         apk = directory / "manager.apk"
-        apk.write_bytes(image_file(images["product"], filesystem, "/app/SukiSU/SukiSU.apk"))
+        apk.write_bytes(image_file(images["system_ext"], filesystem, "/etc/googlebook/SukiSU.apk"))
         verify_manager(apk, tools["apksigner"], tools["aapt2"])
-        require(image_file(images["product"], filesystem, "/etc/googlebook/install-sukisu-manager.sh") == manager_bootstrap(),
+        require(image_file(images["system_ext"], filesystem, "/etc/googlebook/install-sukisu-manager.sh") == manager_bootstrap(),
                 "reviewed manager bootstrap missing")
-        require(hashlib.sha256(image_file(images["product"], filesystem, "/etc/googlebook/SukiSUManagerCheck.jar")).hexdigest() == MANAGER_CHECKER_SHA,
+        require(hashlib.sha256(image_file(images["system_ext"], filesystem, "/etc/googlebook/SukiSUManagerCheck.jar")).hexdigest() == MANAGER_CHECKER_SHA,
                 "reviewed current-certificate/version manager checker missing")
         staged = {}
         for name, image in images.items():
@@ -369,11 +393,16 @@ def validate_plan(plan, certificate, tools):
         avb = checked(tools["avbtool"])
         keys = {name: checked(entry) for name, entry in tools["avb_public_keys"].items()}
         avb_evidence = verify_avb(staged, hardware, avb, keys, plan["avb_mode"])
-    module = ROOT / "artifacts/root-repair/kernelsu-erhai.ko"
-    baseline = json.loads((ROOT / "native_install/sukisu-layout-baseline.json").read_text())
+    module = checked(tools["sukisu_module"])
+    require(sha256(module) == MODULE_SHA, "wrong SukiSU UAPI 6 repaired module")
+    baseline_path = ROOT / "native_install/sukisu-layout-baseline.json"
+    require(sha256(baseline_path) == json.loads((ROOT / "native_install/source-pins.json").read_text())["filtered_layout_baseline_sha256"],
+            "reviewed SukiSU layout baseline drift")
+    baseline = json.loads(baseline_path.read_text())
     layout = check_sukisu_layout(hardware["boot"], BOOT_SHA, KERNEL, module, baseline)
     require(layout["module_sha256"] == MODULE_SHA, "wrong SukiSU repaired module")
-    return images, {"fstab": fstab, "recovery": recovery, "avb": avb_evidence, "public_image": sanitization, "root_layout": layout, "config": config,
+    return images, {"fstab": fstab, "recovery": recovery, "avb": avb_evidence, "public_image": sanitization,
+                    "root_layout": layout, "root_image": root_image, "config": config,
                     "snapshot_rollback": "No rollback guarantee after virtual A/B merge" if capture["virtual_ab"] else "Native B retained; shared data still requires separate backup"}
 
 
@@ -415,7 +444,9 @@ def build(plan_path, review_path, key, certificate, tools, output, feed_key, fee
             payload = temporary / "payload.bin"
             properties, hashes = write_payload(images, plan["dynamic_groups"], plan["timestamp"],
                                                 plan["capture"]["virtual_ab"], key, certificate, payload, temporary,
-                                                source_copy_partitions=set(plan["source_copy_partitions"]))
+                                                source_copy_partitions=set(plan["source_copy_partitions"]),
+                                                source_images={} if not plan["source_copy_partitions"] or "product" in plan["source_copy_partitions"] else
+                                                {"product": checked(tools["product_source"])})
             require(hashes == {n: e["sha256"] for n, e in plan["images"].items()}, "validated inputs changed before payload generation")
             properties_bytes = "".join(f"{name}={value}\n" for name, value in properties.items()).encode()
             filename = "GoogleBook-erhai-native.zip"

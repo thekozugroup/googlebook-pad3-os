@@ -52,16 +52,38 @@
     }
   ],
   "sukisu_manager": {
-    "version": "v4.2.1",
+    "version": "v4.3.0",
     "package": "com.sukisu.ultra",
-    "version_code": 40994,
-    "url": "https://github.com/SukiSU-Ultra/SukiSU-Ultra/releases/download/v4.2.1/SukiSU_v4.2.1_40994-release.apk",
-    "bytes": 17173205,
-    "sha256": "c7f69280cf468e8415c585ff31f963d0147386831217a1e89b822afddc5f40ed",
-    "certificate_sha256": "947ae944f3de4ed4c21a7e4f7953ecf351bfa2b36239da37a34111ad29993eef"
+    "version_code": 41100,
+    "url": "https://github.com/SukiSU-Ultra/SukiSU-Ultra/releases/download/v4.3.0/SukiSU_v4.3.0_41100-release.apk",
+    "bytes": 19219289,
+    "sha256": "a928eb57ad34b105233f92dcd55e54dd883482e417970276329a7d0f0979e212",
+    "certificate_sha256": "947ae944f3de4ed4c21a7e4f7953ecf351bfa2b36239da37a34111ad29993eef",
+    "install_path": "/system_ext/etc/googlebook/SukiSU.apk",
+    "uapi": 6
+  },
+  "sukisu_root": {
+    "version": "v4.3.0",
+    "version_code": 41100,
+    "uapi": 6,
+    "commit": "e67b14e6bbbbd3e67f24df658a01d3e73a64159c",
+    "kernel": "6.6.144-4k-gacb4c5815254",
+    "boot_sha256": "15e43ca52b939d9780438d32d302f1575c3e99c2df4836d500fe2940cab64448",
+    "init_boot_sha256": "9ad55eaf6ce3f715501d0810f147956c6e37ac35e12e3c8391e8ec54991696ba",
+    "init_boot_review": "Parent supplied file-only ksud patch, 8388608 bytes, explicit corrected module and official ksuinit. Parent verified only init and kernelsu.ko contents changed; the other 38 entries, init.real and stock_image.sha1 were preserved. Static BTF/layout check passed 8 structs, 12 fields and 23 addends; runtime untested.",
+    "module_url": "https://github.com/SukiSU-Ultra/SukiSU-Ultra/releases/download/v4.3.0/lkm-aarch64-android15-6.6_kernelsu.ko",
+    "module_upstream_sha256": "0e8f059c89602726dd8180d699b20526c747c58dbc97ebd62893905b56c5e3c6",
+    "module_sha256": "6e9e1abff6ca15da92fe2cb8a51868b99049320aa65d613c826611eb377d4947",
+    "module_bytes": 561184,
+    "module_patch": "Only signed ELF64 RELA addends at file offsets 332064 and 332088 change from 8 to 12 for selinux_blob_sizes.lbs_inode; exactly two bytes differ.",
+    "ksuinit_url": "https://github.com/SukiSU-Ultra/SukiSU-Ultra/releases/download/v4.3.0/ksuinit-aarch64",
+    "ksuinit_sha256": "c7034b996c739734ecefe4357397549443725830c3e395ee4e2dd7913a4c2b26",
+    "ksud_url": "https://github.com/SukiSU-Ultra/SukiSU-Ultra/releases/download/v4.3.0/ksud-aarch64-linux-android",
+    "ksud_sha256": "e9fcad8189397d5c96965819ae1f184557c7a51701fed183a1e0190242a89501",
+    "runtime_verified": false
   },
   "original_sukisu_reviewed_baseline_sha256": "1f7d74acfbc42cd3e2b30930c592434d29017d37b50da165f76bd85bed1f9831",
-  "filtered_layout_baseline_sha256": "d106803e73edc7bec632e45ddfff17954edc11f47905fdb40d3af4f485aaa2d5",
+  "filtered_layout_baseline_sha256": "70144a462143ce4ccd361685cc17315bb0640fc26d392b50cf7f84b02c274407",
   "parent_updater": {
     "repository": "thekozugroup/googlebook-pad3-os",
     "feed_url": "https://raw.githubusercontent.com/thekozugroup/googlebook-pad3-os/refs/heads/main/updates/erhai/stable.json",
@@ -74,8 +96,8 @@
     "metadata_size": "24-byte header plus manifest only; excludes metadata signature"
   },
   "manager_checker": {
-    "jar_sha256": "4758405679d172ab7d530a18aa4f1c68a7204ec035724848122bc7d1270ac822",
-    "install_path": "/product/etc/googlebook/SukiSUManagerCheck.jar",
+    "jar_sha256": "e46d45f8eeeb444c33a58573475049e7dfbe6b0340945399de1e5114b8f7816e",
+    "install_path": "/system_ext/etc/googlebook/SukiSUManagerCheck.jar",
     "query": "IPackageManager.getPackageInfo(String,long,int), GET_SIGNING_CERTIFICATES|MATCH_ANY_USER; current getApkContentsSigners only",
     "uid_allowlist": [
       0,

@@ -9,7 +9,9 @@
   ],
   "normal_manifest_permissions": [
     "android.permission.BLUETOOTH",
-    "android.permission.RECEIVE_BOOT_COMPLETED"
+    "android.permission.RECEIVE_BOOT_COMPLETED",
+    "android.permission.FOREGROUND_SERVICE",
+    "android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE"
   ],
   "privileged_grants": [],
   "not_requested": [
@@ -57,7 +59,11 @@
     "android.permission.BLUETOOTH_SCAN",
     "android.permission.POST_NOTIFICATIONS",
     "android.permission.RECEIVE_BOOT_COMPLETED",
-    "android.permission.WRITE_SETTINGS"
+    "android.permission.WRITE_SETTINGS",
+    "android.permission.FOREGROUND_SERVICE",
+    "android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE"
   ],
-  "write_settings_contract": "write-settings-contract.json"
+  "write_settings_contract": "write-settings-contract.json",
+  "foreground_service": "connectedDevice; foreground promotion before listener setup; low-importance ongoing notification 1001 distinct from pairing notification 1000; no wake lock or freezer exemption",
+  "startup_attachment": "Read present and ble_mac_addr once after registering the uevent observer. Validate the driver address and reconcile an already attached pen; denied reads leave event-driven pairing available."
 }

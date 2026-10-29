@@ -72,19 +72,19 @@
       "sha256": "6e1241695fc296984aa58d407811e0d21ac00cc7fe1552bb70af19eac709d6c9"
     },
     "build_native_rom.py": {
-      "bytes": 33947,
+      "bytes": 36264,
       "executable": false,
-      "sha256": "f88015693fb93fbedb34f559650fa6d7849ccfedfde329a91e403dd1a2a07919"
+      "sha256": "59d73dbc2c44ae6362f8c90db7866315df14ae95b84fa4b6dfb63f464ee3d897"
     },
     "build_native_userspace.py": {
-      "bytes": 27012,
+      "bytes": 27178,
       "executable": false,
-      "sha256": "a12065dc385603eb9e75b8d93e1b33ef7aa4b8019e562b7567a87ce7b96f44d0"
+      "sha256": "4075e89e03c6b8439426f32969abb63b0c04fda4d355e19afff52ed5abd241af"
     },
     "build_oplus_pen.py": {
-      "bytes": 19616,
+      "bytes": 20781,
       "executable": false,
-      "sha256": "18a65b39594a75d63fd2bffa8fc2d519a985aad0412e2d37f0caea15daf52140"
+      "sha256": "f266cb17099ab93bfa09746b1f61928d612fa7c1286923ec0f149e853f8f368c"
     },
     "build_pen_dsu.py": {
       "bytes": 17062,
@@ -191,10 +191,15 @@
       "executable": false,
       "sha256": "e281c01332b36e0715d43222e42eb14ffc6c7b483dc6af0e7dc9ae481ddd9325"
     },
-    "components/oplus-pen/integration/requirements.json": {
-      "bytes": 4323,
+    "components/oplus-pen/integration/pen_attachment.cil": {
+      "bytes": 624,
       "executable": false,
-      "sha256": "83da261b1d283f391c92946621517819e7d792831ff189efd956eac2102a4150"
+      "sha256": "887102fb3676fc74ec2adda62b18c3f1e0bcfdd212cddc458d41dde08f226ec7"
+    },
+    "components/oplus-pen/integration/requirements.json": {
+      "bytes": 4960,
+      "executable": false,
+      "sha256": "aa1f69cd7a801a2b97b4fe19e1bd0ef68ca93d8cbbcdc07b09ff34c1f6e51833"
     },
     "components/oplus-pen/integration/system_ext_mac_permissions.xml.template": {
       "bytes": 315,
@@ -212,9 +217,9 @@
       "sha256": "0d1b35b71d93abcb548bf00593b5bb61de130eee6830f3bc65083e5d7f696a05"
     },
     "components/oplus-pen/patches/googlebook.patch": {
-      "bytes": 35206,
+      "bytes": 40511,
       "executable": false,
-      "sha256": "78788ee908b63581cafa2b4ee3a9f8f3d364d8bd5b8c8f147cc597bcfab9e592"
+      "sha256": "2da9a114657027c1ab14f2385e1504e3107f2a6368054445e69c225b5c028b29"
     },
     "components/oplus-pen/tests/PeakCapSelfTest.kt": {
       "bytes": 5972,
@@ -227,9 +232,9 @@
       "sha256": "bed7636cafe73c9e364050227f347e19928dea34999716e76ccd4102fcd85189"
     },
     "components/oplus-pen/tests/ProtocolSelfTest.kt": {
-      "bytes": 1588,
+      "bytes": 2305,
       "executable": false,
-      "sha256": "0217f79309ea8af56726c06a4f596c05f5509c6733ad195e5673fd6f311e08a9"
+      "sha256": "2543f1f4f5bcef38403875256709ef2b30cf41b4293c648743275b84c66b64a4"
     },
     "components/oplus-pen/toolchain.json": {
       "bytes": 3409,
@@ -239,7 +244,7 @@
     "components/oplus-pen/upstream-manifest.json": {
       "bytes": 25951,
       "executable": false,
-      "sha256": "958c4e40df17f358bcd9a63edfc80e308a8553f310dba8e9170bec3990059ba2"
+      "sha256": "ec1c05e9b77036310e20197cbc6e61656514c4260b64d7f25a3f929e8af5f468"
     },
     "components/oplus-pen/upstream/interfaces/aidl_api/vendor.oplus.hardware.touch/2/.hash": {
       "bytes": 41,
@@ -727,9 +732,9 @@
       "sha256": "e3c0549a7c759e061a1687360665789df5a5662515b01bb1733a65651fda246c"
     },
     "export_public.py": {
-      "bytes": 75061,
+      "bytes": 75270,
       "executable": false,
-      "sha256": "599dfa2a8f89364292c5815127c4f80e448c2db5a0723ba5615698c9043eec6c"
+      "sha256": "b31a265e002b02f0e08d638dd4a61db1bd3b737e2d9cde5180043ddb78390b3d"
     },
     "ext4_source.py": {
       "bytes": 2262,
@@ -752,9 +757,9 @@
       "sha256": "ed3ade3cc4d96b7c5d852966ab0a80a2a7e426ad173c5afa6293b0f170c835f1"
     },
     "native_install/README.md": {
-      "bytes": 3867,
+      "bytes": 4003,
       "executable": false,
-      "sha256": "01a2aa806db1d5b3086405cc58962f6abdb33fa3bd179fc1342a521448ef6dcc"
+      "sha256": "39e03b2b1d10d6ede9ffd2e6613cf8986277ecd7f001cd3dac30bcf862df011e"
     },
     "native_install/avb.py": {
       "bytes": 7070,
@@ -802,9 +807,9 @@
       "sha256": "f8e5e70b01493b1a397659bccae00fde10d00b0627bdbcf41cebaa509a6645c7"
     },
     "native_install/install-sukisu-manager.sh": {
-      "bytes": 1232,
+      "bytes": 1254,
       "executable": false,
-      "sha256": "5d4f0db2cafc61e396daaa03477ec39aea6bd042ccee200b2c1b08b0a5f41dcf"
+      "sha256": "f0916338fcf1b29b46f1172fd442aba9c895d327ae44104051c1475cfccec7b4"
     },
     "native_install/layout.py": {
       "bytes": 6903,
@@ -814,7 +819,7 @@
     "native_install/manager/ManagerDecision.java": {
       "bytes": 587,
       "executable": false,
-      "sha256": "0b4882730fe1c0abf36c1063d7aec951249ed50fe60688d48f1901563f47c154"
+      "sha256": "cb64ed7a015ee8e9878b19f608e015922596879688783681e1c73526b3aa86ce"
     },
     "native_install/manager/README.md": {
       "bytes": 1288,
@@ -822,29 +827,39 @@
       "sha256": "dc2416c253dbb33c526ae6336b38bdb56e4083893fe25205b35d2336aa0922b4"
     },
     "native_install/manager/SukiSUManagerCheck.java": {
-      "bytes": 2412,
+      "bytes": 2508,
       "executable": false,
-      "sha256": "c09564aad6befdff0431d46068c8f8d69063866fbc193790ae5219597ddc42cc"
+      "sha256": "28ccd4a3d066461d47fc402ab91dccb45ed83ce516c8cf896c0e440e709d62c2"
     },
     "native_install/manager/build_checker.py": {
       "bytes": 1944,
       "executable": false,
       "sha256": "e29455ba54a2ce2174f178e4c4ac5e51bc277d492bd4921951f39d3b1ebd4df3"
     },
-    "native_install/payload.py": {
-      "bytes": 7883,
+    "native_install/patch_sukisu_module.py": {
+      "bytes": 1503,
       "executable": false,
-      "sha256": "48487b73095c7622664373295b661d6b604924764f508bbc207b2c699da86c18"
+      "sha256": "1e071e3b77ef7984a52f5179c3c4be47931d98e6e28a96a5517fdc3f24b6a655"
+    },
+    "native_install/payload.py": {
+      "bytes": 14206,
+      "executable": false,
+      "sha256": "62c07169412e9ebb49b1eb42c9b5276f6f47ee414d083a0581eda28839cb219c"
     },
     "native_install/plan.example.json": {
-      "bytes": 5725,
+      "bytes": 5693,
       "executable": false,
-      "sha256": "d141e671f56c011efe1a619f869938974f2149e3310c16d123fc2e7521cd80b0"
+      "sha256": "31afe73e401fe5ec6c5356ee505cf430043d0b4314c3586972cdc9c40d4c2a4e"
     },
     "native_install/plan.schema.json": {
-      "bytes": 10413,
+      "bytes": 11373,
       "executable": false,
-      "sha256": "f6207e70fc3caed7f660b9557c13e4ea7b36f9b6d6579752e235a91ce8f20e85"
+      "sha256": "64dada72fd7544e554410209bd5acf96daefc88e9e749e783e48c8fa45305db4"
+    },
+    "native_install/product_cleanup.py": {
+      "bytes": 1464,
+      "executable": false,
+      "sha256": "f8788f9d51c2138a88d1c5cc8720f2ce2ae93ab158819f79b4baf660766655c4"
     },
     "native_install/public_image.py": {
       "bytes": 3467,
@@ -872,19 +887,19 @@
       "sha256": "5560364c3af6323736efcb81a4e826781726d084ce6d3b7d26843f214fbf1d03"
     },
     "native_install/source-pins.json": {
-      "bytes": 4615,
+      "bytes": 6350,
       "executable": false,
-      "sha256": "60638cf38bdebc95938593f8639de29d2a49af98cce3053b62b7458f86c25ccd"
+      "sha256": "484eed77d53af160b119715622f70f1832ea348fc1e05e6294173e08c49627e1"
     },
     "native_install/sukisu-layout-baseline.json": {
       "bytes": 21611,
       "executable": false,
-      "sha256": "d106803e73edc7bec632e45ddfff17954edc11f47905fdb40d3af4f485aaa2d5"
+      "sha256": "70144a462143ce4ccd361685cc17315bb0640fc26d392b50cf7f84b02c274407"
     },
     "native_install/tools.example.json": {
-      "bytes": 903,
+      "bytes": 1232,
       "executable": false,
-      "sha256": "5c6b2f7e68cd8f215b330f9f8f5f6928940230f2fe6fc1b5880a4f7a967a0b9e"
+      "sha256": "6212995c5f69f7ab9cd18998e5a10c15b017861670b4cb1c6212ec7064634e42"
     },
     "native_install/tools/avbtool.py": {
       "bytes": 207502,
@@ -1007,19 +1022,19 @@
       "sha256": "487a8dfbb850f2d1d55699f36bb290d72895421df16cf5ab6fab440e6c004b9b"
     },
     "test_build_native_rom.py": {
-      "bytes": 44174,
+      "bytes": 53699,
       "executable": false,
-      "sha256": "81759f726d750b6876277fe3d57af7d5b4f1694f9fc0f63a1dcd198866eed3c0"
+      "sha256": "3b6e83e75fb484ad993c20ee8d9341a45ec46a901923ae366e17c9a941e4be6c"
     },
     "test_build_native_userspace.py": {
-      "bytes": 24992,
+      "bytes": 25002,
       "executable": false,
-      "sha256": "899dda752fdcbd3bf35c14dcb2cfb949a5bc894dec407e886368f4ee04103709"
+      "sha256": "00ab09518004eae8a473581b329f28d64e6aadf49f7e7b187918fafceb90a21d"
     },
     "test_build_oplus_pen.py": {
-      "bytes": 9209,
+      "bytes": 11674,
       "executable": false,
-      "sha256": "f63cd24a9da93d37e11cbf775c6eb05bc27a4dc5cf41524385c86dd1afbf0d7f"
+      "sha256": "3f9963e330afc701b27cedb45eb369f79d4f5545ce250b917de6a2cc498947bd"
     },
     "test_build_pen_dsu.py": {
       "bytes": 8546,
@@ -1032,9 +1047,9 @@
       "sha256": "cb0a77dd0e43ed85a0cd5fac5a5f04902e0e1eab0623325fe900009ee2f31b40"
     },
     "test_check_sukisu_layout.py": {
-      "bytes": 1205,
+      "bytes": 1513,
       "executable": false,
-      "sha256": "5dcfd4cd4402d7292b0a13fb9781ffb01b79f69781ab253723752830ee31907d"
+      "sha256": "db853a549535a3e60bc2d59c2f7c9d82fbb2ad6ef6f507cf050a562c09b6d8da"
     },
     "test_check_updates.py": {
       "bytes": 11060,
@@ -1102,9 +1117,9 @@
       "sha256": "4444cb0035dd7df501e2edd831435ede1ac6cf53f8fc6b3edb529d40f0754c26"
     },
     "test_source_copy.py": {
-      "bytes": 18844,
+      "bytes": 29863,
       "executable": false,
-      "sha256": "64e4aa05e60875b0dc27f2843d8a270bdf42899ff3d8f3f819727595991d6219"
+      "sha256": "13602f4f3a91c70821bc84c5eca0bdb33c68bad4921823fb004c516d039130a2"
     },
     "test_stability_probe.py": {
       "bytes": 12281,

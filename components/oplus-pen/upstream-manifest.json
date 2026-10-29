@@ -461,6 +461,6 @@
   },
   "patch": {
     "path": "patches/googlebook.patch",
-    "sha256": "78788ee908b63581cafa2b4ee3a9f8f3d364d8bd5b8c8f147cc597bcfab9e592"
+    "sha256": "2da9a114657027c1ab14f2385e1504e3107f2a6368054445e69c225b5c028b29"
   }
 }

@@ -93,8 +93,11 @@ def reconstruct(blob, sources):
             assert covered.isdisjoint(blocks)
             covered.update(blocks)
             if op[1] == [4]:
-                assert set(op) == {1, 4, 6, 9} and op[4] == op[6]
-                data = source[first * block:(first + count) * block]
+                assert set(op) == {1, 4, 6, 9} and len(op[4]) == 1 and 6 in part
+                source_extent = decode_message(op[4][0])
+                source_first, source_count = source_extent[1][0], source_extent[2][0]
+                assert source_count == count and source_first + count <= len(source) // block
+                data = source[source_first * block:(source_first + count) * block]
                 if hashlib.sha256(data).digest() != op[9][0]:
                     raise ValueError("source operation hash mismatch")
             else:
@@ -193,7 +196,7 @@ class SourceCopyTests(unittest.TestCase):
     def test_default_and_empty_option_remain_identical_full_payloads(self):
         with tempfile.TemporaryDirectory(dir=self.directory) as temporary:
             first, second = Path(temporary) / "default.bin", Path(temporary) / "empty.bin"
-            self.assertEqual(self.write(self.images, first), self.write(self.images, second, source_copy_partitions=set()))
+            self.assertEqual(self.write(self.images, first), self.write(self.images, second, source_copy_partitions=set(), source_images={}))
             self.assertEqual(first.read_bytes(), second.read_bytes())
             blob = first.read_bytes()
             manifest, parts, *_ = decode_payload(blob)
@@ -201,6 +204,157 @@ class SourceCopyTests(unittest.TestCase):
             self.assertTrue(all(6 not in p for p in parts.values()))
             self.assertIn(self.sentinel, blob)
             self.assertEqual(reconstruct(blob, {}), {n: p.read_bytes() for n, p in self.images.items()})
+
+    def test_product_delta_moved_extents_replacements_and_private_literal_exclusion(self):
+        with tempfile.TemporaryDirectory(dir=self.directory) as temporary:
+            directory = Path(temporary)
+            old, new, output = (directory / name for name in ("old-product.img", "product.img", "delta.bin"))
+            private = self.sentinel.ljust(payload.BLOCK, b"P")
+            blocks = [b"A" * payload.BLOCK, private, b"B" * payload.BLOCK,
+                      b"removed APK 1".ljust(payload.BLOCK, b"X"), b"removed APK 2".ljust(payload.BLOCK, b"Y"),
+                      b"C" * payload.BLOCK, b"D" * payload.BLOCK]
+            literal = b"new Product metadata".ljust(payload.BLOCK, b"M")
+            old.write_bytes(b"".join(blocks))
+            new.write_bytes(blocks[5] + blocks[6] + literal + b"".join(blocks[:3]))
+            images = {"system": self.images["boot"], "product": new, "boot": self.images["boot"]}
+            before = {p: p.read_bytes() for p in (old, new)}
+            properties, hashes = self.write(images, output, source_copy_partitions={"boot"}, source_images={"product": old})
+            blob = output.read_bytes()
+            manifest, parts, _, start, final_at = decode_payload(blob)
+            self.assertEqual(manifest[12], [6])
+            product = parts["product"]
+            self.assertEqual(decode_message(product[6][0]), {1: [old.stat().st_size], 2: [hashlib.sha256(old.read_bytes()).digest()]})
+            self.assertEqual(decode_message(product[7][0]), {1: [new.stat().st_size], 2: [hashlib.sha256(new.read_bytes()).digest()]})
+            operations = [decode_message(record) for record in product[8]]
+            self.assertEqual([op[1][0] for op in operations], [4, 0, 4])
+            self.assertEqual([decode_message(op[4][0]) for op in operations if op[1] == [4]],
+                             [{1: [5], 2: [2]}, {1: [0], 2: [3]}])
+            self.assertEqual(blob[start:final_at], images["system"].read_bytes() + literal)
+            self.assertNotIn(self.sentinel, blob)
+            sources = {"product": old.read_bytes(), "boot": images["boot"].read_bytes()}
+            self.assertEqual(reconstruct(blob, sources), {n: p.read_bytes() for n, p in images.items()})
+            self.assertEqual(hashes, {n: payload.sha256(p) for n, p in images.items()})
+            self.assertEqual(properties["FILE_HASH"], base64.b64encode(hashlib.sha256(blob).digest()).decode())
+            self.assertEqual({p: p.read_bytes() for p in before}, before)
+            for bad in (b"", old.read_bytes()[:-payload.BLOCK], b"!" + old.read_bytes()[1:]):
+                with self.assertRaisesRegex(ValueError, "source baseline mismatch"):
+                    reconstruct(blob, dict(sources, product=bad))
+            # A wrong operation source hash must fail even with the correct full baseline.
+            source_hash = operations[0][9][0]
+            with self.assertRaisesRegex(ValueError, "source operation hash mismatch"):
+                reconstruct(blob.replace(source_hash, bytes([source_hash[0] ^ 1]) + source_hash[1:], 1), sources)
+            tampered = bytearray(blob)
+            tampered[start + images["system"].stat().st_size] ^= 1
+            with self.assertRaises(AssertionError):
+                reconstruct(bytes(tampered), sources)
+
+    def test_product_delta_bounds_copy_and_replace_runs_and_handles_identical_input(self):
+        with tempfile.TemporaryDirectory(dir=self.directory) as temporary:
+            directory = Path(temporary)
+            old, new = directory / "old.img", directory / "new.img"
+            original = b"A" * (payload.CHUNK + payload.BLOCK)
+            old.write_bytes(original)
+            new.write_bytes(original + b"B" * (payload.CHUNK + payload.BLOCK))
+            for label, target in (("mixed", new), ("identical", old)):
+                output = directory / (label + ".bin")
+                self.write({"product": target}, output, source_images={"product": old})
+                blob = output.read_bytes()
+                _, parts, _, start, final_at = decode_payload(blob)
+                ops = [decode_message(record) for record in parts["product"][8]]
+                self.assertTrue(all(decode_message(op[6][0])[2][0] * payload.BLOCK <= payload.CHUNK for op in ops))
+                self.assertEqual([op[1][0] for op in ops], [4, 4, 0, 0] if label == "mixed" else [4, 4])
+                self.assertEqual(final_at - start, len(original) if label == "mixed" else 0)
+                self.assertEqual(reconstruct(blob, {"product": original}), {"product": target.read_bytes()})
+
+    def test_product_delta_hash_collision_candidates_are_compared_byte_for_byte(self):
+        with tempfile.TemporaryDirectory(dir=self.directory) as temporary:
+            directory = Path(temporary)
+            old, new, output = (directory / name for name in ("old.img", "new.img", "delta.bin"))
+            old.write_bytes(b"A" * payload.BLOCK + b"B" * payload.BLOCK)
+            new.write_bytes(b"B" * payload.BLOCK + b"C" * payload.BLOCK)
+            real_hash = hashlib.sha256
+
+            def colliding_block_hash(data=b""):
+                if len(data) == payload.BLOCK:
+                    return real_hash(b"synthetic equal block hashes")
+                return real_hash(data)
+
+            with patch.object(payload.hashlib, "sha256", side_effect=colliding_block_hash):
+                self.write({"product": new}, output, source_images={"product": old})
+            _, parts, *_ = decode_payload(output.read_bytes())
+            self.assertEqual([decode_message(op)[1][0] for op in parts["product"][8]], [4, 0])
+            self.assertEqual(reconstruct(output.read_bytes(), {"product": old.read_bytes()}), {"product": new.read_bytes()})
+
+    def test_product_delta_rejects_other_partitions_overlap_and_invalid_inputs(self):
+        output = self.directory / "invalid-delta.bin"
+        for sources in ({"boot": self.images["boot"]}, {"product": self.images["product"], "boot": self.images["boot"]},
+                        {"product": str(self.images["product"])}, [], "product", {"product": self.directory / "missing"}):
+            with self.subTest(sources=sources), self.assertRaisesRegex(ValueError, "only Product"):
+                self.write(self.images, output, source_images=sources)
+            self.assertFalse(output.exists())
+        with self.assertRaisesRegex(ValueError, "overlaps"):
+            self.write(self.images, output, source_copy_partitions={"product"}, source_images={"product": self.images["product"]})
+        with self.assertRaisesRegex(ValueError, "target missing"):
+            self.write({"boot": self.images["boot"]}, output, source_images={"product": self.images["product"]})
+        with tempfile.TemporaryDirectory(dir=self.directory) as temporary:
+            invalid = Path(temporary) / "invalid.img"
+            for data in (b"", b"x", b"x" * 4097):
+                invalid.write_bytes(data)
+                for sources, images in (({"product": invalid}, {"product": self.images["product"]}),
+                                        ({"product": self.images["product"]}, {"product": invalid})):
+                    with self.assertRaisesRegex(ValueError, "unaligned raw Product"):
+                        self.write(images, output, source_images=sources)
+                    self.assertFalse(output.exists())
+
+    def test_product_delta_input_changes_during_packaging_or_signing_remove_output(self):
+        with tempfile.TemporaryDirectory(dir=self.directory) as temporary:
+            directory = Path(temporary)
+            old, new, output = (directory / name for name in ("old.img", "new.img", "delta.bin"))
+            for victim in (old, new):
+                for change_call in (2, 3):
+                    old.write_bytes(b"A" * payload.BLOCK + b"B" * payload.BLOCK)
+                    new.write_bytes(b"B" * payload.BLOCK + b"C" * payload.BLOCK)
+                    original_sign, calls = payload.sign_digest, 0
+
+                    def sign_then_change(digest, key):
+                        nonlocal calls
+                        calls += 1
+                        if calls == change_call:
+                            victim.write_bytes(b"!" + victim.read_bytes()[1:])
+                        return original_sign(digest, key)
+
+                    with self.subTest(victim=victim.name, boundary=change_call), \
+                         patch.object(payload, "sign_digest", side_effect=sign_then_change), \
+                         self.assertRaisesRegex(ValueError, "input changed while"):
+                        self.write({"product": new}, output, source_images={"product": old})
+                    self.assertFalse(output.exists())
+
+    @unittest.skipUnless(shutil.which("payload-dumper-go"), "independent payload decoder unavailable")
+    def test_independent_decoder_product_delta_moved_blocks_and_wrong_source(self):
+        help_result = subprocess.run(["payload-dumper-go", "-help"], capture_output=True, text=True, timeout=10)
+        if "-old " not in help_result.stdout + help_result.stderr:
+            self.skipTest("installed independent decoder has no source-image directory support")
+        with tempfile.TemporaryDirectory(dir=self.directory) as temporary:
+            directory = Path(temporary)
+            old_dir = directory / "source"
+            old_dir.mkdir()
+            old, new, output = old_dir / "product.img", directory / "target.img", directory / "delta.bin"
+            private = self.sentinel.ljust(payload.BLOCK, b"P")
+            old.write_bytes(b"A" * payload.BLOCK + private + b"B" * payload.BLOCK)
+            new.write_bytes(private + b"C" * payload.BLOCK + b"A" * payload.BLOCK + b"B" * payload.BLOCK)
+            self.write({"product": new}, output, source_images={"product": old})
+            self.assertNotIn(self.sentinel, output.read_bytes())
+            result = subprocess.run(["payload-dumper-go", "-c", "2", "-old", str(old_dir),
+                                     "-o", str(directory / "decoded"), str(output)],
+                                    capture_output=True, text=True, timeout=30)
+            self.assertEqual(result.returncode, 0, result.stderr[-1000:])
+            self.assertEqual((directory / "decoded/product.img").read_bytes(), new.read_bytes())
+            old.write_bytes(b"!" + old.read_bytes()[1:])
+            result = subprocess.run(["payload-dumper-go", "-c", "2", "-old", str(old_dir),
+                                     "-o", str(directory / "wrong"), str(output)],
+                                    capture_output=True, text=True, timeout=30)
+            self.assertNotEqual(result.returncode, 0)
+            self.assertRegex((result.stdout + result.stderr).lower(), r"source.*(hash|verification)")
 
     def test_real_signatures_properties_and_tamper_rejection(self):
         blob = self.output.read_bytes()

@@ -1,15 +1,17 @@
 --- a/AndroidManifest.xml
 +++ b/AndroidManifest.xml
-@@ -12,7 +12,7 @@
+@@ -12,7 +12,9 @@
                       android:usesPermissionFlags="neverForLocation" />
      <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
      <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 -    <uses-permission android:name="android.permission.RESTRICT_DISPLAY_MODES" />
 +    <uses-permission android:name="android.permission.WRITE_SETTINGS" />
++    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
++    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE" />
  
      <application
          android:label="@string/app_name"
-@@ -23,6 +23,8 @@
+@@ -23,11 +25,14 @@
              android:name=".BootCompletedReceiver">
              <intent-filter>
                  <action android:name="android.intent.action.BOOT_COMPLETED" />
@@ -18,6 +20,13 @@
                  <category android:name="android.intent.category.DEFAULT" />
              </intent-filter>
          </receiver>
+         <service
+             android:exported="false"
+-            android:name=".PenService" />
++            android:name=".PenService"
++            android:foregroundServiceType="connectedDevice" />
+     </application>
+ </manifest>
 --- a/res/values/config.xml
 +++ b/res/values/config.xml
 @@ -5,7 +5,7 @@
@@ -29,21 +38,31 @@
  
      <!-- Whether to relay pen pressure between the BLE pen and the touch HAL. -->
      <bool name="config_penPressureRelay">true</bool>
+--- a/res/values/strings.xml
++++ b/res/values/strings.xml
+@@ -7,4 +7,5 @@
+     <string name="app_name" translatable="false">OplusPen</string>
+     <string name="pen_attached">Pen attached</string>
+     <string name="tap_to_connect">Tap to connect</string>
++    <string name="pen_service_running">Ready for your pen</string>
+ </resources>
 --- a/src/org/lineageos/pen/BootCompletedReceiver.kt
 +++ b/src/org/lineageos/pen/BootCompletedReceiver.kt
-@@ -12,7 +12,11 @@
+@@ -12,8 +12,12 @@
  
  class BootCompletedReceiver : BroadcastReceiver() {
      override fun onReceive(context: Context, intent: Intent) {
 -        Log.d(TAG, "Received boot completed intent")
+-        context.startService(Intent(context, PenService::class.java))
 +        if (!PenRuntime.acceptsAction(intent.action)) return
 +        if (!PenAccess.allowed(context)) {
 +            Log.i(TAG, "Pen startup refused for current user or missing Bluetooth permission")
 +            return
 +        }
-         context.startService(Intent(context, PenService::class.java))
++        context.startForegroundService(Intent(context, PenService::class.java))
      }
  
+     companion object {
 --- /dev/null
 +++ b/src/org/lineageos/pen/PeakCap.kt
 @@ -0,0 +1,87 @@
@@ -320,7 +339,7 @@
              } else {
 --- a/src/org/lineageos/pen/PenProtocol.kt
 +++ b/src/org/lineageos/pen/PenProtocol.kt
-@@ -15,6 +15,11 @@
+@@ -15,6 +15,20 @@
  
      val INTERFACE_SERVICE_UUID = UUID.fromString("18092dbc-2a69-11ec-8d3d-0242ac130003")
      val INTERFACE_CHAR_UUID = UUID.fromString("18093046-2a69-11ec-8d3d-0242ac130003")
@@ -329,6 +348,15 @@
 +    fun canAckActivePencil(rate: Float, maxRate: Float) =
 +        rate.isFinite() && maxRate.isFinite() && rate > 0f && maxRate > 0f &&
 +            maxRate <= 120f && rate <= maxRate + 0.5f
++
++    // The charging driver includes a measurement suffix in its sysfs address.
++    fun pencilAddress(raw: String?): String? {
++        val value = raw?.trim() ?: return null
++        val match = Regex("(?:0x)?([0-9A-Fa-f]{1,12})(?:_\\(Time:[0-9]+ms\\))?").matchEntire(value)
++        val hex = match?.groupValues?.get(1)?.padStart(12, '0') ?: return null
++        if (hex == "000000000000" || hex.equals("ffffffffffff", ignoreCase = true)) return null
++        return hex.chunked(2).joinToString(":") { it.uppercase() }
++    }
  
      const val MTU = 100
  
@@ -542,6 +570,15 @@
                  ::onSessionReady,
                  ::onSessionClosed,
                  ::onPencilStatus,
+@@ -118,7 +132,7 @@
+         probing.remove(ready.device.address)
+         session?.takeIf { it !== ready }?.close()
+         session = ready
+-        onPencilStatusChanged(ready.isPencilActive ?: false)
++        onPencilStatusChanged(ready.isPencilActive)
+     }
+ 
+     private fun onSessionClosed(closed: PenGattSession) {
 --- /dev/null
 +++ b/src/org/lineageos/pen/PenRuntime.kt
 @@ -0,0 +1,78 @@
@@ -625,7 +662,7 @@
 +}
 --- a/src/org/lineageos/pen/PenService.kt
 +++ b/src/org/lineageos/pen/PenService.kt
-@@ -11,6 +11,7 @@
+@@ -11,11 +11,13 @@
  import android.app.PendingIntent
  import android.app.Service
  import android.bluetooth.BluetoothManager
@@ -633,7 +670,22 @@
  import android.bluetooth.le.ScanCallback
  import android.bluetooth.le.ScanFilter
  import android.bluetooth.le.ScanResult
-@@ -34,12 +35,16 @@
+ import android.bluetooth.le.ScanSettings
+ import android.content.Intent
++import android.content.pm.ServiceInfo
+ import android.hardware.display.DisplayManager
+ import android.hardware.input.InputManager
+ import android.os.Handler
+@@ -23,6 +25,8 @@
+ import android.os.UEventObserver
+ import android.util.Log
+ import android.view.Display
++import java.io.File
++import java.io.IOException
+ 
+ class PenService : Service() {
+     private val bluetoothManager by lazy { getSystemService(BluetoothManager::class.java) }
+@@ -34,12 +38,17 @@
          getString(R.string.config_penSupportedRefreshRate).toFloatOrNull()
      }
  
@@ -650,13 +702,14 @@
 +    private var displayListening = false
 +    private var activeScanner: BluetoothLeScanner? = null
 +    private var activeScanCallback: ScanCallback? = null
++    private val scanTimeout = Runnable { stopScan() }
 +    private val runtime = PenRuntime({ PenAccess.allowed(this) }) {
 +        Log.i(TAG, "Pen stopped for current user or missing Bluetooth permission")
 +        stopSelf()
      }
  
      private val handler by lazy { Handler(mainLooper) }
-@@ -59,17 +64,21 @@
+@@ -59,94 +68,133 @@
  
              override fun onDisplayChanged(displayId: Int) {
                  if (displayId == Display.DEFAULT_DISPLAY) {
@@ -666,29 +719,27 @@
 -        }
 -
 -    private val observer =
+-        object : UEventObserver() {
+-            private val lock = Any()
+-
+-            override fun onUEvent(event: UEvent) {
+-                synchronized(lock) {
+-                    val pencilStatus = event.get("pencil_status") ?: return
+-                    val pencilAddr =
+-                        event.get("pencil_addr")?.chunked(2)?.joinToString(":") { it.uppercase() }
+-                            ?: return
+-
+-                    when (pencilStatus) {
+-                        "0" -> notificationManager.cancel(NOTIFICATION_ID)
+-                        "1" -> postNotification(pencilAddr)
 +                    runtime.runIfAllowed {
 +                        updateRefreshRateCap()
 +                        ackActivePencilIfNeeded()
-+                    }
-+                }
-+            }
-+        }
-+
-+    private val observer by lazy {
-         object : UEventObserver() {
-             private val lock = Any()
- 
-             override fun onUEvent(event: UEvent) {
-                 synchronized(lock) {
-+                    if (!runtime.available()) return
-                     val pencilStatus = event.get("pencil_status") ?: return
-                     val pencilAddr =
-                         event.get("pencil_addr")?.chunked(2)?.joinToString(":") { it.uppercase() }
-@@ -82,71 +91,76 @@
+                     }
                  }
              }
          }
--
+ 
 -    private val inputObserver =
 -        object : InputManager.InputDeviceListener {
 -            override fun onInputDeviceAdded(deviceId: Int) {
@@ -703,6 +754,14 @@
 -                // Do nothing
 -            }
 -        }
++    private val observer by lazy {
++        object : UEventObserver() {
++            override fun onUEvent(event: UEvent) {
++                val status = event.get("pencil_status")
++                val address = event.get("pencil_addr")
++                handler.post { onAttachmentChanged(status, address) }
++            }
++        }
 +    }
 +
 +    private val inputObserver = object : InputManager.InputDeviceListener {
@@ -729,6 +788,7 @@
 -
 -        if (penSupportedRefreshRate != null) {
 +        runtime.start {
++            runtime.bluetooth { startPenForeground() } ?: return@start
 +            refreshCap = PenRefreshRateCap(this, handler) {
 +                runtime.runIfAllowed { updateRefreshRateCap() }
 +            }.also { it.start() }
@@ -760,6 +820,7 @@
 +                displayListening = true
 +                relay.start()
 +            }
++            handler.post { reconcileAttachment() }
          }
      }
  
@@ -783,6 +844,7 @@
 +                observer.stopObserving()
 +            }
 +        }
++        stopForeground(STOP_FOREGROUND_REMOVE)
          super.onDestroy()
 -
 -        if (penSupportedRefreshRate != null) {
@@ -795,7 +857,44 @@
 -        penRelay?.let {
 -            displayManager.unregisterDisplayListener(displayListener)
 -            it.stop()
--        }
++    }
++
++    private fun startPenForeground() {
++        notificationManager.createNotificationChannel(
++            NotificationChannel(SERVICE_CHANNEL_ID, getString(R.string.app_name), NotificationManager.IMPORTANCE_LOW)
++        )
++        val notification = Notification.Builder(this, SERVICE_CHANNEL_ID)
++            .setSmallIcon(R.drawable.ic_stylus)
++            .setContentTitle(getString(R.string.app_name))
++            .setContentText(getString(R.string.pen_service_running))
++            .setCategory(Notification.CATEGORY_SERVICE)
++            .setOngoing(true)
++            .build()
++        // A started background service can become cached and frozen in the full user.
++        startForeground(SERVICE_NOTIFICATION_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE)
++    }
++
++    private fun onAttachmentChanged(status: String?, address: String?) {
++        if (!runtime.available()) return
++        when (status) {
++            "0" -> notificationManager.cancel(NOTIFICATION_ID)
++            "1" -> PenProtocol.pencilAddress(address)?.let { postNotification(it) }
++        }
++    }
++
++    private fun reconcileAttachment() {
++        if (!runtime.available()) return
++        try {
++            val status = File("$PENCIL_SYSFS/present").readText().trim()
++            val address = if (status == "1") File("$PENCIL_SYSFS/ble_mac_addr").readText() else null
++            if (File("$PENCIL_SYSFS/present").readText().trim() == status) {
++                onAttachmentChanged(status, address)
++            }
++        } catch (_: IOException) {
++            Log.w(TAG, "Attached-pen state unavailable; waiting for attachment event")
++        } catch (_: SecurityException) {
++            Log.w(TAG, "Attached-pen state access denied; waiting for attachment event")
+         }
      }
  
      private fun onPencilStatusChanged(isActive: Boolean?) {
@@ -808,7 +907,7 @@
          isActiveAckSent = false
          when (isActive) {
              true -> ackActivePencilIfNeeded()
-@@ -159,58 +173,18 @@
+@@ -159,58 +207,18 @@
          if (pencilStatus != true || isActiveAckSent) {
              return
          }
@@ -871,7 +970,7 @@
          val isPenConnected =
              inputManager.inputDeviceIds.firstOrNull {
                  val device = inputManager.getInputDevice(it) ?: return@firstOrNull false
-@@ -228,17 +202,65 @@
+@@ -228,17 +236,69 @@
                  return@firstOrNull true
              } != null
  
@@ -883,6 +982,7 @@
 +    }
 +
 +    private fun stopScan() {
++        handler.removeCallbacks(scanTimeout)
 +        val scanner = activeScanner
 +        val callback = activeScanCallback
 +        activeScanner = null
@@ -928,6 +1028,9 @@
 +                callback,
 +            )
 +        }
++        if (activeScanCallback === callback && runtime.available()) {
++            handler.postDelayed(scanTimeout, 30_000)
++        }
      }
  
      private fun postNotification(pencilAddr: String) {
@@ -945,10 +1048,24 @@
              return
          }
  
-@@ -281,6 +303,5 @@
+@@ -253,7 +313,7 @@
+         }
+ 
+         val contentIntent =
+-            PendingIntent.getService(
++            PendingIntent.getForegroundService(
+                 this,
+                 0,
+                 Intent(this, PenService::class.java).apply {
+@@ -280,7 +340,9 @@
+ 
          private const val NOTIFICATION_CHANNEL_ID = "OplusPen"
          private const val NOTIFICATION_ID = 1000
- 
+-
 -        private const val REFRESH_RATE_TOLERANCE = 0.5f
++        private const val SERVICE_CHANNEL_ID = "OplusPenService"
++        private const val SERVICE_NOTIFICATION_ID = 1001
++        private const val PENCIL_SYSFS = "/sys/devices/virtual/oplus_wireless/pencil"
++
      }
  }

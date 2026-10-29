@@ -52,9 +52,10 @@ METRICS_SOURCE = native.ROOT / "components/taskmanager-compat/native"
 METRICS_BINARY = "/bin/googlebook_taskmanager_metrics"
 METRICS_RC = "/etc/init/googlebook_taskmanager_metrics.rc"
 FILE_CONTEXTS = "/etc/selinux/system_ext_file_contexts"
-TASKMANAGER_POLICY = (b"\n;; Pad3 aggregate CPU counters for the preinstalled system Task Manager.\n"
+NATIVE_POLICY = (b"\n;; Pad3 aggregate CPU counters for the preinstalled system Task Manager.\n"
                       b"(allow system_app proc_stat (file (getattr open read)))\n"
-                      + (METRICS_SOURCE / "taskmanager_metrics.cil").read_bytes())
+                      + (METRICS_SOURCE / "taskmanager_metrics.cil").read_bytes()
+                      + (native.ROOT / "components/oplus-pen/integration/pen_attachment.cil").read_bytes())
 COMPONENT_CERT_SHA = "3625a00c6244e94e3150604c4903800c3928e958e77a5b2d2814be1864f82eb4"
 TRUST_PATHS = (native.CERT_PATH, native.KEY_PATH, native.CONFIG_PATH,
                native.MANAGER_PATH, native.BOOTSTRAP_PATH, native.MANAGER_CHECKER_PATH)
@@ -161,11 +162,12 @@ def overlay_config(data):
     return data.replace(b"<config>", b"<config>\n" + entry.rstrip(b"\n"), 1)
 
 
-def taskmanager_policy(cil, mapping, digest):
+def native_policy(cil, mapping, digest):
     require(digest == (hashlib.sha256(cil + mapping).hexdigest() + "\n").encode(),
             "system_ext policy/mapping hash mismatch")
-    require(TASKMANAGER_POLICY not in cil, "TaskManager policy is already present")
-    candidate = cil + TASKMANAGER_POLICY
+    require(b"googlebook_taskmanager_metrics" not in cil and b"googlebook_pen_attachment" not in cil,
+            "native extension policy is already present")
+    candidate = cil + NATIVE_POLICY
     return candidate, (hashlib.sha256(candidate + mapping).hexdigest() + "\n").encode()
 
 
@@ -274,7 +276,7 @@ def verify_inputs(inputs):
     require(re.search(rb"^service update_engine /system/bin/update_engine(?:\s|$)", engine_rc, re.M), "captured native engine service missing")
     public_image.audit_text(engine_rc)
     service = files["manager_service"].read_bytes()
-    command = re.search(rb"^service ([a-zA-Z0-9_-]+) /system/bin/sh /product/etc/googlebook/install-sukisu-manager.sh\n", service, re.M)
+    command = re.search(rb"^service ([a-zA-Z0-9_-]+) /system/bin/sh /system_ext/etc/googlebook/install-sukisu-manager.sh\n", service, re.M)
     require(len(re.findall(rb"^service ", service, re.M)) == 1 and
             command is not None
             and all(line in service.splitlines() for line in (b"    user shell", b"    group shell", b"    seclabel u:r:shell:s0", b"    disabled", b"    oneshot"))
@@ -328,7 +330,7 @@ def partition_plan(image, partition, recipe, inputs):
                      "/system/bin/update_engine": inputs["files"]["update_engine"].read_bytes(),
                      "/system/etc/init/update_engine.rc": bundled_rc}
     elif partition == "system_ext":
-        cil, digest = taskmanager_policy(content(image, POLICY), content(image, POLICY_MAPPING),
+        cil, digest = native_policy(content(image, POLICY), content(image, POLICY_MAPPING),
                                         content(image, POLICY_HASH))
         pen = inputs["files"]["pen_apk"].read_bytes()
         contexts = (METRICS_SOURCE / "file_contexts").read_bytes()

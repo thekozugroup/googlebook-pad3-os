@@ -114,9 +114,42 @@ class PenBuildTests(unittest.TestCase):
                 pen.verify_output(target, replace_sha256='0' * 64)
             self.assertEqual(target.read_bytes(), b'v38 preserve until tests pass')
 
-    def test_foreign_scratch_is_rejected(self):
+    def test_owned_scratch_child_is_accepted(self):
+        self.assertEqual(pen.verify_scratch(self.work), self.work)
+
+    def test_outside_scratch_is_rejected(self):
         with self.assertRaisesRegex(ValueError, 'CleanOS task root'):
-            pen.verify_scratch(self.work)
+            pen.verify_scratch(pen.ROOT)
+
+    def test_foreground_lifecycle_contract(self):
+        source = self.work / 'source'
+        shutil.copytree(pen.COMPONENT / 'upstream/packages/Pen', source)
+        pen.run(['git', '-C', source, 'apply', pen.COMPONENT / 'patches/googlebook.patch'],
+                self.work, os.environ.copy(), [])
+        android = '{http://schemas.android.com/apk/res/android}'
+        manifest = ET.parse(source / 'AndroidManifest.xml').getroot()
+        permissions = {n.attrib[android + 'name'] for n in manifest.findall('uses-permission')}
+        self.assertEqual(permissions, set(pen.load(pen.COMPONENT / 'integration/requirements.json')['manifest_permissions']))
+        service = manifest.find('application/service')
+        self.assertEqual(service.attrib[android + 'foregroundServiceType'], 'connectedDevice')
+        self.assertEqual(service.attrib[android + 'exported'], 'false')
+        kotlin = source / 'src/org/lineageos/pen'
+        self.assertIn('context.startForegroundService(', (kotlin / 'BootCompletedReceiver.kt').read_text())
+        service_code = (kotlin / 'PenService.kt').read_text()
+        self.assertLess(service_code.index('runtime.start {'), service_code.index('runtime.bluetooth { startPenForeground() }'))
+        self.assertLess(service_code.index('runtime.bluetooth { startPenForeground() }'), service_code.index('refreshCap = PenRefreshRateCap'))
+        self.assertIn('ServiceInfo.FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE', service_code)
+        self.assertIn('PendingIntent.getForegroundService(', service_code)
+        self.assertIn('stopForeground(STOP_FOREGROUND_REMOVE)', service_code)
+        self.assertIn('private const val SERVICE_NOTIFICATION_ID = 1001', service_code)
+        self.assertIn('private const val NOTIFICATION_ID = 1000', service_code)
+        self.assertLess(service_code.index('observer.startObserving('), service_code.index('handler.post { reconcileAttachment() }'))
+        self.assertIn('handler.postDelayed(scanTimeout, 30_000)', service_code)
+        self.assertIn('handler.removeCallbacks(scanTimeout)', service_code)
+        self.assertIn('onPencilStatusChanged(ready.isPencilActive)', (kotlin / 'PenRelay.kt').read_text())
+
+    def test_kotlin_attachment_addresses_and_actual_rate(self):
+        self.run_kotlin_check(['PenProtocol.kt'], 'ProtocolSelfTest.kt', 'ProtocolSelfTestKt')
 
     def test_dex_parser_rejects_truncated_or_oversized_data(self):
         with self.assertRaisesRegex(ValueError, 'DEX header'):

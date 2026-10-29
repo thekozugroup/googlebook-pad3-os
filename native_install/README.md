@@ -33,12 +33,14 @@ per-PID counters. Merge its dedicated CIL and file contexts, including the
 system_server read rule, and strictly compile the final assembled policy.
 See `components/taskmanager-compat/native/README.md` for the socket contract.
 
-Public follow-up plans use the exact twelve-name `source_copy_partitions` list
-in plan.example.json. Those partitions require matching installed size/hash and
-contribute zero bytes to the download. System, system_ext and approved production
-recovery use REPLACE. Product remains byte-identical to the installed baseline;
-this update cannot provision a fresh tablet. An empty list creates a full private
-package and requires a separate initial-install review.
+Public follow-up plans copy unchanged partitions with signed source size/hash
+checks. The reviewed root migration transports init_boot. The bounded Product
+delta physically removes the three Dell APKs while copying unchanged blocks
+from the pinned native-2 baseline; its changed bytes require a publication audit.
+Build it with native_install.product_cleanup and provide tools.product_source.
+Later updates can copy the cleaned Product unchanged. System, system_ext and
+production recovery use REPLACE. These packages require the matching installed
+baseline and cannot provision a fresh tablet.
 
 Set plan source_slot and target_slot to opposite A/B slots. The signed feed's
 source_slot is `_a` or `_b` and is checked immediately before apply, together with

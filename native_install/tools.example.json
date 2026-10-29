@@ -22,5 +22,13 @@
       "sha256": "REPLACE_WITH_SHA256"
     }
   },
-  "avb_public_keys_note": "Only changed AVB chain images need PEM key pins in verified mode. Use an empty object for explicit preserve-native-disabled mode."
+  "avb_public_keys_note": "Only changed AVB chain images need PEM key pins in verified mode. Use an empty object for explicit preserve-native-disabled mode.",
+  "sukisu_module": {
+    "path": "/ABSOLUTE/REVIEWED/kernelsu-erhai-41100.ko",
+    "sha256": "6e9e1abff6ca15da92fe2cb8a51868b99049320aa65d613c826611eb377d4947"
+  },
+  "product_source": {
+    "path": "/ABSOLUTE/INSTALLED_NATIVE_2/product.img",
+    "sha256": "0aa9d298d39ae416f6b7ab0569b440b080ff9c63d9d79c8db80ea40519d17c6f"
+  }
 }

@@ -18,6 +18,8 @@ sys.dont_write_bytecode = True
 ROOT = Path(__file__).resolve().parent
 COMPONENT = ROOT / 'components/oplus-pen'
 ARTIFACT = ROOT / 'artifacts/component-candidates/oplus-pen-unsigned.apk'
+VERSION_CODE = 40
+VERSION_NAME = '17-pen-live1'
 SPEC = importlib.util.spec_from_file_location('pen_dex_api', COMPONENT / 'build-support/dex_api.py')
 DEX = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(DEX)
@@ -64,7 +66,7 @@ def verify_sources(component=COMPONENT):
         require(sha256(path) == entry['sha256'], 'patch/license drift: ' + entry['path'])
     patch = source_path(component, manifest['patch']['path'])
     paths = re.findall(r'^\+\+\+ b/(.+)$', patch.read_text(), re.MULTILINE)
-    require(set(paths) == {'AndroidManifest.xml', 'res/values/config.xml',
+    require(set(paths) == {'AndroidManifest.xml', 'res/values/config.xml', 'res/values/strings.xml',
                           'src/org/lineageos/pen/PenService.kt', 'src/org/lineageos/pen/PenProtocol.kt',
                           'src/org/lineageos/pen/BootCompletedReceiver.kt', 'src/org/lineageos/pen/PenAccess.kt',
                           'src/org/lineageos/pen/PenRuntime.kt', 'src/org/lineageos/pen/PenRelay.kt',
@@ -77,12 +79,14 @@ def verify_sources(component=COMPONENT):
 def verify_scratch(path):
     path = Path(path).absolute()
     require(not path.is_symlink() and path == path.resolve(), 'scratch must use its real path')
-    require(path.parent == Path('/private/tmp/ai-development'), 'scratch must be a CleanOS task root')
+    require(path.is_relative_to(Path('/private/tmp/ai-development')), 'scratch must be inside a CleanOS task root')
     require(path.is_dir() and path.stat().st_uid == os.getuid(), 'scratch owner mismatch')
-    marker = path / '.cleanos-task.json'
-    require(marker.is_file() and not marker.is_symlink(), 'CleanOS task manifest missing')
+    marker = next((p / '.cleanos-task.json' for p in (path, *path.parents)
+                   if (p / '.cleanos-task.json').is_file()), None)
+    require(marker is not None and not marker.is_symlink() and
+            marker.parent.parent == Path('/private/tmp/ai-development'), 'CleanOS task root manifest missing')
     task = load(marker)
-    require(task.get('schema') == 1 and task.get('id') == path.name and
+    require(task.get('schema') == 1 and task.get('id') == marker.parent.name and
             task.get('owner') == os.getuid() and task.get('project') == str(ROOT) and
             task.get('finished') is False, 'inactive or foreign CleanOS task')
     result = subprocess.run(['tmutil', 'isexcluded', str(path)], capture_output=True, text=True, check=True)
@@ -243,7 +247,7 @@ def build(scratch, *, replace_sha256=None):
             generated = work / 'generated'; generated.mkdir()
             package = work / 'resources.apk'
             run([tools['aapt2'], 'link', '-I', tools['android_jar'], '--manifest', source / 'AndroidManifest.xml',
-                 '--min-sdk-version', '37', '--target-sdk-version', '37', '--version-code', '39', '--version-name', '17-pen-cap1',
+                 '--min-sdk-version', '37', '--target-sdk-version', '37', '--version-code', str(VERSION_CODE), '--version-name', VERSION_NAME,
                  '--java', generated, '-o', package, resources], work, env, commands)
             aidlroot = COMPONENT / 'upstream/interfaces/aidl_api/vendor.oplus.hardware.touch/2'
             aidl_hash = (aidlroot / '.hash').read_text().strip()
@@ -285,12 +289,21 @@ def build(scratch, *, replace_sha256=None):
             badging = run([tools['aapt2'], 'dump', 'badging', candidate], work, env, commands)
             require("package: name='org.lineageos.pen'" in badging, 'unexpected APK package')
             require('RESTRICT_DISPLAY_MODES' not in badging and 'sharedUserId' not in badging, 'unexpected APK privilege')
+            permissions = sorted(set(re.findall(r"^uses-permission: name='([^']+)'", badging, re.M)))
+            require(permissions == sorted(load(COMPONENT / 'integration/requirements.json')['manifest_permissions']),
+                    'binary APK permission contract mismatch')
+            manifest = run([tools['aapt2'], 'dump', 'xmltree', candidate, '--file', 'AndroidManifest.xml'], work, env, commands)
+            require(re.search(r':foregroundServiceType\([^)]*\)=0x0*10(?:\s|$)', manifest),
+                    'binary APK lacks connectedDevice foreground service type')
             receipt = {'status': 'UNSIGNED_UNTESTED_COMPONENT_CANDIDATE', 'apk': str(ARTIFACT),
                        'sha256': sha256(candidate), 'bytes': candidate.stat().st_size,
                        'signing_key_generated': False, 'device_commands_run': False, 'image_changes': False,
                        'automatic_refresh_limiting': 'Settings.System.peak_refresh_rate; only when Settings.System.canWrite',
                        'manual_cap_required_if_write_settings_denied_hz': 120,
-                       'version_code': 39, 'version_name': '17-pen-cap1',
+                       'version_code': VERSION_CODE, 'version_name': VERSION_NAME,
+                       'foreground_service_type': 'connectedDevice', 'requested_permissions': permissions,
+                       'attachment_reconciliation': 'one startup snapshot; event-driven afterwards',
+                       'pairing_scan_timeout_ms': 30000,
                        'headless_system_user_blocked': True, 'bluetooth_runtime_permissions_required': True,
                        'd8_min_api': 36, 'manifest_min_sdk': 37,
                        'active_ack_above_120_hz': 'withheld (native 0.5 Hz rounding tolerance)',
@@ -315,7 +328,7 @@ def build(scratch, *, replace_sha256=None):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--scratch', type=Path, required=True, help='active CleanOS task root under /private/tmp/ai-development')
+    parser.add_argument('--scratch', type=Path, required=True, help='active CleanOS task root or owned child under /private/tmp/ai-development')
     parser.add_argument('--replace-sha256', help='replace only this exact existing unsigned candidate, after all build checks pass')
     args = parser.parse_args()
     try:

@@ -186,6 +186,89 @@ class FstabTests(unittest.TestCase):
 
 
 class ValidationTests(unittest.TestCase):
+    def test_root_replacement_requires_exact_reviewed_image_and_complete_copy_set(self):
+        with tempfile.TemporaryDirectory(prefix="root-image-test-") as temporary:
+            directory = Path(temporary)
+            hardware = {name: directory / (name + "-source.img") for name in ("boot", "init_boot")}
+            hardware["boot"].write_bytes(b"unchanged kernel")
+            hardware["init_boot"].write_bytes(bytes(8388608))
+            images = {"boot": hardware["boot"], "init_boot": directory / "init_boot-target.img"}
+            images["init_boot"].write_bytes(b"6" + bytes(8388607))
+            boot_hash, source_hash = payload.sha256(hardware["boot"]), payload.sha256(hardware["init_boot"])
+            root = {"version_code": 41100, "uapi": 6, "kernel": native.KERNEL,
+                    "boot_sha256": boot_hash, "init_boot_sha256": payload.sha256(images["init_boot"])}
+            pins = directory / "native_install/source-pins.json"
+            pins.parent.mkdir()
+            pins.write_bytes(native.json_bytes({"sukisu_root": root}))
+            copies = sorted(payload.SOURCE_COPY_ALLOWED - {"init_boot"})
+            with patch.object(native, "ROOT", directory), patch.object(native, "BOOT_SHA", boot_hash), \
+                 patch.object(native, "INIT_BOOT_SHA", source_hash):
+                self.assertEqual(native.check_root_images(hardware, images, copies)["operation"], "REPLACE")
+                self.assertEqual(native.check_root_images(hardware, images, sorted(payload.SOURCE_COPY_ALLOWED))["operation"], "SOURCE_COPY")
+                self.assertEqual(native.check_root_images(hardware, images,
+                                 [name for name in copies if name != "product"])["operation"], "REPLACE")
+                for invalid in ([], copies[:-1], copies + ["system"], copies + ["boot"], set(copies)):
+                    with self.subTest(copies=invalid), self.assertRaisesRegex(ValueError, "reviewed Product delta"):
+                        native.check_root_images(hardware, images, invalid)
+                for pin in (None, "", "f" * 64, source_hash):
+                    changed = dict(root, init_boot_sha256=pin)
+                    pins.write_bytes(native.json_bytes({"sukisu_root": changed}))
+                    with self.subTest(pin=pin), self.assertRaises(ValueError):
+                        native.check_root_images(hardware, images, copies)
+                pins.write_bytes(native.json_bytes({"sukisu_root": dict(root, uapi=5)}))
+                with self.assertRaisesRegex(ValueError, "reviewed stack"):
+                    native.check_root_images(hardware, images, copies)
+                pins.write_bytes(native.json_bytes({"sukisu_root": root}))
+                with self.assertRaisesRegex(ValueError, "exact reviewed UAPI 6 image"):
+                    native.check_root_images(hardware, hardware, copies)
+                changed_boot = directory / "changed-boot.img"
+                changed_boot.write_bytes(b"changed kernel")
+                with self.assertRaisesRegex(ValueError, "boot/kernel must remain unchanged"):
+                    native.check_root_images(hardware, dict(images, boot=changed_boot), copies)
+                # Even a reviewed hash cannot waive the matched physical image size.
+                images["init_boot"].write_bytes(b"short image")
+                root["init_boot_sha256"] = payload.sha256(images["init_boot"])
+                pins.write_bytes(native.json_bytes({"sukisu_root": root}))
+                with self.assertRaisesRegex(ValueError, "exact reviewed UAPI 6 image"):
+                    native.check_root_images(hardware, images, copies)
+
+    def test_plan_schema_allows_only_reviewed_root_and_product_exceptions(self):
+        schema = json.loads((native.ROOT / "native_install/plan.schema.json").read_text())
+        self.assertEqual(schema["properties"]["source_copy_partitions"]["enum"],
+                         [sorted(payload.SOURCE_COPY_ALLOWED - omitted) for omitted in
+                          (set(), {"init_boot"}, {"product"}, {"init_boot", "product"})])
+
+    def test_product_cleanup_rejects_wrong_baseline_and_changed_target(self):
+        from native_install import product_cleanup
+        with tempfile.TemporaryDirectory() as directory:
+            source, target = Path(directory) / "source", Path(directory) / "target"
+            source.write_bytes(b"baseline")
+            target.write_bytes(b"reviewed target")
+            with patch.object(product_cleanup, "SOURCE_SHA", payload.sha256(source)), \
+                 patch.object(product_cleanup, "TARGET_SHA", payload.sha256(target)):
+                product_cleanup.validate(source, target)
+                target.write_bytes(b"changed target")
+                with self.assertRaisesRegex(ValueError, "three-APK removal"):
+                    product_cleanup.validate(source, target)
+                source.write_bytes(b"changed baseline")
+                with self.assertRaisesRegex(ValueError, "exact installed"):
+                    product_cleanup.validate(source, target)
+
+    def test_product_cleanup_removes_only_its_failed_generated_output(self):
+        from native_install import product_cleanup
+        with tempfile.TemporaryDirectory() as directory:
+            source, target = Path(directory) / "source", Path(directory) / "target"
+            source.write_bytes(b"baseline")
+            def generate(*args):
+                target.write_bytes(b"unexpected rewrite")
+                return {}
+            with patch.object(product_cleanup, "SOURCE_SHA", payload.sha256(source)), \
+                 patch.object(product_cleanup, "rewrite", side_effect=generate):
+                with self.assertRaisesRegex(ValueError, "three-APK removal"):
+                    product_cleanup.build(source, target, Path(directory))
+                self.assertFalse(target.exists())
+                self.assertEqual(source.read_bytes(), b"baseline")
+
     def test_image_reader_allows_android_sonames_and_rejects_path_escape(self):
         with patch("erofs_overlay.content", return_value=b"pinned library"):
             self.assertEqual(native.image_file(Path("unused"), "erofs", "/lib64/private/android.hardware.boot@1.2.so"), b"pinned library")
@@ -331,14 +414,14 @@ class ManagerBootstrapTests(unittest.TestCase):
                                                        ("10001", "10", False, False)):
             with self.subTest(uid=uid, decision=decision), tempfile.TemporaryDirectory(prefix="manager-shell-test-") as directory:
                 directory = Path(directory).resolve()
-                script = directory / "product/etc/googlebook/install-sukisu-manager.sh"
-                apk = directory / "product/app/SukiSU/SukiSU.apk"
+                script = directory / native.BOOTSTRAP_PATH
+                apk = directory / native.MANAGER_PATH
                 checker = script.parent / "SukiSUManagerCheck.jar"
                 for path in (script, apk, checker):
                     path.parent.mkdir(parents=True, exist_ok=True)
                 apk.write_bytes(b"public fake APK for shell flow test")
                 checker.write_bytes(b"fake checker for shell flow test")
-                body = source.replace("/product/", str(directory / "product") + "/")
+                body = source.replace("/system_ext/", str(directory / "system_ext") + "/")
                 body = body.replace(native.MANAGER_SHA, payload.sha256(apk)).replace(native.MANAGER_CHECKER_SHA, payload.sha256(checker))
                 script.write_text(body)
                 bin_dir = directory / "bin"
@@ -371,13 +454,16 @@ class ManagerBootstrapTests(unittest.TestCase):
               static void expect(int want, int got) { if (want != got) throw new AssertionError(want + " != " + got); }
               public static void main(String[] args) {
                 expect(10, ManagerDecision.decide(false, false, 0, false, false, false));
-                expect(0, ManagerDecision.decide(true, true, 41068, true, false, true));
-                expect(0, ManagerDecision.decide(true, true, 40994, true, false, true));
+                expect(0, ManagerDecision.decide(true, true, 41101, true, false, true));
+                expect(0, ManagerDecision.decide(true, true, 41100, true, false, true));
+                expect(10, ManagerDecision.decide(true, true, 41068, true, false, true));
+                expect(10, ManagerDecision.decide(true, true, 40994, true, false, true));
                 expect(10, ManagerDecision.decide(true, true, 40900, true, false, true));
                 expect(10, ManagerDecision.decide(true, true, 40994, false, true, true));
-                expect(20, ManagerDecision.decide(true, true, 41068, false, true, true));
-                expect(20, ManagerDecision.decide(true, false, 41068, true, false, true));
-                expect(20, ManagerDecision.decide(true, true, 41068, true, false, false));
+                expect(20, ManagerDecision.decide(true, true, 41101, false, true, true));
+                expect(20, ManagerDecision.decide(true, false, 41101, true, false, true));
+                expect(20, ManagerDecision.decide(true, true, 41101, true, false, false));
+                expect(20, ManagerDecision.decide(true, true, 41100, false, false, true));
               }
             }''')
             jdk = Path("/opt/homebrew/opt/openjdk/libexec/openjdk.jdk/Contents/Home/bin")
@@ -390,6 +476,55 @@ class ManagerBootstrapTests(unittest.TestCase):
 
 @unittest.skipUnless(shutil.which("openssl"), "OpenSSL required for real signing tests")
 class PayloadTests(unittest.TestCase):
+    def test_root_migration_payload_replaces_init_boot_and_copies_all_other_baseline_partitions(self):
+        from test_source_copy import decode_message, decode_payload, reconstruct
+        with tempfile.TemporaryDirectory(dir=self.directory) as temporary:
+            directory = Path(temporary)
+            images = {}
+            for index, name in enumerate(sorted(native.PARTITIONS)):
+                images[name] = directory / (name + ".img")
+                images[name].write_bytes(bytes([index + 1]) * 4096)
+            copies = payload.SOURCE_COPY_ALLOWED - {"init_boot"}
+            output = directory / "root-payload.bin"
+            payload.write_payload(images, [], 1793220000, True, self.key, self.cert, output, directory,
+                                  source_copy_partitions=copies)
+            blob = output.read_bytes()
+            manifest, partitions, _, _, _ = decode_payload(blob)
+            self.assertEqual(manifest[12], [6])
+            for name, part in partitions.items():
+                operations = [decode_message(record)[1][0] for record in part[8]]
+                self.assertEqual(operations, [4 if name in copies else 0], name)
+                self.assertEqual(6 in part, name in copies, name)
+            sources = {name: images[name].read_bytes() for name in copies}
+            self.assertEqual(reconstruct(blob, sources), {name: image.read_bytes() for name, image in images.items()})
+            sources["product"] = b"changed Product".ljust(4096, b"\0")
+            with self.assertRaisesRegex(ValueError, "source baseline mismatch"):
+                reconstruct(blob, sources)
+
+    def test_trust_overlay_places_official_seed_only_in_unscanned_system_ext(self):
+        with tempfile.TemporaryDirectory(dir=self.directory) as temporary:
+            directory = Path(temporary)
+            apk, checker = directory / "official.apk", directory / "native_install/manager/SukiSUManagerCheck.jar"
+            checker.parent.mkdir(parents=True)
+            apk.write_bytes(b"synthetic official APK")
+            checker.write_bytes(b"synthetic checker")
+            bootstrap = native.manager_bootstrap()
+            output = directory / "overlay"
+            with patch.object(native, "ROOT", directory), \
+                 patch.object(native, "scratch_output", side_effect=lambda path: Path(path)), \
+                 patch.object(native, "MANAGER_CHECKER_SHA", payload.sha256(checker)), \
+                 patch.object(native, "manager_bootstrap", return_value=bootstrap), \
+                 patch.object(native, "verify_manager") as verify:
+                native.trust_overlay(native.PUBLIC_REPO, self.cert, apk, None, None, output)
+            verify.assert_called_once_with(apk, None, None)
+            self.assertFalse((output / "product").exists())
+            self.assertEqual((output / "system_ext/etc/googlebook/SukiSU.apk").read_bytes(), apk.read_bytes())
+            self.assertEqual((output / native.BOOTSTRAP_PATH).read_bytes(), bootstrap)
+            self.assertEqual((output / native.MANAGER_CHECKER_PATH).read_bytes(), checker.read_bytes())
+            self.assertEqual((output / native.BOOTSTRAP_PATH).stat().st_mode & 0o777, 0o755)
+            manifest = json.loads((output / "integration.json").read_text())
+            self.assertEqual(manifest["files"][native.MANAGER_PATH], payload.sha256(apk))
+
     def test_public_followup_builder_preserves_userdata_and_binds_source_slot(self):
         with tempfile.TemporaryDirectory(dir=self.directory) as temporary:
             directory = Path(temporary)

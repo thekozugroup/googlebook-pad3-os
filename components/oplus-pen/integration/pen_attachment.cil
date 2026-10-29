@@ -1,0 +1,9 @@
+; SPDX-License-Identifier: Apache-2.0
+; Read the charging driver's current attachment only; subsequent changes use uevents.
+(type googlebook_pen_attachment)
+(roletype object_r googlebook_pen_attachment)
+(typeattributeset fs_type (googlebook_pen_attachment))
+(typeattributeset sysfs_type (googlebook_pen_attachment))
+(genfscon sysfs "/devices/virtual/oplus_wireless/pencil/present" (u object_r googlebook_pen_attachment ((s0) (s0))))
+(genfscon sysfs "/devices/virtual/oplus_wireless/pencil/ble_mac_addr" (u object_r googlebook_pen_attachment ((s0) (s0))))
+(allow pen_app googlebook_pen_attachment (file (getattr open read)))

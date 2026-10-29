@@ -2,9 +2,15 @@ import struct
 import unittest
 
 from check_sukisu_layout import btf_types, field_offsets
+from native_install.patch_sukisu_module import patch
 
 
 class BtfLayoutTests(unittest.TestCase):
+    def test_module_patch_rejects_unrecognized_release_before_mutation(self):
+        for data in (b"", b"\x7fELF" + bytes(561180), bytes(561184)):
+            with self.subTest(size=len(data)), self.assertRaises(ValueError):
+                patch(data)
+
     def test_duplicate_structs_and_anonymous_union_offsets(self):
         strings = b"\0int\0f_inode\0file\0"
         integer = struct.pack("<IIII", 1, 1 << 24, 4, 32)

@@ -1,1 +1,45 @@
-[]
+[
+  {
+    "base_profile": "erhai-crdroid-20261025",
+    "channel": "stable",
+    "device": "erhai",
+    "expires_at": 1795848600,
+    "ota": {
+      "parts": [
+        {
+          "sha256": "392323a4343e56aa5232b024ac4cc399a4dce9c6ad008363408ea631999cd23a",
+          "size": 1073741824,
+          "url": "https://github.com/thekozugroup/googlebook-pad3-os/releases/download/native-test-2/GoogleBook-erhai-native.zip.part001"
+        },
+        {
+          "sha256": "fbec7598c47d728541a240f07cd277d2e43331676f0b9e305f07ca12af296d4e",
+          "size": 355474347,
+          "url": "https://github.com/thekozugroup/googlebook-pad3-os/releases/download/native-test-2/GoogleBook-erhai-native.zip.part002"
+        }
+      ],
+      "sha256": "f189980fae2566bbc68bdd5633510132def2b408fc7930ff56920e7f634c43fb",
+      "size": 1429216171
+    },
+    "payload": {
+      "metadata_sha256": "1f62fe0b0cc6bbd69b9c81ed51824f60cfd11274f6d6925669dbca627c50727b",
+      "metadata_size": 21837,
+      "offset": 41,
+      "properties": [
+        "FILE_HASH=kYMTTIpU6bO9rSlOImhbKyWloL05JIUmp4xHjQrld0o=",
+        "FILE_SIZE=1429215587",
+        "METADATA_HASH=H2L+CwzGu9abnIHtUYJPYM/REnT21pJWadvKYnxQcns=",
+        "METADATA_SIZE=21837"
+      ],
+      "sha256": "9183134c8a54e9b3bdad294e22685b2b25a5a0bd39248526a78c478d0ae5774a",
+      "size": 1429215587
+    },
+    "pre_build_fingerprints": [
+      "Googlebook/erhai/erhai:17/GBOS/1:user/release-keys"
+    ],
+    "published_at": 1793256600,
+    "schema": 1,
+    "sequence": 2,
+    "source_slot": "_b",
+    "version": "GoogleBook-Pad3-native-test-2"
+  }
+]

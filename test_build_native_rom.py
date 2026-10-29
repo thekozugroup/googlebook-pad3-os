@@ -95,6 +95,15 @@ def signature_from_message(data):
 
 
 class FstabTests(unittest.TestCase):
+    def test_current_erofs_baselines_are_accepted_only_unchanged(self):
+        for original, patcher, decision in [(vendor_boot(), fstab.patch_vendor_boot, fstab.filesystem_decision),
+                                            (recovery_boot(), fstab.patch_recovery, fstab.recovery_filesystem_decision)]:
+            current = patcher(original)
+            self.assertEqual(decision(current, current, "erofs")["filesystem"], "erofs")
+            changed = current[:-1] + bytes([current[-1] ^ 1])
+            with self.assertRaises(ValueError):
+                decision(current, changed, "erofs")
+
     def test_recovery_patch_preserves_kernel_header_and_every_other_record(self):
         for compression in ("raw", "gzip"):
             with self.subTest(compression=compression):
@@ -177,6 +186,30 @@ class FstabTests(unittest.TestCase):
 
 
 class ValidationTests(unittest.TestCase):
+    def test_image_reader_allows_android_sonames_and_rejects_path_escape(self):
+        with patch("erofs_overlay.content", return_value=b"pinned library"):
+            self.assertEqual(native.image_file(Path("unused"), "erofs", "/lib64/private/android.hardware.boot@1.2.so"), b"pinned library")
+            for path in ("/lib64/../secret", "/lib64/a;id.so", "/lib64/a\n"):
+                with self.subTest(path=path), self.assertRaises(ValueError):
+                    native.image_file(Path("unused"), "erofs", path)
+
+    def test_only_clean_references_and_production_recovery_targets_are_approved(self):
+        hardware = {name: name + "-source" for name in ("vendor_boot", "recovery")}
+        images = {name: name + "-target" for name in hardware}
+        pins = {hardware["vendor_boot"]: native.CLEAN_VENDOR_BOOT_SHA, hardware["recovery"]: native.CLEAN_RECOVERY_SHA,
+                images["vendor_boot"]: native.NATIVE_VENDOR_BOOT_SHA, images["recovery"]: native.NATIVE_RECOVERY_SHA}
+        with patch.object(native, "sha256", side_effect=lambda p: pins[p]):
+            native.check_production_boot_chain(hardware, images)
+            pins[hardware["vendor_boot"]] = native.NATIVE_VENDOR_BOOT_SHA
+            pins[hardware["recovery"]] = native.NATIVE_RECOVERY_SHA
+            native.check_production_boot_chain(hardware, images)
+            for path in (hardware["recovery"], images["recovery"], hardware["vendor_boot"]):
+                saved = pins[path]
+                pins[path] = "f" * 64
+                with self.subTest(path=path), self.assertRaises(ValueError):
+                    native.check_production_boot_chain(hardware, images)
+                pins[path] = saved
+
     def test_target_capacities_firmware_and_snapshot_status_are_evidence_bound(self):
         source = {"boot": 4096, "init_boot": 8192}
         state = {"schema": 1, "source_slot": "b", "target_slot": "a", "slot_count": 2,
@@ -255,7 +288,8 @@ class ValidationTests(unittest.TestCase):
         base = {"schema": 1, "capture": {"device": "erhai", "slot": "b", "dsu_running": False,
                 "page_size": 4096, "kernel": native.KERNEL, "build_utc": 1792932356,
                 "snapshot_state": "none", "virtual_ab": False, "hardware": dict.fromkeys(native.HARDWARE)},
-                "target_slot": "a", "system_as_root": True, "images": dict.fromkeys(native.PARTITIONS)}
+                "source_slot": "b", "target_slot": "a", "system_as_root": True, "images": dict.fromkeys(native.PARTITIONS),
+                "source_copy_partitions": []}
         for key, value in (("device", "mica"), ("slot", "a"),
                            ("kernel", "6.6.144-old"), ("page_size", 16384)):
             plan = copy.deepcopy(base)
@@ -356,6 +390,35 @@ class ManagerBootstrapTests(unittest.TestCase):
 
 @unittest.skipUnless(shutil.which("openssl"), "OpenSSL required for real signing tests")
 class PayloadTests(unittest.TestCase):
+    def test_public_followup_builder_preserves_userdata_and_binds_source_slot(self):
+        with tempfile.TemporaryDirectory(dir=self.directory) as temporary:
+            directory = Path(temporary)
+            images = dict(self.images)
+            for name in native.PARTITIONS - images.keys():
+                images[name] = directory / (name + ".img")
+                images[name].write_bytes(b"C" * 4096)
+            plan = {"repository": native.PUBLIC_REPO, "timestamp": 1793220000, "sequence": 2, "source_slot": "b",
+                    "expires_utc": 1795812000, "release_tag": "native-2", "capture": {"build_utc": 1792932356, "virtual_ab": True},
+                    "avb_mode": "preserve-native-disabled", "super_bytes": 16384, "partition_sizes": {},
+                    "version": "native-test-2", "pre_build_fingerprints": ["synthetic/native/test:17/test/1:user/release-keys"],
+                    "dynamic_groups": [], "source_copy_partitions": sorted(payload.SOURCE_COPY_ALLOWED),
+                    "images": {n: {"sha256": payload.sha256(p)} for n, p in images.items()}}
+            plan_path = directory / "plan.json"
+            plan_path.write_bytes(native.json_bytes(plan))
+            output = directory / "output"
+            with patch.object(native, "scratch_output", side_effect=lambda path: Path(path)), \
+                 patch.object(native, "FEED_KEY_SHA", payload.sha256(self.feed_public)), \
+                 patch.object(native, "validate_plan", return_value=(images, {"synthetic_test": True})):
+                release = native.build(plan_path, None, self.key, self.cert, {"scratch": directory}, output,
+                                       self.feed_key, self.feed_public)
+            validation = json.loads((output / "validation.json").read_bytes())
+            self.assertEqual(release["source_slot"], "_b")
+            self.assertIs(validation["requires_factory_reset"], False)
+            self.assertIs(validation["userdata_preserved"], True)
+            self.assertEqual(validation["wipes"], 0)
+            self.assertFalse(any("reset" in gate.lower() or "wipe" in gate.lower()
+                                 for gate in validation["pending_execution_gates"]))
+
     @classmethod
     def setUpClass(cls):
         cls.temporary = tempfile.TemporaryDirectory(prefix="native-test-")
@@ -448,11 +511,12 @@ class PayloadTests(unittest.TestCase):
         import zipfile
         with tempfile.TemporaryDirectory(dir=self.directory) as directory:
             directory = Path(directory)
-            plan = {"repository": native.PUBLIC_REPO, "timestamp": 1793220000, "sequence": 1,
+            plan = {"repository": native.PUBLIC_REPO, "timestamp": 1793220000, "sequence": 1, "source_slot": "b",
                     "expires_utc": 1795812000, "release_tag": "native-1", "capture": {"build_utc": 1792932356, "virtual_ab": False},
                     "avb_mode": "verified", "super_bytes": 16384, "partition_sizes": {},
                     "version": "native-test-1", "pre_build_fingerprints": ["synthetic/native/test:17/test/test:user/release-keys"],
-                    "dynamic_groups": [], "images": {n: {"sha256": payload.sha256(p)} for n, p in self.images.items()}}
+                    "dynamic_groups": [], "source_copy_partitions": [],
+                    "images": {n: {"sha256": payload.sha256(p)} for n, p in self.images.items()}}
             plan_path = directory / "plan.json"
             plan_path.write_bytes(native.json_bytes(plan))
             # Candidate construction is allowed before any final installer/reset approval.
@@ -481,7 +545,7 @@ class PayloadTests(unittest.TestCase):
             self.assertNotIn(str(self.key).encode(), signed)
             self.assertEqual(json.loads(signed), [descriptor])
             self.assertEqual(set(descriptor), {"schema", "device", "channel", "version", "sequence", "published_at", "expires_at",
-                                               "base_profile", "pre_build_fingerprints", "ota", "payload"})
+                                               "base_profile", "pre_build_fingerprints", "source_slot", "ota", "payload"})
             feed_public = payload.openssl("pkey", "-pubin", "-inform", "DER", "-in", self.feed_public, "-pubout")
             payload.verify_digest(hashlib.sha256(signed).digest(), (output / "stable.json.sig").read_bytes(), feed_public, directory)
             # Compile the actual updater consumer against the actual writer ZIP, including ZIP64.
@@ -492,7 +556,7 @@ class PayloadTests(unittest.TestCase):
               public final class NativeProducerConsumerTest {
                 public static void main(String[] a) throws Exception {
                   File zip = new File(a[0]); UpdateCore.Release r = new UpdateCore.Release();
-                  r.version="actual-writer"; r.sequence=1; r.published=100; r.expires=200;
+                  r.version="actual-writer"; r.sourceSlot="_b"; r.sequence=1; r.published=100; r.expires=200;
                   r.baseProfile="erhai-crdroid-20261025"; r.fingerprints.add("fixture");
                   r.otaSize=Long.parseLong(a[1]); r.otaHash=a[2]; r.offset=Long.parseLong(a[3]);
                   r.payloadSize=Long.parseLong(a[4]); r.payloadHash=a[5]; r.metadataSize=Long.parseLong(a[6]); r.metadataHash=a[7];

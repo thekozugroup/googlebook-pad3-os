@@ -21,7 +21,7 @@ from native_install.layout import check_layout, parse_text_layout, check_target_
 from native_install.public_image import check as check_public_image
 from native_install.fstab import (filesystem_decision, patch_vendor_boot, unpack_vendor_boot,
                                   patch_recovery, recovery_filesystem_decision)
-from native_install.payload import (openssl, public_key, require, sha256, sign_digest,
+from native_install.payload import (SOURCE_COPY_ALLOWED, openssl, public_key, require, sha256, sign_digest,
                                     verify_digest, write_payload)
 
 ROOT = Path(__file__).resolve().parent
@@ -31,6 +31,10 @@ MODULE_SHA = "9045a6869ad575c08f5a81ddc9943ab63f1fc73f2c66ea3501cdb2bd112b14d4"
 MANAGER_SHA = "c7f69280cf468e8415c585ff31f963d0147386831217a1e89b822afddc5f40ed"
 MANAGER_CERT = "947ae944f3de4ed4c21a7e4f7953ecf351bfa2b36239da37a34111ad29993eef"
 KERNEL = "6.6.144-4k-gacb4c5815254"
+CLEAN_VENDOR_BOOT_SHA = "07cc553918749eea357d775251043321d44db9839b357f01af1b981beba284c2"
+NATIVE_VENDOR_BOOT_SHA = "21266e40b3a292b0bcb489439a8a02e607e63fe9fc9d2a6cc967c192aa8e21e4"
+CLEAN_RECOVERY_SHA = "27ac21553b3a532bbb7dc49058a2c3c3e97e866809b560bfafa259e0d4535bd8"
+NATIVE_RECOVERY_SHA = "163100ce0eaa18c9f83fe0dd85a33a17ebe25799533714888b16d9824bde1ddc"
 DEVICES = {"erhai", "OP6190L1", "OPD2415"}
 LOGICAL = {"system", "system_ext", "product", "vendor", "odm", "vendor_dlkm", "system_dlkm"}
 PHYSICAL = {"boot", "init_boot", "vendor_boot", "dtbo", "recovery", "vbmeta", "vbmeta_system", "vbmeta_vendor"}
@@ -175,7 +179,7 @@ def image_kind(path):
 
 
 def image_file(image, filesystem, path):
-    require(re.fullmatch(r"/[A-Za-z0-9_./+-]+", path) and ".." not in path.split("/"), "unsafe image path")
+    require(re.fullmatch(r"/[A-Za-z0-9_./+@-]+", path) and ".." not in path.split("/"), "unsafe image path")
     if filesystem == "erofs":
         from erofs_overlay import content
         return content(image, path)
@@ -237,6 +241,13 @@ def compare_metadata(source, converted):
     return hashlib.sha256(json_bytes(source)).hexdigest()
 
 
+def check_production_boot_chain(hardware, images):
+    for name, clean, production in (("vendor_boot", CLEAN_VENDOR_BOOT_SHA, NATIVE_VENDOR_BOOT_SHA),
+                                    ("recovery", CLEAN_RECOVERY_SHA, NATIVE_RECOVERY_SHA)):
+        require(sha256(hardware[name]) in (clean, production), "unapproved clean boot-chain reference: " + name)
+        require(sha256(images[name]) == production, "approved production boot-chain image required: " + name)
+
+
 def validate_plan(plan, certificate, tools):
     require(plan.get("schema") == 1, "unknown native plan schema")
     require(plan["system_as_root"] is True, "pinned GoogleBook system-as-root layout required")
@@ -245,9 +256,13 @@ def validate_plan(plan, certificate, tools):
             and capture["page_size"] == 4096 and capture["kernel"] == KERNEL
             and capture["build_utc"] == 1792932356, "not the pinned native October 25 slot B base")
     require(type(capture["virtual_ab"]) is bool, "virtual_ab must be observed boolean")
-    require(plan["target_slot"] == "a", "only inactive A target is supported from pinned B")
+    require(plan["source_slot"] in ("a", "b") and plan["target_slot"] in ("a", "b")
+            and plan["source_slot"] != plan["target_slot"], "source/target must be opposite A/B slots")
     require(set(plan["images"]) == PARTITIONS and set(capture["hardware"]) == HARDWARE,
             "native payload must contain only the complete allowed matched-base image set")
+    copies = plan["source_copy_partitions"]
+    require(type(copies) is list and copies in ([], sorted(SOURCE_COPY_ALLOWED)),
+            "select full private output or the exact public unchanged-source baseline")
     images = {name: checked(plan["images"][name]) for name in sorted(PARTITIONS)}
     hardware = {name: checked(capture["hardware"][name]) for name in sorted(HARDWARE)}
     require(sha256(hardware["boot"]) == BOOT_SHA and sha256(hardware["init_boot"]) == INIT_BOOT_SHA,
@@ -261,6 +276,7 @@ def validate_plan(plan, certificate, tools):
     filesystems = {image_kind(images[name]) for name in ("system", "system_ext", "product")}
     require(len(filesystems) == 1, "mixed native userspace filesystems need separate review")
     filesystem = filesystems.pop()
+    check_production_boot_chain(hardware, images)
     fstab = filesystem_decision(hardware["vendor_boot"].read_bytes(), images["vendor_boot"].read_bytes(), filesystem)
     recovery = recovery_filesystem_decision(hardware["recovery"].read_bytes(), images["recovery"].read_bytes(), filesystem)
     # Raw metadata captures are mandatory and bound into the parent review.
@@ -320,6 +336,14 @@ def validate_plan(plan, certificate, tools):
             "candidate must contain the captured Android native update_engine, not the laptop updater")
     require(image_file(system, filesystem, prefix + "/etc/init/update_engine.rc") == engine_rc.read_bytes(),
             "candidate Android update_engine init service differs from reviewed native source")
+    from native_install.engine_libraries import integration_inputs
+    engine_files, bundled_rc = integration_inputs(capture["update_engine_bundle"])
+    require(engine_rc.read_bytes() == bundled_rc, "native engine RC differs from private bundle")
+    for path, item in engine_files.items():
+        if stat.S_ISREG(item["metadata"]["mode"]):
+            require(path.startswith("/system_ext/"), "private engine library escaped system_ext")
+            require(image_file(images["system_ext"], filesystem, path.removeprefix("/system_ext")) == item["data"],
+                    "candidate private update_engine library differs: " + path)
     require(image_file(system, filesystem, prefix + "/etc/googlebook/native-ota.json") == json_bytes(config),
             "own-repository native OTA config missing from system image")
     require(image_file(system, filesystem, prefix + "/etc/update_engine/update-payload-key.pub.pem") == public_key(certificate),
@@ -390,7 +414,8 @@ def build(plan_path, review_path, key, certificate, tools, output, feed_key, fee
             temporary = Path(temporary)
             payload = temporary / "payload.bin"
             properties, hashes = write_payload(images, plan["dynamic_groups"], plan["timestamp"],
-                                                plan["capture"]["virtual_ab"], key, certificate, payload, temporary)
+                                                plan["capture"]["virtual_ab"], key, certificate, payload, temporary,
+                                                source_copy_partitions=set(plan["source_copy_partitions"]))
             require(hashes == {n: e["sha256"] for n, e in plan["images"].items()}, "validated inputs changed before payload generation")
             properties_bytes = "".join(f"{name}={value}\n" for name, value in properties.items()).encode()
             filename = "GoogleBook-erhai-native.zip"
@@ -412,6 +437,7 @@ def build(plan_path, review_path, key, certificate, tools, output, feed_key, fee
             descriptor = {"schema": 1, "device": "erhai", "channel": "stable", "version": plan["version"],
                           "sequence": plan["sequence"], "published_at": plan["timestamp"], "expires_at": plan["expires_utc"],
                           "base_profile": "erhai-crdroid-20261025", "pre_build_fingerprints": plan["pre_build_fingerprints"],
+                          "source_slot": "_" + plan["source_slot"],
                           "ota": {"size": zip_bytes, "sha256": zip_sha,
                                   "parts": [{"url": a["url"], "size": a["bytes"], "sha256": a["sha256"]} for a in assets]},
                           "payload": {"offset": payload_offset, "size": int(properties["FILE_SIZE"]),
@@ -428,13 +454,18 @@ def build(plan_path, review_path, key, certificate, tools, output, feed_key, fee
             (output / "stable.json.sig").write_bytes(signature)
             (output / "feed-verification-key.der").write_bytes(feed_public_der.read_bytes())
             (output / "native-public-key.pem").write_bytes(public_key(certificate))
-            (output / "validation.json").write_bytes(json_bytes({"status": "OFFLINE_NATIVE_CANDIDATE_UNBOOTED",
+            followup = bool(plan["source_copy_partitions"])
+            gates = ["Fresh authoritative native/GSI and snapshot state", "Reviewed inactive target capacity/firmware checks",
+                     "Snapshot allocation and merge validation"]
+            if not followup:
+                gates += ["Prepared initial installer with merge-before-wipe or clean-allocation proof",
+                          "Owner reset/data-preservation approval after candidate review"]
+            (output / "validation.json").write_bytes(json_bytes({"status": "OFFLINE_NATIVE_OTA_CANDIDATE_UNAPPLIED" if followup else "OFFLINE_NATIVE_CANDIDATE_UNBOOTED",
                 "parent_plan_sha256": sha256(plan_path), "parent_review_sha256": sha256(review_path) if review_path else None,
-                "evidence": evidence, "device_operations": 0, "wipes": 0, "requires_factory_reset": True,
+                "evidence": evidence, "device_operations": 0, "wipes": 0, "requires_factory_reset": not followup,
+                "userdata_preserved": followup,
                 "execution_approved": False,
-                "pending_execution_gates": ["Fresh authoritative native/GSI and snapshot state", "Target A capacity/firmware checks",
-                                            "Prepared initial installer with merge-before-wipe or clean-allocation proof",
-                                            "Owner reset/data-preservation approval after candidate review"],
+                "pending_execution_gates": gates,
                 "images_sha256": hashes, "avb_mode": plan["avb_mode"], "transport": "UpdateEngine, not recovery whole-ZIP signed",
                 "limitations": ["No runtime boot, recovery, manager recognition or update_engine apply was tested.",
                                 "No userdata migration or rollback after reset/merge is promised."]}))

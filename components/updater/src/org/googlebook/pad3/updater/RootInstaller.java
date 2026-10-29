@@ -164,8 +164,7 @@ public final class RootInstaller {
                                             release.offset, release.payloadSize);
                                     String[] properties = Arrays.copyOf(release.properties, 5);
                                     properties[4] = "SWITCH_SLOT_ON_REBOOT=1";
-                                    profile.ensureActive();
-                                    NativeIdentity.requireNative();
+                                    guard(release);
                                     engine.applyPayload(payloadFd, properties);
                                     emit("APPLYING", 0, "Verified payload FD submitted to Android A/B engine");
                                 } catch (Exception e) { finish(1, "FAILED", e.toString()); }

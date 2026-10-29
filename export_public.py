@@ -29,14 +29,14 @@ PUBLIC_FEED = "https://raw.githubusercontent.com/" + PUBLIC_REPOSITORY + "/refs/
 ROOT_FILES = """
 android_disk.py assemble_port.py bootanimation_geometry.py build.sh
 build_dsu_diagnostic.py build_native_rom.py build_native_userspace.py build_oplus_pen.py build_pen_dsu.py build_secilc.sh build_updater.py build_face_overlay.py
-patch_taskmanager.py
+patch_taskmanager.py build_taskmanager_metrics.py
 check_policy.py check_sukisu_layout.py check_updates.py cold_build_dsu.py
 desktop_repair_gate.py erofs_overlay.py erofs_sanitize.py ext4_source.py flash_test.py inputs.json
 package_port.py pen_policy.py port_changes.py prepare_inputs.py stability_probe.py
 validate_candidate.py UpdateDsuImages.java VerifyDsuImages.java
 test_android_disk.py test_bootanimation_geometry.py test_build_dsu_diagnostic.py
 test_build_native_rom.py test_build_oplus_pen.py test_build_pen_dsu.py test_build_updater.py test_build_face_overlay.py test_check_sukisu_layout.py
-test_build_native_userspace.py test_initial_install.py
+test_build_native_userspace.py test_initial_install.py test_engine_libraries.py test_source_copy.py
 test_patch_taskmanager.py
 test_check_updates.py test_cold_build_dsu.py test_desktop_repair_gate.py
 test_erofs_overlay.py test_erofs_sanitize.py test_flash_test.py test_pen_policy.py test_port_changes.py
@@ -80,7 +80,7 @@ policy/vendor/plat_pub_versioned.cil policy/vendor/plat_sepolicy_vers.txt
 policy/vendor/vendor_sepolicy.cil
 """.split()
 NATIVE_FILES = """
-avb.py fstab.py layout.py payload.py public_image.py initial_install.py install-sukisu-manager.sh tools/avbtool.py
+avb.py fstab.py layout.py payload.py public_image.py initial_install.py engine_libraries.py install-sukisu-manager.sh tools/avbtool.py
 source-pins.json sukisu-layout-baseline.json plan.example.json tools.example.json
 review.example.json bootcontrol/build_probe.py bootcontrol/NativeBootControlProbe.java
 plan.schema.json review.schema.json slot-state.example.json slot-state.schema.json
@@ -100,7 +100,7 @@ src/org/googlebook/pad3/updater/ManifestCodec.java
 src/org/googlebook/pad3/updater/RootInstaller.java
 src/org/googlebook/pad3/updater/UpdateCore.java
 src/org/googlebook/pad3/updater/UpdateService.java
-tests/FeedOrderTest.java tests/UpdateCoreTest.java tests/ProducerConsumerTest.java
+tests/FeedOrderTest.java tests/UpdateCoreTest.java tests/ProducerConsumerTest.java tests/ManifestCodecTest.java
 """.split()
 FACE_FILES = """
 AndroidManifest.xml README.md overlay-config-entry.xml res/values/bools.xml res/xml/overlays.xml
@@ -111,7 +111,11 @@ README.md
 build-support/GraftClient.java
 compile-api/vendor/google/libraries/desktop/serviceability/ServiceabilityManager.java
 src/vendor/google/libraries/desktop/serviceability/TaskManagerCompat.java
+src/vendor/google/libraries/desktop/serviceability/NativeProcStats.java
 tests/vendor/google/libraries/desktop/serviceability/MetricsSelfTest.java
+native/README.md native/main.c native/metrics.c native/metrics.h native/host_tests.c
+native/NativeProcStatsSelfTest.java native/googlebook_taskmanager_metrics.rc
+native/taskmanager_metrics.cil native/file_contexts
 """.split()
 ALLOWLIST = tuple(sorted(ROOT_FILES + [COMPONENT + n for n in COMPONENT_FILES]
                          + [COMPONENT + "upstream/" + n for n in UPSTREAM_FILES]
@@ -274,6 +278,34 @@ SDK/JDK tools and a task-owned CleanOS output directory. The tools example uses
 absolute checkout path while retaining its SHA-256 pin. The plan example names
 the parent's public repository, but all capture, image, capacity, fingerprint,
 snapshot and review inputs still require deliberate completion and validation.
+
+For the pinned native engine, run `python3 -B -m native_install.engine_libraries
+--help`. Its capture-to-bundle producer derives an absolute DT_RUNPATH for the
+engine and 44 private libraries at `/system_ext/lib64/googlebook-update-engine`.
+Pin the engine, original RC and bundle manifest in the userspace recipe and native
+plan. Keep the global libraries intact and validate the init service with
+AT_SECURE enabled. Supply JAVA_HOME when verifying signed APK inputs.
+
+Build the Task Manager stat service with `build_taskmanager_metrics.py` and the
+shared NDK named by that builder. Its UID1000/readproc service returns only fixed
+per-PID counters. Merge its dedicated CIL and file contexts, including the
+system_server read rule, and strictly compile the final assembled policy.
+See `components/taskmanager-compat/native/README.md` for the socket contract.
+
+Public follow-up plans use the exact twelve-name `source_copy_partitions` list
+in plan.example.json. Those partitions require matching installed size/hash and
+contribute zero bytes to the download. System, system_ext and approved production
+recovery use REPLACE. Product remains byte-identical to the installed baseline;
+this update cannot provision a fresh tablet. An empty list creates a full private
+package and requires a separate initial-install review.
+
+Set plan source_slot and target_slot to opposite A/B slots. The signed feed's
+source_slot is `_a` or `_b` and is checked immediately before apply, together with
+the allowed fingerprint, increasing sequence and protected native boot state.
+Follow-up installation preserves userdata. Validate source hashes, reconstruct
+transported images, verify all signatures and audit public bytes before release.
+The Settings updater needs its own SukiSU grant: enable Show system apps on the
+Superuser page and allow System update. Root grants remain under owner control.
 
 Native trust integration, UpdateEngine, AVB chain/rollback rules, fstab support,
 platform signing and headless-user behavior require the parent's separate review.
@@ -560,6 +592,8 @@ class Scanner:
                 for match in re.finditer(pattern, view):
                     if kind == "email" and match.group().lower().endswith((b"@example.com", b"@example.invalid")):
                         continue
+                    if kind == "email" and re.fullmatch(rb"android\.(?:hardware|hidl)\.[A-Za-z0-9_.]+@[0-9]+\.[0-9]+\.so", match.group()):
+                        continue  # Versioned Android libraries; known-secret scans still run below.
                     if kind == "credential_literal" and match.group(1).lower() in placeholders:
                         continue
                     record(kind, match.start(), view)

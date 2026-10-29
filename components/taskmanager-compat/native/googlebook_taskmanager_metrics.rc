@@ -1,0 +1,8 @@
+service googlebook_taskmanager_metrics /system_ext/bin/googlebook_taskmanager_metrics
+    class main
+    user system
+    group system readproc
+    capabilities
+    # Other profiles have distinct UIDs and lack group system. Peer UID and SELinux gate access.
+    # The daemon calls listen after dropping UID; stream+listen would expose init's peer UID.
+    socket googlebook_taskmanager_metrics stream 0666 system system

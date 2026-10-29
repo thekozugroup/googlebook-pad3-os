@@ -34,6 +34,7 @@ final class ManifestCodec {
         result.version = string(object, "version"); result.sequence = number(object, "sequence");
         result.published = number(object, "published_at"); result.expires = number(object, "expires_at");
         result.baseProfile = string(object, "base_profile");
+        result.sourceSlot = string(object, "source_slot");
         JSONArray fingerprints = object.getJSONArray("pre_build_fingerprints");
         UpdateCore.require(fingerprints.length() <= 16, "Too many fingerprints");
         for (int i = 0; i < fingerprints.length(); i++) {

@@ -15,6 +15,15 @@ import export_public as public
 
 
 class PublicExport(unittest.TestCase):
+    def test_versioned_android_library_is_not_email_but_known_values_still_block(self):
+        scanner = public.Scanner()
+        library = b"android.hardware.boot@1.2.so"
+        self.assertEqual(scanner.scan(library, "fixture.py"), [])
+        scanner.add_secret(library)
+        self.assertIn("known_secret", {f["classification"] for f in scanner.scan(library, "fixture.py")})
+        email = b"somebody" + b"@" + b"review.test"
+        self.assertIn("email", {f["classification"] for f in scanner.scan(email, "fixture.py")})
+
     def setUp(self):
         self.temporary = tempfile.TemporaryDirectory(prefix="public-export-test-")
         self.addCleanup(self.temporary.cleanup)

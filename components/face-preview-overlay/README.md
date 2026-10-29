@@ -36,7 +36,9 @@ All SDK paths and certificate input are external; none are stored in source.
    `system_ext/overlay/GooglebookPad3FacePreview/GooglebookPad3FacePreview.apk`.
 3. Merge `overlay-config-entry.xml` into the existing
    `system_ext/overlay/config/config.xml` root. Preserve its wallpaper entry and
-   every other existing entry. If an entry for this package exists, update it
+   every other existing entry. Place this immutable entry before all mutable
+   overlays and merge entries; the framework rejects an immutable entry after
+   a mutable one during Zygote startup. If this package exists, move it there
    once rather than adding a duplicate. Check later overlays do not override
    the same resource. The expected entry is enabled and immutable.
 

@@ -50,6 +50,16 @@ def fake_adb(serial, *args):
 
 
 class StabilityProbeTests(unittest.TestCase):
+    def test_native_identity_requires_native_build_and_inactive_dsu(self):
+        fingerprint = "Googlebook/erhai/erhai:17/GBOS/2:user/release-keys"
+        inactive = DSU_TRUE.replace("00000001", "00000000")
+        self.assertFalse(probe.parse_identity(fingerprint, "10", inactive, native=True)["dsu_running"])
+        for build, result in [(FINGERPRINT, inactive), (fingerprint, DSU_TRUE),
+                              (fingerprint.replace("GBOS/2", "GBOS/0"), inactive),
+                              (fingerprint, "error: service unavailable")]:
+            with self.subTest(build=build, result=result), self.assertRaises(ValueError):
+                probe.parse_identity(build, "10", result, native=True)
+
     def test_identity_requires_exact_user_build_and_true_binder_result(self):
         self.assertTrue(probe.parse_identity(FINGERPRINT, "10\n", DSU_TRUE)["dsu_running"])
         for fingerprint, user, dsu in [

@@ -20,7 +20,9 @@
     "capture",
     "partition_sizes",
     "images",
-    "dynamic_groups"
+    "dynamic_groups",
+    "source_copy_partitions",
+    "source_slot"
   ],
   "properties": {
     "schema": {
@@ -30,7 +32,10 @@
       "const": "thekozugroup/googlebook-pad3-os"
     },
     "target_slot": {
-      "const": "a"
+      "enum": [
+        "a",
+        "b"
+      ]
     },
     "timestamp": {
       "type": "integer",
@@ -96,7 +101,8 @@
         "lpdump_text_1",
         "kernel_config",
         "update_engine",
-        "update_engine_rc"
+        "update_engine_rc",
+        "update_engine_bundle"
       ],
       "properties": {
         "device": {
@@ -199,6 +205,9 @@
           "$ref": "#/$defs/file"
         },
         "update_engine_rc": {
+          "$ref": "#/$defs/file"
+        },
+        "update_engine_bundle": {
           "$ref": "#/$defs/file"
         }
       }
@@ -411,6 +420,31 @@
     },
     "initial_install_procedure": {
       "$ref": "#/$defs/file"
+    },
+    "source_copy_partitions": {
+      "enum": [
+        [],
+        [
+          "boot",
+          "dtbo",
+          "init_boot",
+          "odm",
+          "product",
+          "system_dlkm",
+          "vbmeta",
+          "vbmeta_system",
+          "vbmeta_vendor",
+          "vendor",
+          "vendor_boot",
+          "vendor_dlkm"
+        ]
+      ]
+    },
+    "source_slot": {
+      "enum": [
+        "a",
+        "b"
+      ]
     }
   },
   "$defs": {

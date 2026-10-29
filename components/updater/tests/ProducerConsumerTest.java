@@ -13,6 +13,7 @@ public final class ProducerConsumerTest {
         UpdateCore.Release release = new UpdateCore.Release();
         release.version = "KEYLESS-PRODUCER-FIXTURE"; release.sequence = 2; release.published = 100; release.expires = 200;
         release.baseProfile = "erhai-crdroid-20261025"; release.fingerprints.add("fixture");
+        release.sourceSlot = args[4];
         release.otaSize = zip.length(); release.otaHash = UpdateCore.hash(zip);
         release.offset = Long.parseLong(args[2]); release.payloadSize = Long.parseLong(properties.getProperty("FILE_SIZE"));
         release.metadataSize = Long.parseLong(properties.getProperty("METADATA_SIZE"));

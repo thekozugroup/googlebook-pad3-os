@@ -58,6 +58,7 @@ public final class UpdateCoreTest {
         release.version = "TEST-FIXTURE-NOT-INSTALLABLE"; release.sequence = 2;
         release.published = 100; release.expires = 200;
         release.baseProfile = "erhai-crdroid-20261025"; release.fingerprints.add("fixture-fingerprint");
+        release.sourceSlot = "_b";
         release.payloadSize = payload.length; release.metadataSize = 25;
         release.payloadHash = hash(payload); release.metadataHash = hash(Arrays.copyOf(payload, 25));
         release.properties = new String[]{"FILE_HASH=" + Base64.getEncoder().encodeToString(MessageDigest.getInstance("SHA-256").digest(payload)),
@@ -94,6 +95,10 @@ public final class UpdateCoreTest {
         fails(() -> UpdateCore.verifyZip(new File(directory, "fixture.zip"), release)); release.offset = offset;
         release.sequence = 0; fails(() -> release.validate(150)); release.sequence = 2;
         release.baseProfile = "unknown"; fails(() -> release.validate(150)); release.baseProfile = "erhai-crdroid-20261025";
+        for (String slot : new String[]{null, "", "a", "b", "_c", "_A", " _b", "_b "}) {
+            release.sourceSlot = slot; fails(() -> release.validate(150));
+        }
+        release.sourceSlot = "_b";
         release.metadataSize++; fails(() -> release.validate(150)); release.metadataSize--;
         release.properties[3] = "POWERWASH=1"; fails(() -> release.validate(150));
         final UpdateCore.Release wrongDevice = fixture(directory, false, "ruby", null);
@@ -122,6 +127,14 @@ public final class UpdateCoreTest {
         properties.put("ro.build.ab_update", "true"); properties.put("ro.virtual_ab.enabled", "true");
         properties.put("ro.boot.slot_suffix", "_b"); properties.put("ro.googlebook.pad3.release_sequence", "1");
         UpdateCore.guardNative(valid, properties, "fixture-fingerprint", new String[]{"arm64-v8a"}, 4096); checks++;
+        for (String slot : new String[]{"_b", "_a"}) {
+            valid.sourceSlot = slot;
+            properties.put("ro.boot.slot_suffix", slot);
+            UpdateCore.guardNative(valid, properties, "fixture-fingerprint", new String[]{"arm64-v8a"}, 4096); checks++;
+            properties.put("ro.boot.slot_suffix", slot.equals("_b") ? "_a" : "_b");
+            fails(() -> UpdateCore.guardNative(valid, properties, "fixture-fingerprint", new String[]{"arm64-v8a"}, 4096));
+        }
+        valid.sourceSlot = "_b"; properties.put("ro.boot.slot_suffix", "_b");
         for (String[] change : new String[][]{{"ro.googlebook.pad3.native","0"},{"ro.googlebook.pad3.device","ruby"},
                 {"ro.googlebook.pad3.base_profile","unknown"},{"ro.gsid.image_running","1"},{"ro.build.ab_update","false"},
                 {"ro.virtual_ab.enabled","false"},{"ro.boot.slot_suffix",""},{"ro.googlebook.pad3.release_sequence","2"},
@@ -136,6 +149,7 @@ public final class UpdateCoreTest {
         UpdateCore.Release large = new UpdateCore.Release();
         large.version = "SIZE-ONLY-FIXTURE"; large.sequence = 3; large.published = 100; large.expires = 200;
         large.baseProfile = valid.baseProfile; large.fingerprints = valid.fingerprints;
+        large.sourceSlot = "_a";
         large.otaSize = 4 * UpdateCore.GIB; large.otaHash = valid.otaHash;
         large.offset = 2 * UpdateCore.GIB + 41; large.payloadSize = UpdateCore.GIB;
         large.payloadHash = valid.payloadHash; large.metadataHash = valid.metadataHash; large.metadataSize = valid.metadataSize;

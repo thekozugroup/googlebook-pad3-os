@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Sample V9 DSU through read-only ADB queries; keep private output outside source/sync.
+"""Sample GoogleBook DSU or native builds through read-only ADB queries.
 
 Example: python3 -B stability_probe.py --output /tmp/your-cleanos-task/probe \
     --duration 1800 --interval 30
@@ -52,15 +52,18 @@ def adb(serial, *args):
     return result.stdout
 
 
-def parse_identity(fingerprint, user, dsu):
-    parcel = re.fullmatch(r"\s*Result:\s*Parcel\(\s*00000000\s+00000001\s+'[^']*'\s*\)\s*", dsu)
-    if FINGERPRINT not in fingerprint.strip():
-        raise ValueError("Expected GoogleBook V9 fingerprint was not observed")
+def parse_identity(fingerprint, user, dsu, native=False):
+    expected = "00000000" if native else "00000001"
+    parcel = re.fullmatch(r"\s*Result:\s*Parcel\(\s*00000000\s+" + expected + r"\s+'[^']*'\s*\)\s*", dsu)
+    correct_build = (re.fullmatch(r"Googlebook/erhai/erhai:17/GBOS/[1-9][0-9]*:user/release-keys", fingerprint.strip())
+                     if native else FINGERPRINT in fingerprint.strip())
+    if not correct_build:
+        raise ValueError("Expected GoogleBook fingerprint was not observed")
     if user.strip() != "10":
         raise ValueError("Expected current Android user 10")
     if not parcel:
-        raise ValueError("dynamic_system Binder transaction 7 did not return true")
-    return {"fingerprint": fingerprint.strip(), "current_user": 10, "dsu_running": True}
+        raise ValueError("Unexpected dynamic_system Binder transaction 7 result")
+    return {"fingerprint": fingerprint.strip(), "current_user": 10, "dsu_running": not native}
 
 
 def output_directory(path):
@@ -218,13 +221,13 @@ def collect(serial, directory, seen):
     return sample
 
 
-def probe(serial, output, duration, interval):
+def probe(serial, output, duration, interval, native=False):
     if not all(math.isfinite(value) and value > 0 for value in (duration, interval)):
         raise ValueError("Duration and interval must be finite positive seconds")
     output = output_directory(output)
     identity = parse_identity(adb(serial, "shell", "getprop", "ro.build.fingerprint"),
                               adb(serial, "shell", "am", "get-current-user"),
-                              adb(serial, "shell", "service", "call", "dynamic_system", "7"))
+                              adb(serial, "shell", "service", "call", "dynamic_system", "7"), native)
     baseline_utc = datetime.now(timezone.utc).isoformat()
     baseline = "\n".join(adb(serial, *QUERIES[name]) for name in ("crash", "anr"))
     seen, baseline_records = set(), []
@@ -280,9 +283,10 @@ def main(argv=None):
     parser.add_argument("--output", required=True, type=Path)
     parser.add_argument("--duration", type=float, default=1800)
     parser.add_argument("--interval", type=float, default=30)
+    parser.add_argument("--native", action="store_true", help="Require a native erhai build with DSU inactive")
     args = parser.parse_args(argv)
     try:
-        summary = probe(args.serial, args.output, args.duration, args.interval)
+        summary = probe(args.serial, args.output, args.duration, args.interval, args.native)
     except (ValueError, RuntimeError, OSError) as error:
         parser.exit(2, f"stability_probe: {error}\n")
     print(json.dumps(summary, sort_keys=True))

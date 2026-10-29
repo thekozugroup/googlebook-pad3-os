@@ -117,7 +117,11 @@
       "sha256": "REPLACE_WITH_SHA256"
     },
     "update_engine_rc": {
-      "path": "/ABSOLUTE/CAPTURE/update_engine.rc",
+      "path": "/ABSOLUTE/PRIVATE_ENGINE_BUNDLE/update_engine.rc",
+      "sha256": "REPLACE_WITH_SHA256"
+    },
+    "update_engine_bundle": {
+      "path": "/ABSOLUTE/PRIVATE_ENGINE_BUNDLE/manifest.json",
       "sha256": "REPLACE_WITH_SHA256"
     }
   },
@@ -187,5 +191,20 @@
   "version": "REPLACE_WITH_REVIEWED_NATIVE_RELEASE_LABEL",
   "pre_build_fingerprints": [
     "REPLACE_WITH_EXACT_ALLOWED_INSTALLED_NATIVE_PORT_FINGERPRINT"
-  ]
+  ],
+  "source_copy_partitions": [
+    "boot",
+    "dtbo",
+    "init_boot",
+    "odm",
+    "product",
+    "system_dlkm",
+    "vbmeta",
+    "vbmeta_system",
+    "vbmeta_vendor",
+    "vendor",
+    "vendor_boot",
+    "vendor_dlkm"
+  ],
+  "source_slot": "b"
 }

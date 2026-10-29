@@ -20,6 +20,12 @@ constructor without the service lookup. Security exceptions are not caught.
 Local metrics use cumulative `/proc/stat` counters, per-PID `stat` counters, actual
 CPU topology/frequency files, and ActivityManager PSS in KiB. Clock ticks are
 converted to the original client's 10-ms unit using actual `_SC_CLK_TCK`.
+Real per-PID reads use the [stat-only init service](native/README.md), because
+Android hides other apps' proc entries from Task Manager. The service requires
+its reviewed UID, readproc group, socket labels and dedicated enforcing domain;
+the app receives neither root nor readproc membership. Fixture paths retain the
+local parser. The service returns only user/system/start ticks, with bounded I/O
+and caller/server credential checks.
 Missing PID files are checked against ActivityManager: an apparently live but
 hidden PID fails explicitly. PSS sampling also checks PID starttime before and
 after the request. A genuinely exited PID uses the original `-1` PSS sentinel;
@@ -75,8 +81,9 @@ must be byte-identical.
 
 The candidate is not installed or ART-verified. Parent must confirm the actual
 shared-library classloader and Task Manager's existing proc/sysfs/PSS authority,
-including user 10 and user switching. No new privilege, policy bypass, shell/root
-process or writer operation is supplied. Strict topology/frequency reads can fail
+including user 10 and user switching. The companion service adds only the reviewed
+read-only proc authority described above. No policy bypass, shell/root process or
+writer operation is supplied. Strict topology/frequency reads can fail
 when a tablet driver does not expose the required files; that is a failure to fix
 with real evidence, not a reason to substitute numbers.
 

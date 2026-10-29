@@ -1,0 +1,36 @@
+;; Dedicated read-only backend. Per-PID proc inodes carry their process label.
+(type googlebook_taskmanager_metrics)
+(typeattributeset domain (googlebook_taskmanager_metrics))
+(typeattributeset coredomain (googlebook_taskmanager_metrics))
+;; Required by the existing MLS read constraint for app process categories.
+;; TE below permits only reads of appdomain process-labelled files.
+(typeattributeset mlstrustedsubject (googlebook_taskmanager_metrics))
+(type googlebook_taskmanager_metrics_exec)
+(typeattributeset file_type (googlebook_taskmanager_metrics_exec))
+(typeattributeset system_file_type (googlebook_taskmanager_metrics_exec))
+(typeattributeset exec_type (googlebook_taskmanager_metrics_exec))
+(roletype object_r googlebook_taskmanager_metrics_exec)
+(roletype object_r googlebook_taskmanager_metrics)
+(type googlebook_taskmanager_metrics_socket)
+(typeattributeset file_type (googlebook_taskmanager_metrics_socket))
+(typeattributeset coredomain_socket (googlebook_taskmanager_metrics_socket))
+(roletype object_r googlebook_taskmanager_metrics_socket)
+
+(allow init googlebook_taskmanager_metrics_exec (file (getattr open read map execute)))
+(allow init googlebook_taskmanager_metrics (process (transition siginh rlimitinh)))
+(typetransition init googlebook_taskmanager_metrics_exec process googlebook_taskmanager_metrics)
+(allow googlebook_taskmanager_metrics googlebook_taskmanager_metrics_exec (file (getattr open read map execute entrypoint)))
+(allow googlebook_taskmanager_metrics appdomain (dir (search)))
+(allow googlebook_taskmanager_metrics appdomain (file (getattr open read)))
+;; ActivityManager includes system_server, which is not an appdomain.
+(allow googlebook_taskmanager_metrics system_server (dir (search)))
+(allow googlebook_taskmanager_metrics system_server (file (getattr open read)))
+(allow system_app googlebook_taskmanager_metrics_socket (sock_file (write)))
+(allow system_app googlebook_taskmanager_metrics (unix_stream_socket (connectto)))
+
+(neverallow googlebook_taskmanager_metrics domain (process (ptrace)))
+(neverallow googlebook_taskmanager_metrics self (capability (all)))
+(neverallow googlebook_taskmanager_metrics self (capability2 (all)))
+(neverallow googlebook_taskmanager_metrics self (tcp_socket (all)))
+(neverallow googlebook_taskmanager_metrics self (udp_socket (all)))
+(neverallow googlebook_taskmanager_metrics self (rawip_socket (all)))

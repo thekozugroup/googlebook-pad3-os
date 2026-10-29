@@ -37,6 +37,7 @@ import java.util.Set;
 public final class GraftClient {
     private static final String MANAGER = "Lvendor/google/libraries/desktop/serviceability/ServiceabilityManager;";
     private static final String HELPER = "Lvendor/google/libraries/desktop/serviceability/TaskManagerCompat;";
+    private static final String NATIVE_STATS = "Lvendor/google/libraries/desktop/serviceability/NativeProcStats;";
     private static final String CONTEXT = "Landroid/content/Context;";
     private static final String MODE = "mTaskManagerCompat";
     private static final ImmutableFieldReference MODE_FIELD = new ImmutableFieldReference(MANAGER, MODE, "Z");
@@ -183,7 +184,7 @@ public final class GraftClient {
         Set<String> changed = new HashSet<>();
         int managers = 0;
         for (ClassDef cls : original.getClasses()) {
-            require(!cls.getType().equals(HELPER)
+            require(!cls.getType().equals(NATIVE_STATS) && !cls.getType().equals(HELPER)
                     && !cls.getType().startsWith(HELPER.substring(0, HELPER.length() - 1) + "$"),
                     "already patched input");
             if (!cls.getType().equals(MANAGER)) {
@@ -215,7 +216,7 @@ public final class GraftClient {
         int added = 0;
         boolean found = false;
         for (ClassDef cls : helper.getClasses()) {
-            require(cls.getType().equals(HELPER)
+            require(cls.getType().equals(NATIVE_STATS) || cls.getType().equals(HELPER)
                     || cls.getType().startsWith(HELPER.substring(0, HELPER.length() - 1) + "$"),
                     "compile-only or unrelated class in helper DEX: " + cls.getType());
             found |= cls.getType().equals(HELPER);

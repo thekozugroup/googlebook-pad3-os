@@ -120,7 +120,7 @@ public final class UpdateCore {
         }
     }
     public static final class Release {
-        public String version, baseProfile, otaHash, payloadHash, metadataHash;
+        public String version, baseProfile, sourceSlot, otaHash, payloadHash, metadataHash;
         public long sequence, published, expires, otaSize, offset, payloadSize, metadataSize;
         public List<String> fingerprints = new ArrayList<>();
         public List<Part> parts = new ArrayList<>();
@@ -130,6 +130,7 @@ public final class UpdateCore {
             require(sequence > 0 && published > 0 && published <= now + 300 && expires > now && expires > published,
                     "Expired, premature or invalid release");
             require("erhai-crdroid-20261025".equals(baseProfile), "Native base profile is not supported");
+            require("_a".equals(sourceSlot) || "_b".equals(sourceSlot), "Invalid release source slot");
             require(!fingerprints.isEmpty() && fingerprints.size() <= 16, "Missing compatible fingerprints");
             for (String fingerprint : fingerprints) require(fingerprint.length() > 0 && fingerprint.length() <= 1024, "Invalid fingerprint");
             require(otaSize > 0 && otaSize <= 16 * GIB && !parts.isEmpty() && parts.size() <= 32, "Invalid OTA size/parts");
@@ -170,6 +171,7 @@ public final class UpdateCore {
         require(!"1".equals(properties.get("ro.gsid.image_running")), "Native OTA is forbidden inside DSU");
         require("true".equals(properties.get("ro.build.ab_update")) && "true".equals(properties.get("ro.virtual_ab.enabled"))
                 && Arrays.asList("_a", "_b").contains(properties.get("ro.boot.slot_suffix")), "Native virtual A/B slot state is missing");
+        require(properties.get("ro.boot.slot_suffix").equals(release.sourceSlot), "Signed release source slot does not match native boot");
         require(Arrays.asList(abis).contains("arm64-v8a") && pageSize == 4096, "Wrong architecture/page size");
         long installed = Long.parseLong(properties.get("ro.googlebook.pad3.release_sequence"));
         require(installed > 0 && release.sequence > installed, "Release is not newer than installed native port");

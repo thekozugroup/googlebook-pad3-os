@@ -118,7 +118,12 @@ public final class UpdateService extends Service {
                 "Apply/status requires the built-in system APK at the integration path");
         String command = "CLASSPATH=" + RootInstaller.APK + " /system/bin/app_process /system/bin org.googlebook.pad3.updater.RootInstaller "
                 + operation + " " + android.os.Process.myUid();
-        java.lang.Process process = new ProcessBuilder("su", "-c", command).redirectErrorStream(true).start();
+        java.lang.Process process;
+        try {
+            process = new ProcessBuilder("su", "-c", command).redirectErrorStream(true).start();
+        } catch (IOException unavailable) {
+            throw new IOException("Open SukiSU's Superuser page, enable Show system apps, and allow System update. Then retry.", unavailable);
+        }
         String last = "Root authorization was denied or helper could not start";
         try (BufferedReader in = new BufferedReader(new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8))) {
             String line;

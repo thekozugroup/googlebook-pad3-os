@@ -172,6 +172,7 @@ final class TaskManagerCompat {
     }
 
     static ProcStat process(Path proc, int pid) throws IOException {
+        if (PROC.equals(proc)) return NativeProcStats.read(pid);
         return parseProcess(pid, read(proc.resolve(Integer.toString(pid)).resolve("stat")));
     }
 

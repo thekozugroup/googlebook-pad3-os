@@ -1,0 +1,2 @@
+/system_ext/bin/googlebook_taskmanager_metrics  u:object_r:googlebook_taskmanager_metrics_exec:s0
+/dev/socket/googlebook_taskmanager_metrics      u:object_r:googlebook_taskmanager_metrics_socket:s0

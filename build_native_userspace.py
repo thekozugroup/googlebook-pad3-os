@@ -3,15 +3,15 @@
 
 Recipe schema 1: sequence, timestamp, images {system,system_ext,product},
 files {face_overlay,updater,pen_apk,pen_unsigned,taskmanager_jar,taskmanager_verification,component_certificate,payload_certificate,
-trust_manifest,update_engine,update_engine_rc,update_engine_protobuf,
-update_engine_protobuf_metadata,manager_service,apksigner,aapt2},
+trust_manifest,update_engine,update_engine_rc,update_engine_bundle,
+taskmanager_metrics,taskmanager_metrics_verification,
+manager_service,apksigner,aapt2},
 and trust {each relative path emitted by build_native_rom.trust_overlay: file pin}.
 Every file pin is exactly {path: absolute path, sha256: lowercase SHA-256}.
 Supply JAVA_HOME for the installed apksigner. Trust files come from the parent's
 trust_overlay call; components and the one-shot shell service are reviewed inputs.
 """
 import argparse
-import base64
 import hashlib
 import io
 import json
@@ -30,7 +30,7 @@ sys.dont_write_bytecode = True
 import build_native_rom as native
 from erofs_overlay import apply, content
 from erofs_sanitize import inventory, rewrite
-from native_install import public_image
+from native_install import engine_libraries, public_image
 from native_install.payload import require, sha256
 from port_changes import (BOOT_STAGE_FILE, BOOT_STAGE_PROPERTY, DIAGNOSTIC_ID,
                           DIAGNOSTIC_USB_REFRESH, DIAGNOSTIC_WAITS, WATCHDOG_NAME,
@@ -45,13 +45,23 @@ UPDATER = "/priv-app/Pad3Updater/Pad3Updater.apk"
 PEN = "/priv-app/OplusPen.apk"
 OVERLAY_CONFIG = "/overlay/config/config.xml"
 MANAGER_RC = "/etc/init/googlebook-pad3-sukisu-manager.rc"
-PROTOBUF = "/system/lib64/libprotobuf-cpp-lite-6.33.5.so"
+POLICY = "/etc/selinux/system_ext_sepolicy.cil"
+POLICY_HASH = "/etc/selinux/system_ext_sepolicy_and_mapping.sha256"
+POLICY_MAPPING = "/etc/selinux/mapping/202604.cil"
+METRICS_SOURCE = native.ROOT / "components/taskmanager-compat/native"
+METRICS_BINARY = "/bin/googlebook_taskmanager_metrics"
+METRICS_RC = "/etc/init/googlebook_taskmanager_metrics.rc"
+FILE_CONTEXTS = "/etc/selinux/system_ext_file_contexts"
+TASKMANAGER_POLICY = (b"\n;; Pad3 aggregate CPU counters for the preinstalled system Task Manager.\n"
+                      b"(allow system_app proc_stat (file (getattr open read)))\n"
+                      + (METRICS_SOURCE / "taskmanager_metrics.cil").read_bytes())
 COMPONENT_CERT_SHA = "3625a00c6244e94e3150604c4903800c3928e958e77a5b2d2814be1864f82eb4"
 TRUST_PATHS = (native.CERT_PATH, native.KEY_PATH, native.CONFIG_PATH,
                native.MANAGER_PATH, native.BOOTSTRAP_PATH, native.MANAGER_CHECKER_PATH)
 FILE_INPUTS = {"face_overlay", "updater", "pen_apk", "pen_unsigned", "taskmanager_jar", "taskmanager_verification", "component_certificate",
                "payload_certificate", "trust_manifest", "update_engine", "update_engine_rc",
-               "update_engine_protobuf", "update_engine_protobuf_metadata",
+               "update_engine_bundle",
+               "taskmanager_metrics", "taskmanager_metrics_verification",
                "manager_service", "apksigner", "aapt2"}
 FACE_ENTRY = {"package": "com.googlebook.pad3.facepreview", "mutable": "false", "enabled": "true"}
 TASKMANAGER_SOURCES = {
@@ -59,6 +69,11 @@ TASKMANAGER_SOURCES = {
     "components/taskmanager-compat/compile-api/vendor/google/libraries/desktop/serviceability/ServiceabilityManager.java",
     "components/taskmanager-compat/src/vendor/google/libraries/desktop/serviceability/TaskManagerCompat.java",
     "components/taskmanager-compat/tests/vendor/google/libraries/desktop/serviceability/MetricsSelfTest.java",
+    "components/taskmanager-compat/src/vendor/google/libraries/desktop/serviceability/NativeProcStats.java",
+    "components/taskmanager-compat/native/NativeProcStatsSelfTest.java",
+    "components/taskmanager-compat/native/metrics.c",
+    "components/taskmanager-compat/native/metrics.h",
+    "components/taskmanager-compat/native/host_tests.c",
 }
 PRIVATE_FILE = re.compile(r"googlebook.*(?:logger|logcat|watchdog|diagnostic|debug|probe|crash)|(?:gb[-_])?dsu[-_](?:log|boot|adb)", re.I)
 
@@ -105,6 +120,7 @@ def native_properties(data, partition, sequence, timestamp):
                     "ro.googlebook.pad3.native": "1", "ro.googlebook.pad3.device": "erhai",
                     "ro.googlebook.pad3.base_profile": "erhai-crdroid-20261025",
                     "ro.googlebook.pad3.release_sequence": str(sequence),
+                    "bluetooth.power.suspend.hid_wake_up.enabled": "false",
                     "ro.build.ab_update": "true", "ro.virtual_ab.enabled": "true"}
     controlled = set(updates)
     lines, seen = [], set()
@@ -133,10 +149,35 @@ def overlay_config(data):
     entries = [e for e in root.iter("overlay") if e.get("package") == FACE_ENTRY["package"]]
     require(len(entries) <= 1 and all(e.attrib == FACE_ENTRY and len(e) == 0 for e in entries),
             "conflicting face OverlayConfig entry")
-    if entries:
+    if entries and len(root) and root[0] is entries[0]:
         return data
-    require(data.count(b"</config>") == 1, "expected explicit OverlayConfig closing tag")
-    return data.replace(b"</config>", b'    <overlay package="com.googlebook.pad3.facepreview" mutable="false" enabled="true" />\n</config>')
+    entry = b'    <overlay package="com.googlebook.pad3.facepreview" mutable="false" enabled="true" />\n'
+    if entries:
+        require(data.count(entry) == 1, "expected canonical face OverlayConfig entry")
+        data = data.replace(entry, b"")
+    require(data.count(b"<config>") == 1 and data.count(b"</config>") == 1,
+            "expected explicit OverlayConfig tags")
+    # Android parses immutable overlays before any mutable entry or merged file.
+    return data.replace(b"<config>", b"<config>\n" + entry.rstrip(b"\n"), 1)
+
+
+def taskmanager_policy(cil, mapping, digest):
+    require(digest == (hashlib.sha256(cil + mapping).hexdigest() + "\n").encode(),
+            "system_ext policy/mapping hash mismatch")
+    require(TASKMANAGER_POLICY not in cil, "TaskManager policy is already present")
+    candidate = cil + TASKMANAGER_POLICY
+    return candidate, (hashlib.sha256(candidate + mapping).hexdigest() + "\n").encode()
+
+
+def verify_metrics(binary, receipt):
+    proof = json.loads(receipt.read_text())
+    require(proof.get("ndk_version") == "30.0.16248370" and proof.get("abi") == "arm64-v8a"
+            and proof.get("api") == 35 and proof.get("needed") == ["libc.so"], "metrics build ABI mismatch")
+    expected = {str((METRICS_SOURCE / name).relative_to(native.ROOT)): sha256(METRICS_SOURCE / name)
+                for name in ("main.c", "metrics.c", "metrics.h")}
+    require(proof.get("source_sha256") == expected and proof.get("binary", {}).get("sha256") == sha256(binary)
+            and proof["binary"].get("bytes") == binary.stat().st_size, "metrics source/binary proof mismatch")
+    return proof
 
 
 def load_recipe(path):
@@ -201,24 +242,6 @@ def verify_taskmanager(jar, receipt):
     return proof
 
 
-def protobuf_addition(files):
-    proof = json.loads(files["update_engine_protobuf_metadata"].read_text())
-    native.checked(proof["source_image"])
-    data = files["update_engine_protobuf"].read_bytes()
-    require(proof["image_path"] == PROTOBUF and proof["bytes"] == len(data)
-            and proof["sha256"] == hashlib.sha256(data).hexdigest(), "native protobuf source proof mismatch")
-    require(data[:6] == b"\x7fELF\x02\x01" and data[18:20] == b"\xb7\x00", "native protobuf must be an AArch64 ELF")
-    meta = dict(proof["metadata"])
-    meta["xattrs"] = {k: base64.b64decode(v, validate=True) for k, v in meta["xattrs"].items()}
-    require(set(meta) == {"mode", "uid", "gid", "mtime", "mtime_nsec", "xattrs"}
-            and meta["mode"] == stat.S_IFREG | 0o644 and meta["uid"] == meta["gid"] == 0
-            and type(meta["mtime"]) is int and type(meta["mtime_nsec"]) is int
-            and 0 <= meta["mtime_nsec"] < 10**9
-            and meta["xattrs"].get("security.selinux") == b"u:object_r:system_lib_file:s0\0",
-            "native protobuf metadata mismatch")
-    return {"data": data, "metadata": meta}
-
-
 def verify_inputs(inputs):
     files, trust = inputs["files"], inputs["trust"]
     require(sha256(files["component_certificate"]) == COMPONENT_CERT_SHA, "component certificate differs from public profile")
@@ -228,6 +251,7 @@ def verify_inputs(inputs):
     require(apk_payload_hashes(files["pen_apk"].read_bytes()) == apk_payload_hashes(files["pen_unsigned"].read_bytes()),
             "signed pen payload differs from the approved pinned unsigned build")
     verify_taskmanager(files["taskmanager_jar"], files["taskmanager_verification"])
+    verify_metrics(files["taskmanager_metrics"], files["taskmanager_metrics_verification"])
     manifest = json.loads(files["trust_manifest"].read_text())
     require(manifest.get("status") == "PUBLIC_TRUST_OVERLAY_ONLY_NOT_ROM_OR_FLASHABLE"
             and manifest["files"] == {name: sha256(path) for name, path in trust.items()}, "trust_overlay manifest differs from pinned files")
@@ -244,7 +268,9 @@ def verify_inputs(inputs):
     with files["update_engine"].open("rb") as stream:
         elf = stream.read(20)
     require(elf[:6] == b"\x7fELF\x02\x01" and elf[18:20] == b"\xb7\x00", "native engine must be an AArch64 ELF")
-    protobuf_addition(files)
+    _, bundled_rc = engine_libraries.integration_inputs({"path": str(files["update_engine_bundle"]),
+                                                        "sha256": sha256(files["update_engine_bundle"])})
+    require(engine_rc == bundled_rc, "native engine RC differs from private bundle")
     require(re.search(rb"^service update_engine /system/bin/update_engine(?:\s|$)", engine_rc, re.M), "captured native engine service missing")
     public_image.audit_text(engine_rc)
     service = files["manager_service"].read_bytes()
@@ -289,31 +315,49 @@ def partition_plan(image, partition, recipe, inputs):
         if (path.startswith(prefix + "/etc/init/") or path.startswith(prefix + "/bin/")) and PRIVATE_FILE.search(PurePosixPath(path).name):
             require(not stat.S_ISDIR(item["mode"]), "diagnostic directory needs explicit review: " + path)
             removals.add(path)
+    bundle = inputs["files"]["update_engine_bundle"]
+    engine_additions, bundled_rc = engine_libraries.integration_inputs(
+        {"path": str(bundle), "sha256": sha256(bundle)}, partition)
+    require(not engine_additions.keys() & entries.keys(), "private engine bundle would replace existing files")
     if partition == "system":
-        require(PROTOBUF not in entries, "native protobuf addition would replace an existing DSO")
-        protobuf = protobuf_addition(inputs["files"])
+        require(inputs["files"]["update_engine_rc"].read_bytes() == bundled_rc,
+                "native engine RC differs from private bundle")
         require(WATCHDOG_PATH in removals, "not pure V10: watchdog input missing")
         require(hashlib.sha256(content(image, TASKMANAGER)).hexdigest() == TASKMANAGER_BASE_SHA, "TaskManager source JAR drift")
         payloads |= {INIT: strip_diagnostics(content(image, INIT)), TASKMANAGER: inputs["files"]["taskmanager_jar"].read_bytes(),
-                     PROTOBUF: protobuf["data"],
                      "/system/bin/update_engine": inputs["files"]["update_engine"].read_bytes(),
-                     "/system/etc/init/update_engine.rc": inputs["files"]["update_engine_rc"].read_bytes()}
+                     "/system/etc/init/update_engine.rc": bundled_rc}
     elif partition == "system_ext":
+        cil, digest = taskmanager_policy(content(image, POLICY), content(image, POLICY_MAPPING),
+                                        content(image, POLICY_HASH))
         pen = inputs["files"]["pen_apk"].read_bytes()
+        contexts = (METRICS_SOURCE / "file_contexts").read_bytes()
+        old_contexts = content(image, FILE_CONTEXTS)
+        require(b"googlebook_taskmanager_metrics" not in old_contexts, "metrics contexts already present")
         require(dex_hashes(pen) != dex_hashes(content(image, PEN)),
                 "pen code is unchanged from V10; headless-user and permission fix required")
         payloads |= {FACE: inputs["files"]["face_overlay"].read_bytes(), UPDATER: inputs["files"]["updater"].read_bytes(),
                      PEN: pen,
+                     POLICY: cil, POLICY_HASH: digest,
+                     FILE_CONTEXTS: old_contexts.rstrip(b"\n") + b"\n" + contexts,
+                     METRICS_BINARY: inputs["files"]["taskmanager_metrics"].read_bytes(),
+                     METRICS_RC: (METRICS_SOURCE / "googlebook_taskmanager_metrics.rc").read_bytes(),
                      OVERLAY_CONFIG: overlay_config(content(image, OVERLAY_CONFIG)) if OVERLAY_CONFIG in entries else overlay_config(b"<config>\n</config>\n"),
                      MANAGER_RC: inputs["files"]["manager_service"].read_bytes()}
+    payloads |= {p: item["data"] for p, item in engine_additions.items()
+                 if stat.S_ISREG(item["metadata"]["mode"])}
     for relative, path in inputs["trust"].items():
         part, _, name = relative.partition("/")
         if part == partition:
             payloads["/" + relative if partition == "system" else "/" + name] = path.read_bytes()
     require(not payloads.keys() & removals, "replacement overlaps a removal")
     changes, additions = additions_and_changes(entries, payloads)
-    if partition == "system":
-        additions[PROTOBUF] = protobuf
+    additions.update(engine_additions)
+    if partition == "system_ext":
+        require(METRICS_BINARY in additions, "metrics executable must be a new file")
+        metadata = additions[METRICS_BINARY]["metadata"]
+        metadata["mode"] = stat.S_IFREG | 0o755
+        metadata["xattrs"] = {"security.selinux": b"u:object_r:googlebook_taskmanager_metrics_exec:s0\0"}
     return changes, additions, removals, payloads
 
 

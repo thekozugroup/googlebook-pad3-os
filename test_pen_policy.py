@@ -31,7 +31,7 @@ class CertificateValidation(unittest.TestCase):
 
     def test_fresh_owned_scratch_required(self):
         with self.assertRaisesRegex(ValueError, "fresh local task"):
-            prepare_pen_policy({}, b"", b"", "unused", ROOT / "reports")
+            prepare_pen_policy({}, b"", b"", "unused", ROOT)
 
 
 @unittest.skipUnless(CERT_PATH.is_file() and shutil.which("openssl"), "public component certificate/OpenSSL unavailable")

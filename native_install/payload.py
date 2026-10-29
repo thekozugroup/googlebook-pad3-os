@@ -1,7 +1,8 @@
-"""Bounded full A/B payload v2 writer. No device or network operations.
+"""Bounded A/B payload v2 writer. No device or network operations.
 
 Wire format: AOSP update_metadata.proto at dc84c2552b2d4cf00d2a843cb1c091d99d0499f1.
-Only REPLACE operations, full minor version 0, and RSA/SHA-256 are emitted.
+Defaults to full REPLACE, minor 0; allowlisted unchanged images may use SOURCE_COPY, minor 6.
+Only RSA/SHA-256 signatures are emitted.
 """
 import base64
 import hashlib
@@ -10,6 +11,10 @@ import subprocess
 
 BLOCK = 4096
 CHUNK = 4 * 1024 * 1024
+SOURCE_COPY_ALLOWED = frozenset({
+    "boot", "init_boot", "vendor_boot", "dtbo", "vbmeta", "vbmeta_system", "vbmeta_vendor",
+    "vendor", "odm", "vendor_dlkm", "system_dlkm", "product",
+})
 
 
 def require(ok, message):
@@ -75,8 +80,16 @@ def verify_digest(digest, signature, public, scratch):
         public_path.unlink(missing_ok=True)
 
 
-def write_payload(images, groups, timestamp, virtual_ab, key, certificate, output, scratch):
-    """images: ordered {name: Path}; all raw byte lengths must be 4 KiB aligned."""
+def write_payload(images, groups, timestamp, virtual_ab, key, certificate, output, scratch,
+                  *, source_copy_partitions=frozenset()):
+    """images: ordered {name: Path}; raw byte lengths must be 4 KiB aligned.
+
+    Opt-in set/frozenset must be a subset of SOURCE_COPY_ALLOWED. Each installed
+    source must equal its target image byte-for-byte; that image pins both.
+    """
+    require(isinstance(source_copy_partitions, (set, frozenset))
+            and source_copy_partitions <= SOURCE_COPY_ALLOWED, "SOURCE_COPY partition not allowlisted")
+    require(source_copy_partitions <= images.keys(), "SOURCE_COPY partition missing from images")
     public = public_key(certificate)
     probe = sign_digest(hashlib.sha256(b"native-payload-key-check").digest(), key)
     require(len(probe) in (256, 512), "only RSA-2048 or RSA-4096 payload keys are supported")
@@ -86,6 +99,7 @@ def write_payload(images, groups, timestamp, virtual_ab, key, certificate, outpu
     blobs_size = 0
     expected = {}
     for name, path in images.items():
+        source_copy = name in source_copy_partitions
         size = path.stat().st_size
         require(size > 0 and size % BLOCK == 0, "unaligned raw partition: " + name)
         digest = hashlib.sha256()
@@ -94,15 +108,22 @@ def write_payload(images, groups, timestamp, virtual_ab, key, certificate, outpu
             block = 0
             while data := stream.read(CHUNK):
                 digest.update(data)
-                extent = field(1, block) + field(2, len(data) // BLOCK)
-                operations.append(field(8, field(1, 0) + field(2, blobs_size)
-                                        + field(3, len(data)) + field(6, extent)
-                                        + field(8, hashlib.sha256(data).digest())))
+                if not source_copy:
+                    extent = field(1, block) + field(2, len(data) // BLOCK)
+                    operations.append(field(8, field(1, 0) + field(2, blobs_size)
+                                            + field(3, len(data)) + field(6, extent)
+                                            + field(8, hashlib.sha256(data).digest())))
+                    blobs_size += len(data)
                 block += len(data) // BLOCK
-                blobs_size += len(data)
+            require(stream.tell() == size, "input size changed while packaging: " + name)
         expected[name] = digest.hexdigest()
         info = field(1, size) + field(2, digest.digest())
-        partitions.append(field(13, field(1, name) + field(2, 0) + field(7, info)
+        if source_copy:
+            extent = field(1, 0) + field(2, size // BLOCK)
+            operations = [field(8, field(1, 4) + field(4, extent) + field(6, extent)
+                                + field(9, digest.digest()))]
+        partitions.append(field(13, field(1, name) + field(2, 0)
+                                + (field(6, info) if source_copy else b"") + field(7, info)
                                 + b"".join(operations)))
     dynamic = b""
     for group in groups:
@@ -111,8 +132,10 @@ def write_payload(images, groups, timestamp, virtual_ab, key, certificate, outpu
         dynamic += field(1, record)
     # VABC is deliberately disabled; uncompressed snapshot allocation needs parent review.
     dynamic += field(2, int(virtual_ab)) + field(3, 0)
+    # Minor 3 adds source hashes; minor 6 also permits 64-bit REPLACE blob offsets.
+    minor = 6 if source_copy_partitions else 0
     manifest = (field(3, BLOCK) + field(4, blobs_size) + field(5, signature_size)
-                + field(12, 0) + b"".join(partitions) + field(14, timestamp)
+                + field(12, minor) + b"".join(partitions) + field(14, timestamp)
                 + field(15, dynamic) + field(16, 0))
     metadata = b"CrAU" + struct.pack(">QQI", 2, len(manifest), signature_size) + manifest
     metadata_digest = hashlib.sha256(metadata).digest()
@@ -132,8 +155,9 @@ def write_payload(images, groups, timestamp, virtual_ab, key, certificate, outpu
                 with path.open("rb") as source:
                     while data := source.read(CHUNK):
                         digest.update(data)
-                        payload_digest.update(data)
-                        stream.write(data)
+                        if name not in source_copy_partitions:
+                            payload_digest.update(data)
+                            stream.write(data)
                 require(digest.hexdigest() == expected[name], "input changed while packaging: " + name)
             signature = sign_digest(payload_digest.digest(), key)
             verify_digest(payload_digest.digest(), signature, public, scratch)

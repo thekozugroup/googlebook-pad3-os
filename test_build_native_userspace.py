@@ -1,4 +1,3 @@
-import base64
 import hashlib
 import io
 import json
@@ -33,25 +32,30 @@ def apk_fixture(code):
 
 
 class TextTests(unittest.TestCase):
-    def test_native_protobuf_binds_bytes_source_and_original_metadata(self):
-        with tempfile.TemporaryDirectory(dir=os.environ.get("EROFS_TEST_SCRATCH")) as directory:
+    def test_metrics_receipt_rejects_stale_sources_and_changed_binary(self):
+        with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            source, dso, manifest = root / "system_b.img", root / "protobuf.so", root / "metadata.json"
-            source.write_bytes(b"source image")
-            dso.write_bytes(b"\x7fELF\x02\x01" + bytes(12) + b"\xb7\0native protobuf")
-            meta = {"mode": stat.S_IFREG | 0o644, "uid": 0, "gid": 0, "mtime": 1230768000,
-                    "mtime_nsec": 123, "xattrs": {"security.selinux": b"u:object_r:system_lib_file:s0\0", "user.binary": b"\0\xff"}}
-            proof = {"source_image": pin(source), "image_path": userspace.PROTOBUF, "bytes": dso.stat().st_size,
-                     "sha256": userspace.sha256(dso), "metadata": dict(meta, xattrs={k: base64.b64encode(v).decode() for k, v in meta["xattrs"].items()})}
-            manifest.write_text(json.dumps(proof))
-            files = {"update_engine_protobuf": dso, "update_engine_protobuf_metadata": manifest}
-            self.assertEqual(userspace.protobuf_addition(files), {"data": dso.read_bytes(), "metadata": meta})
-            dso.write_bytes(dso.read_bytes() + b"tampered")
-            with self.assertRaisesRegex(ValueError, "source proof mismatch"):
-                userspace.protobuf_addition(files)
-            source.write_bytes(b"changed source image")
-            with self.assertRaisesRegex(ValueError, "SHA-256 mismatch"):
-                userspace.protobuf_addition(files)
+            sources = root / "native"
+            sources.mkdir()
+            for name in ("main.c", "metrics.c", "metrics.h"):
+                (sources / name).write_bytes(name.encode())
+            binary, receipt = root / "metrics", root / "receipt.json"
+            binary.write_bytes(b"compiled binary")
+            proof = {"ndk_version": "30.0.16248370", "abi": "arm64-v8a", "api": 35,
+                     "needed": ["libc.so"], "source_sha256": {
+                         "native/" + name: userspace.sha256(sources / name)
+                         for name in ("main.c", "metrics.c", "metrics.h")},
+                     "binary": {"sha256": userspace.sha256(binary), "bytes": binary.stat().st_size}}
+            receipt.write_text(json.dumps(proof))
+            with patch.object(userspace, "METRICS_SOURCE", sources), patch.object(userspace.native, "ROOT", root):
+                self.assertEqual(userspace.verify_metrics(binary, receipt), proof)
+                binary.write_bytes(b"changed binary")
+                with self.assertRaisesRegex(ValueError, "source/binary"):
+                    userspace.verify_metrics(binary, receipt)
+                binary.write_bytes(b"compiled binary")
+                (sources / "main.c").write_bytes(b"changed source")
+                with self.assertRaisesRegex(ValueError, "source/binary"):
+                    userspace.verify_metrics(binary, receipt)
 
     def test_pen_code_identity_ignores_resigning_and_resources(self):
         original = apk_fixture(b"old code")
@@ -130,6 +134,7 @@ class TextTests(unittest.TestCase):
     def test_native_properties_preserve_heap_display_and_disable_private_adb(self):
         source = (b"dalvik.vm.heapsize=512m\ndebug.sf.ignore_hwc_physical_display_orientation=true\n"
                   b"ro.product.system.device=desktop\nro.debuggable=1\nro.adb.secure=0\n"
+                  b"bluetooth.power.suspend.hid_wake_up.enabled=true\n"
                   b"persist.adb.tls_server.enable=0\nservice.adb.listen_addrs=tcp:localhost:5555\n"
                   b"persist.sys.usb.config=adb\nro.boot.apex.early_adbd=1\nro.build.user=PRIVATE_OWNER\n")
         source += b"ro.audio.ihaladaptervendorextension_enabled=true\nro.audio.ihaladaptervendorextension_enabled=true\n"
@@ -138,6 +143,7 @@ class TextTests(unittest.TestCase):
                      b"ro.product.system.device=erhai", b"ro.googlebook.pad3.release_sequence=3",
                      b"ro.build.ab_update=true", b"ro.virtual_ab.enabled=true", b"ro.debuggable=0", b"ro.adb.secure=1"):
             self.assertIn(line + b"\n", result)
+        self.assertIn(b"bluetooth.power.suspend.hid_wake_up.enabled=false\n", result)
         for token in (b"PRIVATE_OWNER", b"persist.adb.", b"service.adb.", b"persist.sys.usb.config", b"early_adbd"):
             self.assertNotIn(token, result)
         self.assertIn(b"Googlebook/erhai/erhai:17/GBOS/3:user/release-keys", result)
@@ -152,10 +158,26 @@ class TextTests(unittest.TestCase):
     def test_overlay_config_preserves_order_comments_and_rejects_conflict(self):
         original = b'<config>\n<!-- retain -->\n<merge path="other.xml" />\n</config>\n'
         result = userspace.overlay_config(original)
-        self.assertTrue(result.startswith(original.split(b"</config>")[0]))
+        self.assertIn(b'<!-- retain -->\n<merge path="other.xml" />', result)
+        self.assertEqual(userspace.ET.fromstring(result)[0].attrib, userspace.FACE_ENTRY)
         self.assertEqual(userspace.overlay_config(result), result)
         with self.assertRaisesRegex(ValueError, "conflicting"):
             userspace.overlay_config(result.replace(b'mutable="false"', b'mutable="true"'))
+
+    def test_immutable_face_overlay_precedes_mutable_and_merged_entries(self):
+        original = (b'<config>\n<overlay package="fixed" mutable="false" />\n'
+                    b'<overlay package="default.mutable" enabled="true" />\n'
+                    b'<overlay package="mutable" mutable="true" />\n'
+                    b'<merge path="more.xml" />\n</config>\n')
+        result = userspace.overlay_config(original)
+        entries = list(userspace.ET.fromstring(result))
+        self.assertEqual(entries[0].attrib, userspace.FACE_ENTRY)
+        self.assertEqual([e.get("package") for e in entries[1:-1]],
+                         ["fixed", "default.mutable", "mutable"])
+        self.assertEqual(userspace.overlay_config(result), result)
+        old_append = original.replace(b'</config>',
+            b'    <overlay package="com.googlebook.pad3.facepreview" mutable="false" enabled="true" />\n</config>')
+        self.assertEqual(userspace.overlay_config(old_append), result)
 
     def test_new_directories_have_explicit_metadata_and_cannot_cross_symlinks(self):
         entries = {"/": {"mode": stat.S_IFDIR}, "/etc": {"mode": stat.S_IFDIR}}
@@ -168,6 +190,17 @@ class TextTests(unittest.TestCase):
         entries["/etc"] = {"mode": stat.S_IFLNK}
         with self.assertRaisesRegex(ValueError, "non-directory"):
             userspace.additions_and_changes(entries, {"/etc/googlebook/data": b"payload"})
+
+    def test_taskmanager_policy_preserves_existing_rules_and_binds_mapping(self):
+        cil, mapping = b"(type pen_app)\n", b";; mapping fixture\n"
+        digest = (hashlib.sha256(cil + mapping).hexdigest() + "\n").encode()
+        candidate, updated = userspace.taskmanager_policy(cil, mapping, digest)
+        self.assertEqual(candidate, cil + userspace.TASKMANAGER_POLICY)
+        self.assertEqual(updated, (hashlib.sha256(candidate + mapping).hexdigest() + "\n").encode())
+        for old, mapped, proof in [(cil, mapping + b"changed", digest),
+                                   (candidate, mapping, updated)]:
+            with self.subTest(old=old), self.assertRaises(ValueError):
+                userspace.taskmanager_policy(old, mapped, proof)
 
     def test_recipe_requires_every_pin_and_rejects_unknown_inputs(self):
         with tempfile.TemporaryDirectory(dir=os.environ.get("EROFS_TEST_SCRATCH")) as directory:
@@ -229,6 +262,10 @@ class AssemblyTests(unittest.TestCase):
                 files["/etc/security/adb_keys"] = self.secret
             if part == "system_ext":
                 files[userspace.PEN] = apk_fixture(b"old crashing pen fixture")
+                files[userspace.POLICY] = b"(type existing_pen_app)\n"
+                files[userspace.POLICY_MAPPING] = b";; retained mapping\n"
+                files[userspace.POLICY_HASH] = (hashlib.sha256(
+                    files[userspace.POLICY] + files[userspace.POLICY_MAPPING]).hexdigest() + "\n").encode()
             image = self.root / (part + "-source.img")
             self.make_image(image, files, links)
             images[part] = pin(image)
@@ -237,15 +274,14 @@ class AssemblyTests(unittest.TestCase):
             p = self.root / name
             p.write_bytes(apk_fixture(b"new headless/permission guards") if name == "pen_apk" else (name + " component fixture").encode())
             files[name] = pin(p)
-        self.protobuf_meta = {"mode": stat.S_IFREG | 0o644, "uid": 0, "gid": 0, "mtime": 1230768000,
+        self.engine_meta = {"mode": stat.S_IFREG | 0o644, "uid": 0, "gid": 0, "mtime": 1230768000,
                               "mtime_nsec": 0, "xattrs": {"security.selinux": b"u:object_r:system_lib_file:s0\0"}}
-        dso = Path(files["update_engine_protobuf"]["path"])
-        dso.write_bytes(b"\x7fELF\x02\x01" + bytes(12) + b"\xb7\0native protobuf fixture")
-        manifest = Path(files["update_engine_protobuf_metadata"]["path"])
-        manifest.write_text(json.dumps({"source_image": images["system"], "image_path": userspace.PROTOBUF,
-                                       "bytes": dso.stat().st_size, "sha256": userspace.sha256(dso),
-                                       "metadata": dict(self.protobuf_meta, xattrs={k: base64.b64encode(v).decode() for k, v in self.protobuf_meta["xattrs"].items()})}))
-        files["update_engine_protobuf"], files["update_engine_protobuf_metadata"] = pin(dso), pin(manifest)
+        private = userspace.engine_libraries.DESTINATION
+        self.engine_dso = private + "/liblp.so"
+        self.engine_data = b"native private library fixture"
+        self.engine_additions = {
+            private: {"data": b"", "metadata": dict(self.engine_meta, mode=stat.S_IFDIR | 0o755)},
+            self.engine_dso: {"data": self.engine_data, "metadata": self.engine_meta}}
         trust = {}
         for i, name in enumerate(userspace.TRUST_PATHS):
             p = self.root / ("trust-" + str(i))
@@ -278,7 +314,9 @@ class AssemblyTests(unittest.TestCase):
 
     def run_build(self, output):
         with patch.object(userspace, "TASKMANAGER_BASE_SHA", hashlib.sha256(self.jar).hexdigest()), \
-             patch.object(userspace, "verify_inputs"):
+             patch.object(userspace, "verify_inputs"), \
+             patch.object(userspace.engine_libraries, "integration_inputs", return_value=(
+                 self.engine_additions, Path(self.recipe["files"]["update_engine_rc"]["path"]).read_bytes())):
             return userspace.build(self.path, output, self.root)
 
     def test_real_three_image_assembly_preserves_signed_bytes_metadata_and_sanitizes(self):
@@ -303,12 +341,14 @@ class AssemblyTests(unittest.TestCase):
             self.assertEqual(userspace.sha256(Path(self.recipe["images"][part]["path"])), self.recipe["images"][part]["sha256"])
         self.assertEqual(content(output / "system_ext.img", userspace.UPDATER), Path(self.recipe["files"]["updater"]["path"]).read_bytes())
         self.assertEqual(content(output / "system_ext.img", userspace.PEN), Path(self.recipe["files"]["pen_apk"]["path"]).read_bytes())
+        self.assertEqual(content(output / "system_ext.img", userspace.POLICY),
+                         b"(type existing_pen_app)\n" + userspace.TASKMANAGER_POLICY)
         self.assertEqual(content(output / "system.img", userspace.TASKMANAGER), Path(self.recipe["files"]["taskmanager_jar"]["path"]).read_bytes())
         self.assertNotIn(userspace.WATCHDOG_PATH, inventory(output / "system.img"))
         self.assertEqual(content(output / "system.img", "/system/lib64/libprotobuf-cpp-lite.so"), b"original donor DSO")
-        added = inventory(output / "system.img")[userspace.PROTOBUF]
-        self.assertEqual({k: added[k] for k in self.protobuf_meta}, self.protobuf_meta)
-        self.assertEqual(content(output / "system.img", userspace.PROTOBUF), Path(self.recipe["files"]["update_engine_protobuf"]["path"]).read_bytes())
+        added = inventory(output / "system.img")[self.engine_dso]
+        self.assertEqual({k: added[k] for k in self.engine_meta}, self.engine_meta)
+        self.assertEqual(content(output / "system.img", self.engine_dso), self.engine_data)
         self.assertEqual(list(self.root.glob("userspace-overlay-*")), [])
 
     def test_failed_rewrite_removes_only_new_outputs_and_preserves_existing(self):

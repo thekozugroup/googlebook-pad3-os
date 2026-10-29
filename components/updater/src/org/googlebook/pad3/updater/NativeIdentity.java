@@ -9,7 +9,15 @@ import java.nio.charset.StandardCharsets;
 /** No userdata writes: both protected Binder state and mounted kernel identity must prove native boot. */
 final class NativeIdentity {
     static boolean query(String serviceName, String interfaceName, String method) throws Exception {
-        IBinder binder = (IBinder)Class.forName("android.os.ServiceManager").getMethod("getService", String.class).invoke(null, serviceName);
+        java.lang.reflect.Method wait = Class.forName("android.os.ServiceManager").getMethod("waitForService", String.class);
+        java.util.concurrent.FutureTask<IBinder> lookup = new java.util.concurrent.FutureTask<>(
+                () -> (IBinder)wait.invoke(null, serviceName));
+        Thread worker = new Thread(lookup, "BootStateService");
+        worker.setDaemon(true);
+        worker.start();
+        IBinder binder;
+        try { binder = lookup.get(5, java.util.concurrent.TimeUnit.SECONDS); }
+        finally { lookup.cancel(true); }
         UpdateCore.require(binder != null, "Protected boot-state service is unavailable: " + serviceName);
         Class<?> api = Class.forName(interfaceName);
         Object service = Class.forName(interfaceName + "$Stub").getMethod("asInterface", IBinder.class).invoke(null, binder);

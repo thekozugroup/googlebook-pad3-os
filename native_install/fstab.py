@@ -228,7 +228,11 @@ def patch_recovery(data):
 def recovery_filesystem_decision(stock, candidate, filesystem):
     before, after = unpack_recovery(stock), unpack_recovery(candidate)
     check_fstab(after["fstab"], filesystem)
-    if filesystem == "erofs":
+    already_erofs = {row[2] for row in entries(before["fstab"]) if row[0] in TARGETS} == {"erofs"}
+    if filesystem == "erofs" and already_erofs:
+        check_fstab(before["fstab"], "erofs")
+        require(candidate == stock, "native EROFS recovery baseline changed")
+    elif filesystem == "erofs":
         require(strip_avb(candidate, after["end"]) == patch_recovery(stock), "recovery differs from bounded EROFS patch")
     else:
         require(filesystem == "ext4" and candidate == stock, "EXT4 route must retain captured recovery")
@@ -241,7 +245,11 @@ def recovery_filesystem_decision(stock, candidate, filesystem):
 def filesystem_decision(stock, candidate, filesystem):
     original, updated = unpack_vendor_boot(stock), unpack_vendor_boot(candidate)
     check_fstab(updated["fstab"], filesystem)
-    if filesystem == "erofs":
+    already_erofs = {row[2] for row in entries(original["fstab"]) if row[0] in TARGETS} == {"erofs"}
+    if filesystem == "erofs" and already_erofs:
+        check_fstab(original["fstab"], "erofs")
+        require(candidate == stock, "native EROFS vendor_boot baseline changed")
+    elif filesystem == "erofs":
         require(unsigned_vendor_boot(candidate) == patch_vendor_boot(stock), "vendor_boot differs from bounded EROFS patch")
     else:
         require(filesystem == "ext4" and candidate == stock, "EXT4 route must retain captured vendor_boot")

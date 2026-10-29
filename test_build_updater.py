@@ -63,6 +63,61 @@ class UpdaterBuildTest(unittest.TestCase):
             with self.subTest(output=output), self.assertRaises(ValueError):
                 builder.output_path(scratch, output)
 
+    def test_apply_rechecks_source_slot_immediately_before_submission(self):
+        source = (builder.COMPONENT / "src/org/googlebook/pad3/updater/RootInstaller.java").read_text()
+        before, _ = source.split("engine.applyPayload(payloadFd, properties);", 1)
+        self.assertTrue(before.rstrip().endswith("guard(release);"))
+        self.assertLess(before.rindex("engine.verifyPayloadMetadata("), before.rindex("guard(release);"))
+
+    def test_manifest_source_slot_binding(self):
+        lock = json.loads((builder.COMPONENT / "toolchain.json").read_text())
+        java = Path(os.environ.get("JAVA_HOME", lock["java_home"])) / "bin"
+        if not (java / "javac").is_file():
+            self.skipTest("Configure JAVA_HOME or the JDK in toolchain.json")
+        with tempfile.TemporaryDirectory() as temporary:
+            work = Path(temporary)
+            # Object getters only: Android owns JSON text parsing; no signed feed is generated.
+            sources = {
+                "JSONObject.java": '''package org.json;
+import java.util.*;
+public class JSONObject {
+ public static final Object NULL = new Object();
+ private final Map<String,Object> values = new HashMap<>();
+ public JSONObject put(String key, Object value) { values.put(key,value); return this; }
+ public Object get(String key) {
+  if (!values.containsKey(key)) throw new IllegalArgumentException("Missing: "+key);
+  return values.get(key);
+ }
+ public Object remove(String key) { return values.remove(key); }
+ public JSONObject getJSONObject(String key) { return (JSONObject)get(key); }
+ public JSONArray getJSONArray(String key) { return (JSONArray)get(key); }
+}''',
+                "JSONArray.java": '''package org.json;
+import java.util.*;
+public class JSONArray {
+ private final List<Object> values = new ArrayList<>();
+ public JSONArray() { }
+ public JSONArray(String text) { throw new AssertionError("Unexpected JSON text parsing"); }
+ public JSONArray put(Object value) { values.add(value); return this; }
+ public int length() { return values.size(); }
+ public Object get(int index) { return values.get(index); }
+ public JSONObject getJSONObject(int index) { return (JSONObject)get(index); }
+}'''}
+            for name, source in sources.items():
+                (work / name).write_text(source)
+            env = dict(os.environ, JAVA_TOOL_OPTIONS=f"-Djava.io.tmpdir={work} -XX:-UsePerfData")
+            subprocess.run([str(java / "javac"), "--release", "17", "-d", str(work),
+                            *(str(work / name) for name in sources),
+                            str(builder.COMPONENT / "src/org/googlebook/pad3/updater/UpdateCore.java"),
+                            str(builder.COMPONENT / "src/org/googlebook/pad3/updater/ManifestCodec.java"),
+                            str(builder.COMPONENT / "tests/ManifestCodecTest.java")],
+                           env=env, check=True, capture_output=True, timeout=30)
+            result = subprocess.run([str(java / "java"), "-cp", str(work),
+                                     "org.googlebook.pad3.updater.ManifestCodecTest"],
+                                    env=env, capture_output=True, text=True, timeout=30)
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+            self.assertIn("MANIFEST_SOURCE_SLOT_CHECKS_PASSED=17", result.stdout)
+
     def test_actual_native_writer_zip32_and_zip64_match_consumer(self):
         from native_install import payload
         source = (builder.ROOT / "build_native_rom.py").read_text()
@@ -92,8 +147,8 @@ class UpdaterBuildTest(unittest.TestCase):
             subprocess.run([str(java / "javac"), "--release", "17", "-d", str(work),
                             str(builder.COMPONENT / "src/org/googlebook/pad3/updater/UpdateCore.java"),
                             str(builder.COMPONENT / "tests/ProducerConsumerTest.java")], env=env, check=True, capture_output=True)
-            for zip64 in (False, True):
-                with self.subTest(zip64=zip64):
+            for zip64, source_slot in ((False, "_b"), (True, "_b"), (False, "_a"), (True, "_a")):
+                with self.subTest(zip64=zip64, source_slot=source_slot):
                     archive = work / ("zip64.zip" if zip64 else "zip32.zip")
                     with zipfile.ZipFile(archive, "w", compression=zipfile.ZIP_STORED) as out:
                         with out.open("payload.bin", "w", force_zip64=zip64) as stream: stream.write(binary.read_bytes())
@@ -104,7 +159,7 @@ class UpdaterBuildTest(unittest.TestCase):
                     with archive.open("rb") as stream:
                         stream.seek(start + 26); name, extra = struct.unpack("<HH", stream.read(4))
                     result = subprocess.run([str(java / "java"), "-cp", str(work), "org.googlebook.pad3.updater.ProducerConsumerTest",
-                                             str(archive), str(props), str(start + 30 + name + extra), str(signature_size)],
+                                             str(archive), str(props), str(start + 30 + name + extra), str(signature_size), source_slot],
                                             env=env, capture_output=True, text=True)
                     self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
                     self.assertIn("PRODUCER_CONSUMER_FORMAT_PASS", result.stdout)

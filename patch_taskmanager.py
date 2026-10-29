@@ -192,7 +192,8 @@ def preservation(original, patched):
     after = {p.relative_to(patched).as_posix(): p.read_text() for p in patched.rglob('*.smali')}
     require(len(before) == 153 and before.keys() <= after.keys(), 'original class set drift')
     added = sorted(after.keys() - before.keys())
-    require(added and all(n == HELPER + '.smali' or n.startswith(HELPER + '$') for n in added), 'unexpected added class')
+    require(added and all(n == HELPER + '.smali' or n.startswith(HELPER + '$')
+                         or n == PACKAGE + 'NativeProcStats.smali' for n in added), 'unexpected added class')
     for name in before:
         if name != MANAGER:
             require(before[name] == after[name], 'unrelated class changed: ' + name)
@@ -265,15 +266,28 @@ def build(input_jar, scratch, output=CANDIDATE):
             directory.mkdir()
         api_source = COMPONENT / ('compile-api/' + PACKAGE + 'ServiceabilityManager.java')
         helper = COMPONENT / ('src/' + PACKAGE + 'TaskManagerCompat.java')
+        native_stats = COMPONENT / ('src/' + PACKAGE + 'NativeProcStats.java')
+        native_checks = COMPONENT / 'native/NativeProcStatsSelfTest.java'
         checks = COMPONENT / ('tests/' + PACKAGE + 'MetricsSelfTest.java')
         graft = COMPONENT / 'build-support/GraftClient.java'
+        protocol_sources = [COMPONENT / 'native' / name for name in ('metrics.c', 'metrics.h', 'host_tests.c')]
+        protocol_test = work / 'metrics-host-tests'
+        protocol_fixtures = work / 'protocol-fixtures'
+        protocol_fixtures.mkdir()
+        golden = work / 'golden-response.bin'
+        run(['cc', '-std=c11', '-O1', '-Wall', '-Wextra', '-Werror',
+             protocol_sources[0], protocol_sources[2], '-o', protocol_test], env)
+        protocol_checks = run([protocol_test, protocol_fixtures, golden], env)
         javac = JAVA / 'bin/javac'
         run([javac, '--release', '8', '-d', api, api_source], env)
         classpath = os.pathsep.join(map(str, [ANDROID, api]))
-        run([javac, '--release', '8', '-cp', classpath, '-d', classes, helper, checks], env)
+        run([javac, '--release', '8', '-cp', classpath, '-d', classes, helper, native_stats, checks, native_checks], env)
         host_checks = run([JAVA / 'bin/java', '-ea', '-cp', os.pathsep.join(map(str, [classes, api, ANDROID])),
                            'vendor.google.libraries.desktop.serviceability.MetricsSelfTest', work / 'fixtures'], env)
+        host_checks += protocol_checks + run([JAVA / 'bin/java', '-ea', '-cp', os.pathsep.join(map(str, [classes, api, ANDROID])),
+                            'vendor.google.libraries.desktop.serviceability.NativeProcStatsSelfTest', golden], env)
         helper_classes = sorted((classes / PACKAGE).glob('TaskManagerCompat*.class'))
+        helper_classes.append(classes / PACKAGE / 'NativeProcStats.class')
         run([D8, '--release', '--min-api', '28', '--lib', ANDROID, '--classpath', api,
              '--output', dex_dir, *helper_classes], env)
         run([javac, '--release', '8', '-cp', JADX, '-d', tools, graft], env)
@@ -292,7 +306,7 @@ def build(input_jar, scratch, output=CANDIDATE):
                    'candidate_sha256': digest(jar), 'candidate_bytes': jar.stat().st_size,
                    'dex': structure, 'transform': transform, 'preservation': preserved,
                    'host_checks': host_checks.strip(), 'sources': {str(p.relative_to(ROOT)): digest(p)
-                   for p in [api_source, helper, checks, graft, Path(__file__)]},
+                   for p in [api_source, helper, native_stats, checks, native_checks, graft, Path(__file__), *protocol_sources]},
                    'tool_jar': str(JADX), 'tool_jar_sha256': JADX_SHA256,
                    'device_commands_run': False, 'apk_modified': False, 'device_installed': False,
                    'runtime_verified': False, 'fsv_meta_updated': False,

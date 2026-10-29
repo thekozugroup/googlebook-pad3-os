@@ -27,3 +27,10 @@ Signing private keys remain external. The owner DER file is deliberately omitted
 
 The builders preserve their existing safeguards and experimental status. Consult
 their CLI help, inspect the inputs, and review each generated result before use.
+
+The build2-to-native3 UAPI 5-to-6 transition requires a separate one-time install
+of the pinned official 41100 daemon after OTA apply and before the first reboot.
+The updater did not perform that migration. Read the prerequisites, exact order
+and qualified runtime record in [PUBLIC_RELEASE.md](PUBLIC_RELEASE.md#native3-runtime-record-and-one-time-root-migration).
+The manager's boot-time self-upgrade does not migrate the shared daemon or
+establish automatic compatibility with future SukiSU versions.

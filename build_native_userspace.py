@@ -30,7 +30,7 @@ sys.dont_write_bytecode = True
 import build_native_rom as native
 from erofs_overlay import apply, content
 from erofs_sanitize import inventory, rewrite
-from native_install import engine_libraries, public_image
+from native_install import engine_libraries, product_cleanup, public_image
 from native_install.payload import require, sha256
 from port_changes import (BOOT_STAGE_FILE, BOOT_STAGE_PROPERTY, DIAGNOSTIC_ID,
                           DIAGNOSTIC_USB_REFRESH, DIAGNOSTIC_WAITS, WATCHDOG_NAME,
@@ -366,6 +366,11 @@ def partition_plan(image, partition, recipe, inputs):
 def assemble_partition(partition, recipe, inputs, output, scratch):
     image = native.checked(recipe["images"][partition])
     final = native.scratch_output(Path(output) / (partition + ".img"))
+    if partition == "product" and sha256(image) == product_cleanup.SOURCE_SHA:
+        # Keep the audited Product baseline's other files byte-identical for delta updates.
+        result = product_cleanup.build(image, final, scratch)
+        return result | {"path": str(final), "base_sha256": recipe["images"][partition]["sha256"],
+                         "changed_paths": [], "added_paths": []}
     changes, additions, removals, expected = partition_plan(image, partition, recipe, inputs)
     try:
         with tempfile.TemporaryDirectory(prefix="userspace-overlay-", dir=scratch) as directory:

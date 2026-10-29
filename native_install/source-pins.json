@@ -70,7 +70,7 @@
     "kernel": "6.6.144-4k-gacb4c5815254",
     "boot_sha256": "15e43ca52b939d9780438d32d302f1575c3e99c2df4836d500fe2940cab64448",
     "init_boot_sha256": "9ad55eaf6ce3f715501d0810f147956c6e37ac35e12e3c8391e8ec54991696ba",
-    "init_boot_review": "Parent supplied file-only ksud patch, 8388608 bytes, explicit corrected module and official ksuinit. Parent verified only init and kernelsu.ko contents changed; the other 38 entries, init.real and stock_image.sha1 were preserved. Static BTF/layout check passed 8 structs, 12 fields and 23 addends; runtime untested.",
+    "init_boot_review": "Parent supplied file-only ksud patch, 8388608 bytes, explicit corrected module and official ksuinit. Parent verified only init and kernelsu.ko contents changed; the other 38 entries, init.real and stock_image.sha1 were preserved. Static BTF/layout check passed 8 structs, 12 fields and 23 addends; runtime verification is scoped below.",
     "module_url": "https://github.com/SukiSU-Ultra/SukiSU-Ultra/releases/download/v4.3.0/lkm-aarch64-android15-6.6_kernelsu.ko",
     "module_upstream_sha256": "0e8f059c89602726dd8180d699b20526c747c58dbc97ebd62893905b56c5e3c6",
     "module_sha256": "6e9e1abff6ca15da92fe2cb8a51868b99049320aa65d613c826611eb377d4947",
@@ -80,7 +80,8 @@
     "ksuinit_sha256": "c7034b996c739734ecefe4357397549443725830c3e395ee4e2dd7913a4c2b26",
     "ksud_url": "https://github.com/SukiSU-Ultra/SukiSU-Ultra/releases/download/v4.3.0/ksud-aarch64-linux-android",
     "ksud_sha256": "e9fcad8189397d5c96965819ae1f184557c7a51701fed183a1e0190242a89501",
-    "runtime_verified": false
+    "runtime_verified": true,
+    "runtime_verification": "Parent-reported native3 Settings OTA stage/download/apply, followed by a separate pinned official 41100 ksud install before adb reboot for UAPI 5-to-6 migration. Slot B was successful and bootable with snapshot NONE, kernel interface 41100/UAPI 6, ksud 4.3.0 and SELinux Enforcing. Postboot native UpdateEngine reported CleanupPreviousUpdateAction kSuccess and MergeCompleted. Build2 did not automatically migrate the shared daemon; future SukiSU versions require separate review. See PUBLIC_RELEASE.md."
   },
   "original_sukisu_reviewed_baseline_sha256": "1f7d74acfbc42cd3e2b30930c592434d29017d37b50da165f76bd85bed1f9831",
   "filtered_layout_baseline_sha256": "70144a462143ce4ccd361685cc17315bb0640fc26d392b50cf7f84b02c274407",
@@ -104,6 +105,7 @@
       2000
     ],
     "no_new_selinux_domain": true,
-    "runtime_verified": false
+    "runtime_verified": true,
+    "runtime_verification": "Parent observed the native3 boot bootstrap upgrade the normal com.sukisu.ultra manager to 41100 using the same package. A read-only SukiSUManagerCheck run as shell returned 0, verifying the current official signer, canonical data path and version. This verifies the observed upgrade and shell check only; the shared daemon was migrated separately before reboot. See PUBLIC_RELEASE.md."
   }
 }

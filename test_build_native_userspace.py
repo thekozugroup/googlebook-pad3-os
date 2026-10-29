@@ -33,6 +33,52 @@ def apk_fixture(code):
 
 
 class TextTests(unittest.TestCase):
+    def test_pinned_product_followup_uses_physical_cleanup_without_property_changes(self):
+        with tempfile.TemporaryDirectory() as directory:
+            base = Path(directory) / "base.img"
+            base.write_bytes(b"reviewed product")
+            recipe = {"images": {"product": pin(base)}}
+            proof = {"removed_paths": sorted(userspace.product_cleanup.REMOVALS)}
+            with patch.object(userspace.product_cleanup, "SOURCE_SHA", userspace.sha256(base)), \
+                 patch.object(userspace.native, "scratch_output", side_effect=lambda p: p), \
+                 patch.object(userspace.product_cleanup, "build", return_value=proof) as clean, \
+                 patch.object(userspace, "partition_plan", side_effect=AssertionError("must preserve other files")):
+                result = userspace.assemble_partition("product", recipe, {}, Path(directory), Path(directory))
+                clean.assert_called_once_with(base, Path(directory) / "product.img", Path(directory))
+                self.assertEqual(result, proof | {"path": str(Path(directory) / "product.img"),
+                                                  "base_sha256": recipe["images"]["product"]["sha256"],
+                                                  "changed_paths": [], "added_paths": []})
+
+    def test_cleanup_dispatch_requires_product_and_the_reviewed_baseline(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            base = root / "base.img"
+            base.write_bytes(b"other image")
+            for partition, source_sha in (("product", "0" * 64), ("system", userspace.sha256(base))):
+                recipe = {"images": {partition: pin(base)}}
+                with self.subTest(partition=partition), \
+                     patch.object(userspace.product_cleanup, "SOURCE_SHA", source_sha), \
+                     patch.object(userspace.native, "scratch_output", side_effect=lambda p: p), \
+                     patch.object(userspace.product_cleanup, "build") as clean, \
+                     patch.object(userspace, "partition_plan", side_effect=ValueError("ordinary plan")) as plan:
+                    with self.assertRaisesRegex(ValueError, "ordinary plan"):
+                        userspace.assemble_partition(partition, recipe, {}, root, root)
+                    plan.assert_called_once_with(base, partition, recipe, {})
+                    clean.assert_not_called()
+
+    def test_pinned_product_cleanup_rejects_a_changed_recipe_input(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            base = root / "base.img"
+            base.write_bytes(b"reviewed product")
+            recipe = {"images": {"product": pin(base)}}
+            with patch.object(userspace.product_cleanup, "SOURCE_SHA", userspace.sha256(base)), \
+                 patch.object(userspace.product_cleanup, "build") as clean:
+                base.write_bytes(b"changed product")
+                with self.assertRaisesRegex(ValueError, "SHA-256 mismatch"):
+                    userspace.assemble_partition("product", recipe, {}, root, root)
+                clean.assert_not_called()
+
     def test_metrics_receipt_rejects_stale_sources_and_changed_binary(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

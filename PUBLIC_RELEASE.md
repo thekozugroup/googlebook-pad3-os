@@ -6,6 +6,43 @@ GitHub. The public target is `thekozugroup/googlebook-pad3-os`; the parent publi
 reviewed source there using fresh history. Do not copy the private `.git` directory.
 The exporter never changes Git identity, initializes a repository or publishes.
 
+## Native3 runtime record and one-time root migration
+
+The parent reported the following observations after the built-in Settings
+updater staged, downloaded and applied native3. After apply completed, the parent
+separately ran `ksud install` using the pinned official SukiSU 41100 daemon, then
+ran `adb reboot`. This was the one-time shared-daemon migration from UAPI 5 to
+UAPI 6; the build2 updater did not perform that migration automatically.
+
+- Build fingerprint: `Googlebook/erhai/erhai:17/GBOS/3:user/release-keys`.
+- Slot B was successful and bootable; snapshot state was `NONE`. Postboot native
+  UpdateEngine reported `CleanupPreviousUpdateAction kSuccess` and `MergeCompleted`.
+- SukiSU kernel interface 41100/UAPI 6 and `ksud` 4.3.0 were observed with SELinux
+  `Enforcing`.
+- The boot bootstrap upgraded the normal `com.sukisu.ultra` manager to 41100
+  using the same package. This manager upgrade is separate from daemon migration.
+  A read-only `SukiSUManagerCheck` run as shell returned 0, verifying the current
+  official signer, canonical data path and version.
+- All three Dell APKs were physically absent. The remaining installed
+  SupportAssist update was separately uninstalled; all three packages were then
+  absent even from `pm list packages -u` listings.
+- After sign-in, user 10 was `RUNNING_UNLOCKED`. Following `BOOT_COMPLETED`,
+  `org.lineageos.pen/.PenService` reported `isForeground=true`, `foregroundId=1001`
+  and a non-cached process. OnePlus Stylo2 BLE was connected, encrypted and bonded.
+  Dedicated sysfs labels were verified; no relevant pen AVC/EACCES appeared in
+  the available log. The user previously confirmed physical lines and pressure
+  with the same pen version 40. No fresh physical strokes were tested in native3;
+  the service and connection evidence does not establish that physical result.
+
+For a build2-to-native3 update, prepare the reviewed UAPI 6 `init_boot` and pinned
+official 41100 daemon, and preserve the old shared daemon/assets before apply.
+After the updater finishes applying native3, install the matching daemon before
+the first reboot into native3. Slot rollback alone does not restore `/data/adb`.
+The observed boot-time manager upgrade does not establish automatic migration
+for future SukiSU versions. Future kernel, module, daemon or UAPI changes need
+their own compatibility review and migration procedure. This record describes
+the reported native3 run, not a new device test or an artifact approval.
+
 ## Run and review
 
 Run from the private checkout in a verified local development folder. Use a

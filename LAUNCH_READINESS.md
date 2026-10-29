@@ -18,7 +18,7 @@ The public source has hash-bound patches and fail-closed image/signature/source 
 
 A 66.77-second native3 baseline showed about 5.5 GiB available RAM, 4.62% aggregate CPU load, 2.31 GiB occupied zRAM slots using about 778 MiB actual RAM, zero swap-outs and negligible memory-pressure stalls. No tuning was justified. This is a short baseline, not a heavy-load or battery benchmark.
 
-The latest verified ARM recovery donor remains mica R2/build 16560795, matching this port. A newer ARM OTA has not yet been acquired or reviewed. Never apply a laptop OTA directly to the tablet's firmware.
+Google's recovery catalog still lists mica R2/build 16560795, matching this port. On October 29, the maintainer acquired Google's signed mica R2-to-R5 incremental OTA, targeting CL3B.260622.276.R5/build 16693588 with the October 1 security patch. Payload hashes and RSA signatures passed; the signer matches the retained R2 donor certificate. R5 is not integrated into the Pad 3 build. Reconstruct the exact clean donor target and re-review the tablet patches before any test; never apply the laptop OTA directly to tablet firmware.
 
 XDA's official forum rules and GPL guidance must be checked before posting or sharing binaries. Rule 15 prohibits AI-generated forum content. COMMUNITY_NOTES.md is a factual checklist for the owner to use when writing their own post; it is not a forum post.
 

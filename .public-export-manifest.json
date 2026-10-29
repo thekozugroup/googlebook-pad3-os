@@ -12,14 +12,14 @@
       "sha256": "dbd9b469b6a70f3aff02679c0521913dcc6c8a2349e3f4dafda0dc395921abf7"
     },
     "COMMUNITY_NOTES.md": {
-      "bytes": 1888,
+      "bytes": 2165,
       "executable": false,
-      "sha256": "985e14711acf410539b25aea370dd18b03d40360a47b772664d6d2986c8ffb35"
+      "sha256": "40808f358db5c259f1e9d8398f09c9d76bb264c58c6eb91bce012730f750ad52"
     },
     "LAUNCH_READINESS.md": {
-      "bytes": 3097,
+      "bytes": 3424,
       "executable": false,
-      "sha256": "80312a0c98d91313fe988c14aca8c7ed20c0eccbe3902ed2c1451461cfcae0d2"
+      "sha256": "ffc9f82240b02b8dd635c2506be09514ccf9975926a79d1a8259afb9d7806ddb"
     },
     "PUBLIC_RELEASE.md": {
       "bytes": 21062,

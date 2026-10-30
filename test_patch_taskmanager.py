@@ -48,7 +48,7 @@ class TaskManagerPatchTest(unittest.TestCase):
         self.assertEqual(proof['public_manager_methods'], 79)
         self.assertEqual(proof['public_manager_fields'], 30)
         self.assertEqual(set(proof['changed_methods']), patch.TARGET_COUNTS.keys())
-        self.assertEqual(proof['untouched_manager_methods'], 83)
+        self.assertEqual(proof['untouched_manager_methods'], 82)
         self.assertTrue(proof['original_target_instructions_branches_try_debug_preserved'])
         self.assertFalse(proof['compile_only_classes_in_candidate'])
 

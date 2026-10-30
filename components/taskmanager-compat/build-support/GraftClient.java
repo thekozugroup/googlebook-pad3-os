@@ -44,6 +44,7 @@ public final class GraftClient {
     private static final ImmutableFieldReference CONTEXT_FIELD = new ImmutableFieldReference(MANAGER, "mContext", CONTEXT);
     private static final Set<String> TARGETS = new HashSet<>(Arrays.asList(
             "<init>(" + CONTEXT + ")V",
+            "fetchBatteryInfo()" + MANAGER.substring(0, MANAGER.length() - 1) + "$BatteryInfo;",
             "fetchCpuUsageInfo()" + MANAGER.substring(0, MANAGER.length() - 1) + "$CpuUsageInfo;",
             "fetchCpuUsageInfoWithProcessUsage([I)" + MANAGER.substring(0, MANAGER.length() - 1) + "$CpuUsageInfoWithProcessUsage;",
             "fetchPhysicalCpusInfo()Ljava/util/List;", "getProcessMemoryUsage([I)Ljava/util/List;",
@@ -109,6 +110,11 @@ public final class GraftClient {
                 prefix.add(new BuilderInstruction10x(Opcode.RETURN_VOID));
             } else {
                 switch (original.getName()) {
+                    case "fetchBatteryInfo":
+                        prefix.add(new BuilderInstruction22x(Opcode.MOVE_OBJECT_FROM16, 0, self));
+                        prefix.add(new BuilderInstruction22c(Opcode.IGET_OBJECT, 0, 0, CONTEXT_FIELD));
+                        prefix.add(call("battery", Collections.singletonList(CONTEXT), original.getReturnType(), 1, 0, 0));
+                        break;
                     case "fetchCpuUsageInfo":
                         prefix.add(call("cpu", Collections.emptyList(), original.getReturnType(), 0, 0, 0));
                         break;
@@ -232,7 +238,7 @@ public final class GraftClient {
         }
         require(found, "helper missing");
         DexPool.writeTo(args[2], new ImmutableDexFile(original.getOpcodes(), classes));
-        System.out.println("{\"grafted_methods\":6,\"original_classes\":" + original.getClasses().size()
+        System.out.println("{\"grafted_methods\":7,\"original_classes\":" + original.getClasses().size()
                 + ",\"helper_classes\":" + added + ",\"validated_client_references\":"
                 + checkedReferences.size() + "}");
     }

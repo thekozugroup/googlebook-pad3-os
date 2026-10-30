@@ -11,6 +11,15 @@
  import java.io.File
  import java.security.KeyStore
  import java.security.MessageDigest
+@@ -70,7 +71,7 @@
+ val releaseKeyPassword = releaseSigningValues.getValue("RELEASE_KEY_PASSWORD")
+ 
+ // Single source for artifact base name: PixelifyInfinity-<versionName>-<buildType>.apk/.aab
+-val appVersionCode = 10
++val appVersionCode = 11
+ val appVersionName = "1.4.1"
+ 
+ android {
 @@ -104,7 +105,7 @@
          }
      }
@@ -48,6 +57,32 @@
          save.setOnClickListener {
              savePreferences()
          }
+--- /dev/null
++++ b/app/src/main/java/io/github/samson910022/pixelifyphotos/BinderSafePreferences.kt
+@@ -0,0 +1,23 @@
++package io.github.samson910022.pixelifyphotos
++
++import android.content.SharedPreferences
++
++/** Binder's boot class loader cannot deserialize Kotlin collection singletons. */
++internal class BinderSafePreferences(private val delegate: SharedPreferences) : SharedPreferences by delegate {
++    override fun edit(): SharedPreferences.Editor = BinderSafeEditor(delegate.edit())
++}
++
++internal class BinderSafeEditor(private val delegate: SharedPreferences.Editor) : SharedPreferences.Editor {
++    override fun putStringSet(key: String?, values: MutableSet<String>?): SharedPreferences.Editor = apply {
++        delegate.putStringSet(key, values?.let { java.util.HashSet(it) })
++    }
++    override fun putString(key: String?, value: String?): SharedPreferences.Editor = apply { delegate.putString(key, value) }
++    override fun putInt(key: String?, value: Int): SharedPreferences.Editor = apply { delegate.putInt(key, value) }
++    override fun putLong(key: String?, value: Long): SharedPreferences.Editor = apply { delegate.putLong(key, value) }
++    override fun putFloat(key: String?, value: Float): SharedPreferences.Editor = apply { delegate.putFloat(key, value) }
++    override fun putBoolean(key: String?, value: Boolean): SharedPreferences.Editor = apply { delegate.putBoolean(key, value) }
++    override fun remove(key: String?): SharedPreferences.Editor = apply { delegate.remove(key) }
++    override fun clear(): SharedPreferences.Editor = apply { delegate.clear() }
++    override fun commit(): Boolean = delegate.commit()
++    override fun apply() = delegate.apply()
++}
 --- a/app/src/main/java/io/github/samson910022/pixelifyphotos/DeviceSpoofer.kt
 +++ b/app/src/main/java/io/github/samson910022/pixelifyphotos/DeviceSpoofer.kt
 @@ -1,3 +1,4 @@
@@ -247,6 +282,22 @@
 -            )
 -        }
 -    }
+ }
+--- a/app/src/main/java/io/github/samson910022/pixelifyphotos/PrefUtils.kt
++++ b/app/src/main/java/io/github/samson910022/pixelifyphotos/PrefUtils.kt
+@@ -12,11 +12,12 @@
+ object PrefUtils {
+ 
+     fun getPrefs(context: Context): SharedPreferences? {
+-        return try {
++        val preferences = try {
+             App.mService?.getRemotePreferences(Constants.SHARED_PREF_FILE_NAME)
+                 ?: context.getSharedPreferences(Constants.SHARED_PREF_FILE_NAME, Context.MODE_PRIVATE)
+         } catch (e: Exception) {
+             context.getSharedPreferences(Constants.SHARED_PREF_FILE_NAME, Context.MODE_PRIVATE)
+         }
++        return BinderSafePreferences(preferences)
+     }
  }
 --- a/app/src/main/java/io/github/samson910022/pixelifyphotos/ScopePolicy.kt
 +++ b/app/src/main/java/io/github/samson910022/pixelifyphotos/ScopePolicy.kt
@@ -700,6 +751,66 @@
  targetApiVersion=101
 -staticScope=false
 +staticScope=true
+--- /dev/null
++++ b/app/src/test/java/io/github/samson910022/pixelifyphotos/BinderSafePreferencesTest.kt
+@@ -0,0 +1,57 @@
++package io.github.samson910022.pixelifyphotos
++
++import android.content.SharedPreferences
++import java.io.*
++import org.junit.Assert.*
++import org.junit.Test
++
++class BinderSafePreferencesTest {
++    private class Recorder : SharedPreferences.Editor {
++        var received: MutableSet<String>? = null
++        var applied = false
++        override fun putStringSet(key: String?, values: MutableSet<String>?) = apply { received = values }
++        override fun putString(key: String?, value: String?) = this
++        override fun putInt(key: String?, value: Int) = this
++        override fun putLong(key: String?, value: Long) = this
++        override fun putFloat(key: String?, value: Float) = this
++        override fun putBoolean(key: String?, value: Boolean) = this
++        override fun remove(key: String?) = this
++        override fun clear() = this
++        override fun commit() = false
++        override fun apply() { applied = true }
++    }
++
++    @Test fun emptySetCrossesBootClassLoaderBoundaryAfterChainedEdit() {
++        val target = Recorder()
++        val editor: SharedPreferences.Editor = BinderSafeEditor(target)
++        assertSame(editor, editor.putBoolean("flag", true))
++        assertSame(editor, editor.putStringSet("set", emptySet()))
++        assertEquals(java.util.HashSet::class.java, target.received!!.javaClass)
++        val bytes = ByteArrayOutputStream().also { out -> ObjectOutputStream(out).use { it.writeObject(target.received) } }.toByteArray()
++        val restored = object : ObjectInputStream(ByteArrayInputStream(bytes)) {
++            override fun resolveClass(desc: ObjectStreamClass): Class<*> {
++                if (desc.name.startsWith("kotlin.")) throw ClassNotFoundException(desc.name)
++                return super.resolveClass(desc)
++            }
++        }.use { it.readObject() }
++        assertEquals(emptySet<String>(), restored)
++    }
++
++    @Test fun nullRemovalAndCommitApplySemanticsArePreserved() {
++        val target = Recorder()
++        val editor: SharedPreferences.Editor = BinderSafeEditor(target)
++        editor.putStringSet("set", setOf("one", "two"))
++        assertEquals(setOf("one", "two"), target.received)
++        assertSame(editor, editor.putString("string", "value"))
++        assertSame(editor, editor.putInt("int", 1))
++        assertSame(editor, editor.putLong("long", 1))
++        assertSame(editor, editor.putFloat("float", 1f))
++        assertSame(editor, editor.remove("remove"))
++        assertSame(editor, editor.clear())
++        editor.putStringSet("set", null)
++        assertNull(target.received)
++        assertFalse(editor.commit())
++        editor.apply()
++        assertTrue(target.applied)
++    }
++}
 --- a/app/src/test/java/io/github/samson910022/pixelifyphotos/DeviceSpooferTest.kt
 +++ b/app/src/test/java/io/github/samson910022/pixelifyphotos/DeviceSpooferTest.kt
 @@ -1,3 +1,4 @@

@@ -119,6 +119,8 @@ class PublicExport(unittest.TestCase):
                      "components/updater/Pad3Updater-unsigned.apk",
                      "components/photos-spoof/photos-strict-proof.apk",
                      "components/photos-spoof/upstream.tar.gz",
+                     "components/diagnostics-compat/DiagnosticsCompat.apk",
+                     "components/diagnostics-compat/api.jar",
                      "components/taskmanager-compat/candidate/private.verification.json"):
             self.put(name, "private fixture only")
         report = self.run_export()
@@ -136,6 +138,7 @@ class PublicExport(unittest.TestCase):
         self.assertNotIn("components/taskmanager-compat/candidate/private.verification.json", report["pending_review_paths"])
         self.assertIn("components/photos-spoof/source-lock.json", actual)
         self.assertIn("components/photos-spoof/licenses/Apache-2.0.txt", actual)
+        self.assertIn("components/diagnostics-compat/source-lock.json", actual)
 
     def test_portability_rules_are_explicit_and_preserve_source_and_hashes(self):
         original = {n: (self.source / n).read_bytes() for n in public.ALLOWLIST}

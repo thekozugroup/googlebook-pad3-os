@@ -29,7 +29,7 @@ PUBLIC_FEED = "https://raw.githubusercontent.com/" + PUBLIC_REPOSITORY + "/refs/
 ROOT_FILES = """
 android_disk.py assemble_port.py bootanimation_geometry.py build.sh
 build_dsu_diagnostic.py build_native_rom.py build_native_userspace.py build_oplus_pen.py build_pen_dsu.py build_secilc.sh build_updater.py build_face_overlay.py
-patch_taskmanager.py build_taskmanager_metrics.py
+patch_taskmanager.py build_taskmanager_metrics.py build_diagnostics_compat.py test_diagnostics_compat.py
 check_policy.py check_sukisu_layout.py check_updates.py cold_build_dsu.py
 desktop_repair_gate.py erofs_overlay.py erofs_sanitize.py ext4_source.py flash_test.py inputs.json
 package_port.py pen_policy.py port_changes.py prepare_inputs.py stability_probe.py
@@ -128,6 +128,13 @@ README.md LICENSE FORK_NOTICE.md THIRD_PARTY_NOTICES.md licenses/Apache-2.0.txt
 source-lock.json photos-strict.patch prepare.py verify.py build.sh
 build-support.gradle tests/test_contract.py
 """.split()
+DIAGNOSTICS_FILES = """
+README.md LICENSE AndroidManifest.xml source-lock.json
+META-INF/xposed/module.prop META-INF/xposed/java_init.list META-INF/xposed/scope.list
+src/org/googlebook/pad3/diagnostics/MetricValues.java
+src/org/googlebook/pad3/diagnostics/DiagnosticsModule.java
+tests/MetricValuesSelfTest.java
+""".split()
 ALLOWLIST = tuple(sorted(ROOT_FILES + [COMPONENT + n for n in COMPONENT_FILES]
                          + [COMPONENT + "upstream/" + n for n in UPSTREAM_FILES]
                          + [PROFILE + n for n in PROFILE_FILES]
@@ -136,10 +143,11 @@ ALLOWLIST = tuple(sorted(ROOT_FILES + [COMPONENT + n for n in COMPONENT_FILES]
                          + ["components/face-preview-overlay/" + n for n in FACE_FILES]
                          + ["components/taskmanager-compat/" + n for n in TASKMANAGER_FILES]
                          + ["components/photos-spoof/" + n for n in PHOTOS_FILES]
+                         + ["components/diagnostics-compat/" + n for n in DIAGNOSTICS_FILES]
                          + ["qa/serve_probe.py", "qa/test_serve_probe.py", "qa/tablet-probe.html"]))
 JSON_TRANSFORMS = {COMPONENT + n for n in ("toolchain.json", "donor-inputs.json", "integration/requirements.json")} | {
     "components/updater/toolchain.json", "native_install/tools.example.json", "native_install/plan.example.json"}
-INTEGRATION_DIRS = ("native_install", "components/oplus-pen", "components/updater", "components/face-preview-overlay", "components/taskmanager-compat", "components/photos-spoof")
+INTEGRATION_DIRS = ("native_install", "components/oplus-pen", "components/updater", "components/face-preview-overlay", "components/taskmanager-compat", "components/photos-spoof", "components/diagnostics-compat")
 ANNOUNCED_BUILDERS = ("build_face_overlay.py", "patch_taskmanager.py", "build_native_userspace.py")
 ANNOUNCED_TESTS = ("test_build_face_overlay.py", "test_patch_taskmanager.py", "test_build_native_userspace.py")
 PRIVATE_CAPTURE = "native_install/capture-manifest.json"

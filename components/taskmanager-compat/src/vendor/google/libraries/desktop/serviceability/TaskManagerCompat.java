@@ -3,7 +3,10 @@ package vendor.google.libraries.desktop.serviceability;
 import android.app.ActivityManager;
 import android.content.ComponentName;
 import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.pm.PackageManager;
+import android.os.BatteryManager;
 import android.os.Debug;
 import android.os.Process;
 import android.system.Os;
@@ -21,6 +24,7 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import vendor.google.libraries.desktop.serviceability.ServiceabilityManager.CpuUsageInfo;
+import vendor.google.libraries.desktop.serviceability.ServiceabilityManager.BatteryInfo;
 import vendor.google.libraries.desktop.serviceability.ServiceabilityManager.CpuUsageInfoWithProcessUsage;
 import vendor.google.libraries.desktop.serviceability.ServiceabilityManager.LogicalCpuInfo;
 import vendor.google.libraries.desktop.serviceability.ServiceabilityManager.PhysicalCpuInfo;
@@ -33,6 +37,7 @@ final class TaskManagerCompat {
     static final String DIAGNOSTICS_PACKAGE = "com.google.android.factory.diagnostics";
     private static final Path PROC = Paths.get("/proc");
     private static final Path CPU = Paths.get("/sys/devices/system/cpu");
+    private static final Path BATTERY = Paths.get("/sys/class/power_supply/battery");
 
     interface MissingService {
         boolean missing();
@@ -112,6 +117,33 @@ final class TaskManagerCompat {
         long value = Long.parseLong(text);
         if (value < 0) throw new IllegalArgumentException("Negative metric counter");
         return value;
+    }
+
+    static int capacityMicroAmpHours(Path path) throws IOException {
+        String value = read(path);
+        if (!value.matches("[0-9]{1,10}")) throw new IllegalArgumentException("Malformed battery capacity");
+        int capacity = Integer.parseInt(value);
+        if (capacity <= 0) throw new IllegalArgumentException("Battery capacity unavailable");
+        return capacity;
+    }
+
+    static BatteryInfo battery(Context context) {
+        BatteryManager manager = (BatteryManager) context.getSystemService(Context.BATTERY_SERVICE);
+        if (manager == null) throw new IllegalStateException("BatteryManager unavailable");
+        try {
+            int full = capacityMicroAmpHours(BATTERY.resolve("charge_full"));
+            int design = capacityMicroAmpHours(BATTERY.resolve("charge_full_design"));
+            Intent changed = context.registerReceiver(null, new IntentFilter(Intent.ACTION_BATTERY_CHANGED));
+            int cycles = changed == null ? Integer.MIN_VALUE
+                    : changed.getIntExtra(BatteryManager.EXTRA_CYCLE_COUNT, Integer.MIN_VALUE);
+            // The donor DTO uses uAh/uA. Unknown metadata stays null; no board identity is substituted.
+            return new BatteryInfo(manager.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY), cycles,
+                    manager.getIntProperty(BatteryManager.BATTERY_PROPERTY_CURRENT_NOW),
+                    manager.getIntProperty(BatteryManager.BATTERY_PROPERTY_CURRENT_AVERAGE),
+                    manager.getIntProperty(BatteryManager.BATTERY_PROPERTY_CHARGE_COUNTER), full, design, null, null);
+        } catch (IOException unavailable) {
+            throw new IllegalStateException("Battery capacity telemetry unavailable", unavailable);
+        }
     }
 
     static long ticks(long value, long hz) {

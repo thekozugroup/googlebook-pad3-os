@@ -1,0 +1,19 @@
+{
+  "schema": 1,
+  "target_package": "com.google.android.factory.diagnostics",
+  "target_apk_sha256": "efc1408bbbceb9d3b7b3f70a307d42ff8194e481ecec5a40d1b9d17d39ffcb83",
+  "target_app_id": 1000,
+  "scope": ["com.google.android.factory.diagnostics"],
+  "minimum_modern_libxposed_api": 101,
+  "compile_only_api": {
+    "url": "https://repo.maven.apache.org/maven2/io/github/libxposed/api/101.0.0/api-101.0.0.aar",
+    "sha256": "99679197215606606667844b1a73575746e919d921f1042744da7a42b4fd93c4",
+    "classes_jar_sha256": "843b4e1a4cddf30c1be737cc13c375561d10b1af2ed29459a0fde013c055e37b"
+  },
+  "battery_health_source": "/sys/devices/virtual/oplus_chg/battery/battery_soh",
+  "battery_capacities_source": "/sys/class/power_supply/battery",
+  "wifi_channel_api": "android.net.wifi.ScanResult.convertFrequencyMhzToChannelIfSupported",
+  "memory_source": "android.app.ActivityManager.MemoryInfo.totalMem and availMem",
+  "cpu_source": "Audited shared-client cumulative real kernel counters",
+  "original_apk_modified": false
+}

@@ -28,6 +28,17 @@
 (allow system_app googlebook_taskmanager_metrics_socket (sock_file (write)))
 (allow system_app googlebook_taskmanager_metrics (unix_stream_socket (connectto)))
 
+;; Only these kernel battery telemetry leaves are exposed to the system tools.
+(type googlebook_battery_info)
+(roletype object_r googlebook_battery_info)
+(typeattributeset fs_type (googlebook_battery_info))
+(typeattributeset sysfs_type (googlebook_battery_info))
+(genfscon sysfs "/devices/platform/soc/soc:oplus,mms_gauge/oplus_mms/gauge/battery/charge_full" (u object_r googlebook_battery_info ((s0) (s0))))
+(genfscon sysfs "/devices/platform/soc/soc:oplus,mms_gauge/oplus_mms/gauge/battery/charge_full_design" (u object_r googlebook_battery_info ((s0) (s0))))
+(genfscon sysfs "/devices/virtual/oplus_chg/battery/battery_soh" (u object_r googlebook_battery_info ((s0) (s0))))
+(allow system_app googlebook_battery_info (file (getattr open read)))
+(allow system_app vendor_sysfs_usb_supply (dir (search)))
+
 (neverallow googlebook_taskmanager_metrics domain (process (ptrace)))
 (neverallow googlebook_taskmanager_metrics self (capability (all)))
 (neverallow googlebook_taskmanager_metrics self (capability2 (all)))

@@ -6,7 +6,35 @@ GitHub. The public target is `thekozugroup/googlebook-pad3-os`; the parent publi
 reviewed source there using fresh history. Do not copy the private `.git` directory.
 The exporter never changes Git identity, initializes a repository or publishes.
 
-## Native6 R5 owner installation: app validation pending
+## Native7 metrics candidate: host checks only
+
+Native7 is a private native6/A-to-B update candidate with the same R5 base,
+kernel, vendor, firmware and root interface. It preserves userdata. The shared
+client now reads measured/design battery capacity in uAh from the actual gauge.
+A new, separately scoped Diagnostics adapter corrects the donor's 6 GHz Wi-Fi
+channel calculation, rescaled advertised-RAM arithmetic, binary-unit labels,
+CPU startup/history and missing-value presentation. OEM state of health comes
+from the actual gauge. The original Google Diagnostics APK is unchanged.
+
+The adapter requires active Vector/Zygisk and admits only the exact audited
+Diagnostics package/APK hash and system appId. It is included as a regular
+SystemExt app; first enablement and personal-user scope require validation.
+The ROM grants read-only access to three exact battery telemetry leaves. Fresh
+combined policy compilation passed strict neverallow and runtime linkage checks.
+The modified client JAR's stale fsverity sidecar is removed rather than retained
+as authentication for different bytes. Actual ART loading remains a device gate.
+
+The signed adapter builder passed 25 metric/scope checks. Shared-client tests
+passed 61 Java checks, 210 C checks and 23 socket checks. Initial host regression
+passed with eight optional cases skipped; the three real EROFS assembly cases
+were subsequently run and passed. Product6-to-7 review found only build.prop
+content changed, with all 757 paths and metadata preserved and 610 file/link
+contents checked. The Google Diagnostics APK hash still matches the original.
+
+The tablet disconnected before installing the adapter or native7. These are
+host results, not runtime acceptance. The public native3 feed remains unchanged.
+
+## Native6 R5 owner test and remaining metric defects
 
 Private native5 rebased the three userspace partitions onto Google's signed
 mica R5/build 16693588 (CL3B.260622.276.R5, security patch 2026-10-01).
@@ -37,8 +65,12 @@ to the previously compiled set. Product5-to-6 changed only build.prop across all
 757 paths/610 file contents. The private data-preserving owner OTA applied from
 native5/B to A, booted in 25.9 seconds, and matched all 15 live target hashes.
 Snapshot state is NONE and A is successful/bootable; B is not a usable slot-only
-rollback after merge. Root and enforcing SELinux remain active. Diagnostics UI
-and post-fix stability checks await owner sign-in; initial boot is insufficient.
+rollback after merge. Root and enforcing SELinux remain active. After owner sign-in, all five Diagnostics sections stayed resumed, with live CPU
+load, temperature and frequency. Its unsupported memory factory test reported
+failure without a crash. A 15-minute, 31-sample probe captured no new crashes,
+ANRs, native fatal signals or restarts, but one sample lost ADB. Two baseline
+crashes belonged to the Photos configuration app. A subsequent metric audit
+found the donor UI arithmetic and missing-data defects addressed by native7.
 
 A separate owner Photos experiment installed official pinned ZygiskNext 1.5.2
 and Vector 2.2, plus a locally built module enabled only for
@@ -46,9 +78,13 @@ com.google.android.apps.photos in the personal user. The exact scope was read
 back through Vector's supported CLI. Its default profile is Pixel XL, and the
 proof preserves real Android version/security fields. Its 299 JVM tests passed.
 The root injection engines operate globally and add live policy allowances;
-only the module's spoof logic is restricted to Photos. Neither the Photos runtime
-behavior nor Google server-side storage entitlement has been verified. These
-add-ons are separate from the ROM payload and have a disable/reboot recovery path.
+only the module's spoof logic is restricted to Photos. Native hook code was mapped in the actual Photos process, and the owner
+reported backups consuming no storage quota. Future server eligibility is not
+guaranteed by those observations. The configuration app exposed a Binder
+StringSet class-loader crash; the same-signer code11 candidate normalizes writes
+to Java HashSet and passed 301 tests with unchanged native libraries. Its device
+validation is pending USB reconnection. These add-ons are separate from the ROM
+payload and have a disable/reboot recovery path.
 
 The public native3 feed is unchanged; no R5/native6 binary is public. No reset or
 erase was performed in these updates. First-install recovery, licensing and
@@ -193,6 +229,10 @@ added after review. The selection consists of:
   Its source README and component ignore file are included; the entire generated
   `candidate/` directory is omitted from both source copying and pending-source
   inventory, and remains owned by the parent.
+- The ten exact Diagnostics adapter source/metadata/license files, its offline
+  builder and contract tests. No APK, API dependency archive, signing material or
+  private runtime evidence enters the export. Its exact APK hash gate is a source
+  verification pin, not a Google signing-key replacement.
 - The six named native policy/profile inputs under
   `profiles/erhai-crdroid-20261025`, with their original verification hashes.
 - The 12 exact `PHOTOS_FILES` under `components/photos-spoof`: locked source

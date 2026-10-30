@@ -39,6 +39,10 @@ def verify_source(source):
     require(props == {'minApiVersion': '101', 'targetApiVersion': '101', 'staticScope': 'true'}, 'Modern libxposed API101/static scope required')
     require((metadata / 'scope.list').read_text().strip() == PACKAGE, 'Only Photos may be scoped')
     require('val defaultDeviceName = "Pixel XL"' in read('DeviceProps'), 'Default profile must remain Pixel XL')
+    require('return BinderSafePreferences(preferences)' in read('PrefUtils'), 'Preference writes must cross the safe Binder boundary')
+    editor = read('BinderSafePreferences')
+    require('java.util.HashSet(it)' in editor and 'BinderSafeEditor(delegate.edit())' in editor,
+            'String sets must use boot-classloader collections')
 
 
 if __name__ == '__main__':

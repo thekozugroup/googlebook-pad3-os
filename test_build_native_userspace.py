@@ -139,9 +139,9 @@ class TextTests(unittest.TestCase):
                      "original_jar_sha256": userspace.TASKMANAGER_BASE_SHA,
                      "original_dex_sha256": taskmanager.ORIGINAL_DEX_SHA256,
                      "sources": {source.name: userspace.sha256(source)}, "dex": dex,
-                     "transform": {"grafted_methods": 6}, "preservation": {
+                     "transform": {"grafted_methods": 7}, "preservation": {
                          "changed_methods": list(taskmanager.TARGET_COUNTS), "manager_methods": 89,
-                         "untouched_manager_methods": 83,
+                         "untouched_manager_methods": 82,
                          "original_target_instructions_branches_try_debug_preserved": True,
                          "original_fields_dtos_annotations_parameters_preserved": True,
                          "compile_only_classes_in_candidate": False}}
@@ -299,6 +299,7 @@ class AssemblyTests(unittest.TestCase):
             links = {}
             if part == "system":
                 files |= {userspace.INIT: diagnostic_init(INIT), userspace.TASKMANAGER: self.jar,
+                          userspace.TASKMANAGER + ".fsv_meta": b"metadata for the original JAR only",
                           "/system/lib64/libprotobuf-cpp-lite.so": b"original donor DSO",
                           "/system/bin/update_engine": b"disabled donor binary",
                           "/system/etc/init/update_engine.rc": b"# intentionally disabled donor updater\n",
@@ -391,6 +392,7 @@ class AssemblyTests(unittest.TestCase):
         self.assertEqual(content(output / "system_ext.img", userspace.POLICY),
                          b"(type existing_pen_app)\n" + userspace.NATIVE_POLICY)
         self.assertEqual(content(output / "system.img", userspace.TASKMANAGER), Path(self.recipe["files"]["taskmanager_jar"]["path"]).read_bytes())
+        self.assertNotIn(userspace.TASKMANAGER + ".fsv_meta", inventory(output / "system.img"))
         self.assertNotIn(userspace.WATCHDOG_PATH, inventory(output / "system.img"))
         self.assertEqual(content(output / "system.img", "/system/lib64/libprotobuf-cpp-lite.so"), b"original donor DSO")
         added = inventory(output / "system.img")[self.engine_dso]

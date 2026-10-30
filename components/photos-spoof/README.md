@@ -10,7 +10,9 @@ The module requires Modern libxposed **API101**. Enablement, scope readback, a P
 
 `source-lock.json` pins the upstream commit/archive URL, archive SHA-256, exact patch SHA-256, changed source files and original license/notices. The chosen source is later than the published 1.4.1 release and includes Android17 fallbacks. `photos-strict.patch` is unchanged from the built proof. The original MIT license, fork notice, third-party notices and Apache license are preserved byte for byte.
 
-The tested tool versions are JDK17, Gradle8.11.1, AGP8.10.1, Kotlin2.1.0, SDK36, installed NDK30.0.16248370 and CMake3.22.1. The NDK30 substitution is explicit in the patch and lock. A previous signed proof passed 299 Android JVM tests and compiled JNI for arm64-v8a, armeabi-v7a and x86_64. Those are build/JVM results, not device or quota results.
+The tested tool versions are JDK17, Gradle8.11.1, AGP8.10.1, Kotlin2.1.0, SDK36, installed NDK30.0.16248370 and CMake3.22.1. The NDK30 substitution is explicit in the patch and lock. The first signed proof passed 299 Android JVM tests and compiled JNI for arm64-v8a, armeabi-v7a and x86_64. Code11 adds a Binder-safe StringSet editor and two serialization/chaining regressions: 301 tests passed. Its candidate reuses the exact three verified native libraries; Java/Kotlin was rebuilt. The normal source build compiles those unchanged native sources. Device acceptance is recorded separately.
+
+The owner reported quota-free Photos backups with the initial proof. Its configuration app also exposed a RemotePreferences class-loader error when Kotlin's empty-set singleton crossed Binder. Code11 copies StringSet writes to Java HashSet and preserves editor chaining, null removal and commit/apply behavior. This changes preference transport only; scope, profile and real OS-version rules are unchanged. Runtime validation of the configuration-app fix remains required.
 
 ## Reconstruct and verify without building
 

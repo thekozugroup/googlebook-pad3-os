@@ -6,6 +6,16 @@ import java.util.List;
 
 /** Compile/test API only. No class from this file may enter the candidate DEX. */
 public class ServiceabilityManager {
+    public static class BatteryInfo {
+        public final int capacity, cycleCount, currentNow, currentAvg, chargeNow, chargeFull, chargeFullDesign;
+        public final String manufacturer, modelName;
+        public BatteryInfo(int capacity, int cycleCount, int currentNow, int currentAvg,
+                int chargeNow, int chargeFull, int chargeFullDesign, String manufacturer, String modelName) {
+            this.capacity = capacity; this.cycleCount = cycleCount; this.currentNow = currentNow;
+            this.currentAvg = currentAvg; this.chargeNow = chargeNow; this.chargeFull = chargeFull;
+            this.chargeFullDesign = chargeFullDesign; this.manufacturer = manufacturer; this.modelName = modelName;
+        }
+    }
     public static class CpuUsageInfo {
         public final long userTotalCpuUsage, systemTotalCpuUsage, totalCpuUsage;
         public CpuUsageInfo(long user, long system, long total) {

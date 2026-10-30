@@ -44,6 +44,17 @@ public final class MetricsSelfTest {
     public static void main(String[] args) throws Exception {
         Path root = Paths.get(args[0]);
         Files.createDirectories(root);
+        Path battery = root.resolve("battery/charge_full");
+        write(battery, "11732000\n");
+        check(TaskManagerCompat.capacityMicroAmpHours(battery) == 11732000, "measured full capacity stays in uAh");
+        write(battery, "12140000\n");
+        check(TaskManagerCompat.capacityMicroAmpHours(battery) == 12140000, "design capacity stays in uAh");
+        for (String invalid : new String[]{"", "0", "-1", "1.5", "1 2", "2147483648"}) {
+            write(battery, invalid);
+            fails(IllegalArgumentException.class, () -> TaskManagerCompat.capacityMicroAmpHours(battery));
+        }
+        Files.delete(battery);
+        fails(IOException.class, () -> TaskManagerCompat.capacityMicroAmpHours(battery));
         String line = "cpu 100 20 30 400 50 6 7 8 999 111\ncpu0 1 2 3";
         CpuUsageInfo cpu = TaskManagerCompat.parseCpu(line, 100);
         check(cpu.userTotalCpuUsage == 120 && cpu.systemTotalCpuUsage == 43 && cpu.totalCpuUsage == 621,

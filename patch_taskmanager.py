@@ -31,6 +31,7 @@ HELPER = PACKAGE + 'TaskManagerCompat'
 MODE_LINE = '.field private final synthetic mTaskManagerCompat:Z'
 TARGET_COUNTS = {
     '<init>(Landroid/content/Context;)V': 5,
+    'fetchBatteryInfo()L' + PACKAGE + 'ServiceabilityManager$BatteryInfo;': 8,
     'fetchCpuUsageInfo()L' + PACKAGE + 'ServiceabilityManager$CpuUsageInfo;': 6,
     'fetchCpuUsageInfoWithProcessUsage([I)L' + PACKAGE + 'ServiceabilityManager$CpuUsageInfoWithProcessUsage;': 9,
     'fetchPhysicalCpusInfo()Ljava/util/List;': 6,

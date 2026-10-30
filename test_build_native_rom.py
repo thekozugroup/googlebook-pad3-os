@@ -273,16 +273,17 @@ class ValidationTests(unittest.TestCase):
         from native_install import product_cleanup
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            old, current, updated, fixed = [root / name for name in ("old", "current", "updated", "fixed")]
-            for path in (old, current, updated, fixed):
+            old, current, updated, fixed, metrics = [root / name for name in ("old", "current", "updated", "fixed", "metrics")]
+            for path in (old, current, updated, fixed, metrics):
                 path.write_bytes(path.name.encode())
             with patch.object(product_cleanup, "SOURCE_SHA", payload.sha256(old)), \
                  patch.object(product_cleanup, "TARGET_SHA", payload.sha256(current)), \
                  patch.object(product_cleanup, "R5_TARGET_SHA", payload.sha256(updated)), \
-                 patch.object(product_cleanup, "R5_DIAGNOSTICS_TARGET_SHA", payload.sha256(fixed)):
-                for target, source in ((current, None), (updated, None), (fixed, None), (current, old), (updated, current), (fixed, updated)):
+                 patch.object(product_cleanup, "R5_DIAGNOSTICS_TARGET_SHA", payload.sha256(fixed)), \
+                 patch.object(product_cleanup, "R5_METRICS_TARGET_SHA", payload.sha256(metrics)):
+                for target, source in ((current, None), (updated, None), (fixed, None), (metrics, None), (current, old), (updated, current), (fixed, updated), (metrics, fixed)):
                     product_cleanup.validate_release(target, source)
-                for target, source in ((updated, old), (current, updated), (fixed, old), (fixed, current), (updated, fixed)):
+                for target, source in ((updated, old), (current, updated), (fixed, old), (fixed, current), (updated, fixed), (metrics, old), (metrics, updated), (fixed, metrics)):
                     with self.assertRaises(ValueError):
                         product_cleanup.validate_release(target, source)
                 updated.write_bytes(b"unreviewed target")

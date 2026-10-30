@@ -1,6 +1,6 @@
 # Tablet system-tools shared-client fallback
 
-This offline builder grafts the constructor, four metrics methods and routine cancellation in the exact
+This offline builder grafts the constructor, four CPU/process metrics methods, battery information and routine cancellation in the exact
 GoogleBook client JAR. It keeps every original class, public declaration, DTO and
 untouched method. The Google-signed Task Manager and Diagnostics APKs are not inputs to the
 transform and are not modified.
@@ -37,9 +37,12 @@ four-int topology DTO legitimately omits optional cpuidle telemetry.
 
 The donor Diagnostics constructor failed because the laptop vendor service is
 absent. The same exact-package/system-appId/context guard now admits Diagnostics.
-Its CPU usage and topology calls use the existing real native metrics. Standard
-battery, memory, storage, audio, camera and network information continues to use
-Android APIs. Missing vendor full/design battery capacities remain unavailable.
+Its CPU usage and topology calls use the existing real native metrics. Native7
+adds full/design charge capacity from the actual kernel gauge, in uAh. Other
+battery fields use BatteryManager and its sticky broadcast; unknown manufacturer
+and model metadata remains null. Three exact sysfs leaves receive read-only labels
+for the system tools. The separate Diagnostics adapter reads the OEM state of
+health and corrects donor UI arithmetic without modifying the Google APK.
 
 No local factory routine creates a token. Cancellation is therefore an idempotent
 no-op only in local compatibility mode; the original vendor branch is preserved.
@@ -84,7 +87,7 @@ It does not rename classes or edit DEX strings. Compile-only DTO stubs are exclu
 from the production DEX; the helper's references resolve against original public
 DTO declarations.
 
-Verification compares all other class disassemblies exactly. In the six targets,
+Verification compares all other class disassemblies exactly. In the seven targets,
 it removes only the specified guard instructions and compares original
 instructions, branch targets, try ranges and debug locations. Method sets,
 declarations, annotations, parameters, registers and all fields remain unchanged
@@ -105,9 +108,11 @@ writer operation is supplied. Strict topology/frequency reads can fail
 when a tablet driver does not expose the required files; that is a failure to fix
 with real evidence, not a reason to substitute numbers.
 
-The original client JAR has an 8,192-byte `.fsv_meta` sidecar. Parent must handle
-matching verity metadata, dexpreopt and image integrity through its normal build
-process. This builder creates only the client JAR candidate and a receipt.
+The original client JAR has an 8,192-byte `.fsv_meta` sidecar for different bytes.
+The native image assembler removes that stale sidecar when replacing the JAR;
+ROM/payload integrity uses the normal native build process. Runtime ART loading
+and compiled-cache behavior still need device checks. This builder creates only
+the client JAR candidate and a receipt.
 
 ActivityManager may legitimately return cached PSS. PID generation is checked
 around PSS, but the unchanged CPU DTO cannot communicate a PID epoch to the app's

@@ -10,6 +10,8 @@ and trust {each relative path emitted by build_native_rom.trust_overlay: file pi
 Every file pin is exactly {path: absolute path, sha256: lowercase SHA-256}.
 Schema 2 adds lineage="mica-r5-16693588" and files.tablet_graft_source, pins
 the three clean signed R5 targets, and composes functional tablet changes directly.
+Sequence 7 and later also require files.diagnostics_compat and its source-bound
+diagnostics_compat_verification receipt for the exact Diagnostics-only adapter.
 Supply JAVA_HOME for the installed apksigner. Trust files come from the parent's
 trust_overlay call; components and the one-shot shell service are reviewed inputs.
 """
@@ -45,6 +47,7 @@ TASKMANAGER = "/system/framework/vendor.google.libraries.desktop.serviceability.
 TASKMANAGER_BASE_SHA = "5e4d4c6336e18a3228b4ac4960ea5ecddcc556865d530db7a7094903f62695ba"
 FACE = "/overlay/GooglebookPad3FacePreview/GooglebookPad3FacePreview.apk"
 UPDATER = "/priv-app/Pad3Updater/Pad3Updater.apk"
+DIAGNOSTICS_COMPAT = "/app/Pad3DiagnosticsCompat/Pad3DiagnosticsCompat.apk"
 PEN = "/priv-app/OplusPen.apk"
 OVERLAY_CONFIG = "/overlay/config/config.xml"
 MANAGER_RC = "/etc/init/googlebook-pad3-sukisu-manager.rc"
@@ -67,6 +70,14 @@ FILE_INPUTS = {"face_overlay", "updater", "pen_apk", "pen_unsigned", "taskmanage
                "update_engine_bundle",
                "taskmanager_metrics", "taskmanager_metrics_verification",
                "manager_service", "apksigner", "aapt2"}
+DIAGNOSTICS_INPUTS = {"diagnostics_compat", "diagnostics_compat_verification"}
+DIAGNOSTICS_SOURCES = {"build_diagnostics_compat.py", "test_diagnostics_compat.py"} | {
+    "components/diagnostics-compat/" + name for name in (
+        "AndroidManifest.xml", "README.md", "LICENSE", "source-lock.json",
+        "META-INF/xposed/module.prop", "META-INF/xposed/java_init.list", "META-INF/xposed/scope.list",
+        "src/org/googlebook/pad3/diagnostics/MetricValues.java",
+        "src/org/googlebook/pad3/diagnostics/DiagnosticsModule.java",
+        "tests/MetricValuesSelfTest.java")}
 FACE_ENTRY = {"package": "com.googlebook.pad3.facepreview", "mutable": "false", "enabled": "true"}
 TASKMANAGER_SOURCES = {
     "patch_taskmanager.py", "components/taskmanager-compat/build-support/GraftClient.java",
@@ -195,6 +206,7 @@ def load_recipe(path):
             "invalid release sequence/timestamp")
     require(set(recipe["images"]) == set(PARTITIONS)
             and set(recipe["files"]) == FILE_INPUTS | ({"tablet_graft_source"} if clean else set())
+                | (DIAGNOSTICS_INPUTS if recipe["sequence"] >= 7 else set())
             and set(recipe["trust"]) == set(TRUST_PATHS), "missing or unexpected pinned inputs")
     if clean:
         r5_userspace.validate_lineage(recipe)
@@ -253,6 +265,27 @@ def verify_taskmanager(jar, receipt):
     return proof
 
 
+def verify_diagnostics(apk, receipt, tools):
+    from build_diagnostics_compat import API_SHA, PACKAGE
+    proof = json.loads(receipt.read_text())
+    require(proof.get("package") == PACKAGE and proof.get("apk_sha256") == sha256(apk)
+            and proof.get("apk_bytes") == apk.stat().st_size
+            and proof.get("certificate_sha256") == COMPONENT_CERT_SHA
+            and proof.get("scope") == ["com.google.android.factory.diagnostics"]
+            and proof.get("minimum_modern_api") == 101 and proof.get("api_sha256") == API_SHA,
+            "Diagnostics adapter proof/package/scope mismatch")
+    require(set(proof["sources"]) == DIAGNOSTICS_SOURCES, "Unexpected Diagnostics adapter source proof")
+    for name, digest in proof["sources"].items():
+        native.checked({"path": str(native.ROOT / name), "sha256": digest})
+    verify_component(apk, PACKAGE, tools)
+    with zipfile.ZipFile(apk) as archive:
+        require(archive.testzip() is None
+                and archive.read("META-INF/xposed/scope.list").decode().strip() == "com.google.android.factory.diagnostics"
+                and archive.read("META-INF/xposed/module.prop").decode() == "minApiVersion=101\ntargetApiVersion=101\nstaticScope=true\n",
+                "Diagnostics adapter APK metadata mismatch")
+    return proof
+
+
 def verify_inputs(inputs):
     files, trust = inputs["files"], inputs["trust"]
     require(sha256(files["component_certificate"]) == COMPONENT_CERT_SHA, "component certificate differs from public profile")
@@ -263,6 +296,8 @@ def verify_inputs(inputs):
             "signed pen payload differs from the approved pinned unsigned build")
     verify_taskmanager(files["taskmanager_jar"], files["taskmanager_verification"])
     verify_metrics(files["taskmanager_metrics"], files["taskmanager_metrics_verification"])
+    if "diagnostics_compat" in files:
+        verify_diagnostics(files["diagnostics_compat"], files["diagnostics_compat_verification"], files)
     manifest = json.loads(files["trust_manifest"].read_text())
     require(manifest.get("status") == "PUBLIC_TRUST_OVERLAY_ONLY_NOT_ROM_OR_FLASHABLE"
             and manifest["files"] == {name: sha256(path) for name, path in trust.items()}, "trust_overlay manifest differs from pinned files")
@@ -346,6 +381,9 @@ def partition_plan(image, partition, recipe, inputs):
             require(WATCHDOG_PATH in removals, "not pure V10: watchdog input missing")
             payloads[INIT] = strip_diagnostics(content(image, INIT))
         require(hashlib.sha256(content(image, TASKMANAGER)).hexdigest() == TASKMANAGER_BASE_SHA, "TaskManager source JAR drift")
+        # The original sidecar authenticates different JAR bytes; never retain it beside a replacement.
+        if TASKMANAGER + ".fsv_meta" in entries:
+            removals.add(TASKMANAGER + ".fsv_meta")
         payloads |= {TASKMANAGER: inputs["files"]["taskmanager_jar"].read_bytes(),
                      "/system/bin/update_engine": inputs["files"]["update_engine"].read_bytes(),
                      "/system/etc/init/update_engine.rc": bundled_rc}
@@ -369,6 +407,8 @@ def partition_plan(image, partition, recipe, inputs):
                      METRICS_RC: (METRICS_SOURCE / "googlebook_taskmanager_metrics.rc").read_bytes(),
                      OVERLAY_CONFIG: overlay_config(content(image, OVERLAY_CONFIG)) if OVERLAY_CONFIG in entries else overlay_config(b"<config>\n</config>\n"),
                      MANAGER_RC: inputs["files"]["manager_service"].read_bytes()}
+        if recipe["sequence"] >= 7:
+            payloads[DIAGNOSTICS_COMPAT] = inputs["files"]["diagnostics_compat"].read_bytes()
     payloads |= {p: item["data"] for p, item in engine_additions.items()
                  if stat.S_ISREG(item["metadata"]["mode"])}
     require(not grafts.keys() & payloads.keys(), "tablet graft overlaps production integration")
@@ -436,7 +476,7 @@ def build(recipe_path, output, scratch):
         report = {"status": "NATIVE_USERSPACE_ASSEMBLED_UNBOOTED", "recipe_sha256": sha256(Path(recipe_path)),
                   "sequence": recipe["sequence"], "images": results, "public_image": public,
                   "limitations": ["Native update_engine library ABI requires a later device check.",
-                                  "TaskManager JAR .fsv_meta/dexpreopt integrity remains a separate parent integration gate; ABI proof does not clear it.",
+                                  "Modified shared-client fsverity sidecar removed; actual ART loading and compiled-cache behavior remain device gates.",
                                   "Parent must verify replacement pen headless/permission guards and protected updater DSU/mount guards; native properties do not prove DSU absence.",
                                   "EROFS requires reviewed vendor_boot AND recovery fstab patches.",
                                   "No AVB signing, payload generation, device actions or runtime pass."]}

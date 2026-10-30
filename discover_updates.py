@@ -156,7 +156,8 @@ def main():
         result = discover(policy, pins)
         args.output.parent.mkdir(parents=True, exist_ok=True)
         args.output.write_text(json.dumps(result, indent=2, sort_keys=True) + "\n")
-        print(json.dumps({"status": result["status"], "source_errors": len(result["errors"]), "automatic_build_or_install": False}))
+        print(json.dumps({"status": result["status"], "source_errors": len(result["errors"]),
+                          "errors": result["errors"], "automatic_build_or_install": False}))
         return 1 if result["errors"] else 0
     except (OSError, ValueError, KeyError, TypeError):
         print('{"status":"discovery_failed","private_paths_redacted":true}')

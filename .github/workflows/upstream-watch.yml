@@ -36,6 +36,7 @@ jobs:
               out.write('report=' + base64.b64encode(data).decode() + '\n')
           with open(os.environ['GITHUB_STEP_SUMMARY'], 'a') as out:
               out.write('Upstream discovery: **' + result['status'] + '**. No firmware was built, signed or installed.\n')
+              out.write('Public-source errors: `' + json.dumps(result['errors']) + '`\n')
           PY
           exit "$status"
   propose:

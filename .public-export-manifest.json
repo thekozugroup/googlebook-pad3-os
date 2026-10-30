@@ -12,9 +12,9 @@
       "sha256": "73698bc81071da6ed77e4a5b6d45ad157320685d35b9d00d6274205771b6232e"
     },
     ".github/workflows/upstream-watch.yml": {
-      "bytes": 2041,
+      "bytes": 2131,
       "executable": false,
-      "sha256": "32ef8ec966d42269dd9780af191e5a8e8497acfc16ccda5297c4f4884a7928aa"
+      "sha256": "61184320c636e7749987c8033b9ee3ab701e6666470db27983e6280978da70f4"
     },
     ".gitignore": {
       "bytes": 248,
@@ -947,9 +947,9 @@
       "sha256": "21f68bdf7cea9e5b3588aa24be1e00f08d04490a42d42c4cf1c8cb8aade44eb2"
     },
     "discover_updates.py": {
-      "bytes": 8078,
+      "bytes": 8132,
       "executable": false,
-      "sha256": "2b15ca2ac6e38b5644ca0cba89c9bc195b4150acc41157cb3e3f609ca3067960"
+      "sha256": "cd4683fe26f60d2ea06824b2516c813d682125a1ec1ea0ca375969fe9fd440a1"
     },
     "erofs_overlay.py": {
       "bytes": 13599,

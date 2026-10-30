@@ -1,15 +1,35 @@
 {
   "exporter": "googlebook-pad3-public-export/v1",
   "files": {
+    ".github/workflows/native-maintenance.yml": {
+      "bytes": 1834,
+      "executable": false,
+      "sha256": "98cdf5905320b105d0ad4b89c4950f205365f3de8246b4237042d36befab5e01"
+    },
+    ".github/workflows/source-checks.yml": {
+      "bytes": 1336,
+      "executable": false,
+      "sha256": "73698bc81071da6ed77e4a5b6d45ad157320685d35b9d00d6274205771b6232e"
+    },
+    ".github/workflows/upstream-watch.yml": {
+      "bytes": 2041,
+      "executable": false,
+      "sha256": "32ef8ec966d42269dd9780af191e5a8e8497acfc16ccda5297c4f4884a7928aa"
+    },
     ".gitignore": {
       "bytes": 248,
       "executable": false,
       "sha256": "ae532335c27774d31594e93fb12865423775410667932ad86fe1933decc21cb6"
     },
-    "BUILDING.md": {
-      "bytes": 2345,
+    "AGENTS.md": {
+      "bytes": 1415,
       "executable": false,
-      "sha256": "dbd9b469b6a70f3aff02679c0521913dcc6c8a2349e3f4dafda0dc395921abf7"
+      "sha256": "bed5b3883431db30c207653faa0eba7e54bbcaedd1e89cae8f48a75fb7790227"
+    },
+    "BUILDING.md": {
+      "bytes": 2477,
+      "executable": false,
+      "sha256": "46b75901eddf2d87ac10d11af60515e9f5acc0fd032dd58dc03860085e5f4e2c"
     },
     "COMMUNITY_NOTES.md": {
       "bytes": 2412,
@@ -17,9 +37,19 @@
       "sha256": "3690032ef7a75bfabbfd2aa9a7789d8886fb34f7ac4e2704c290d1b3f9f60dcd"
     },
     "LAUNCH_READINESS.md": {
-      "bytes": 4108,
+      "bytes": 4592,
       "executable": false,
-      "sha256": "14e6a98d35e0f6ad442d1f99f90511729f65e0e1cc2dc69b6dceac9f9f2b6eb3"
+      "sha256": "6def190460fd4ee4799a6a943a0ea8eddae7259dcaf3d3b4bebfc70ab929705e"
+    },
+    "MAINTAINING.md": {
+      "bytes": 9387,
+      "executable": false,
+      "sha256": "56fbefcbae8d8ede6ca35b19f43a82fec68fe3c6833311eed50b8e19a5d27317"
+    },
+    "PRIVACY_AUDIT.md": {
+      "bytes": 2583,
+      "executable": false,
+      "sha256": "f8e6ba6e9993dee226ca158ef43c1d919193ee4cf14711b6f87d15ee5c8b9f2e"
     },
     "PUBLIC_RELEASE.md": {
       "bytes": 30927,
@@ -27,9 +57,9 @@
       "sha256": "9cf4a2656e1f776df99c9530937470327ae70778cd630389dcfa0854af62d78b"
     },
     "README.md": {
-      "bytes": 1044,
+      "bytes": 1205,
       "executable": false,
-      "sha256": "2a711a49077d6a61f69de8c35ffcffd2b25250bf764baa4e9bf09c88f7184be5"
+      "sha256": "81cb5da3071dfa9ef1980c24cd577aed4a696be17acfa8460d9fbf6f4cee4c74"
     },
     "TESTING.md": {
       "bytes": 804,
@@ -37,9 +67,9 @@
       "sha256": "b7a56fba9d9f4892aa984ccc370075d7347430f3c3fb0b2cbd43f9f23f6c1407"
     },
     "UPDATING.md": {
-      "bytes": 658,
+      "bytes": 875,
       "executable": false,
-      "sha256": "7725324461fef8b1e6c61d24ef31b1c2f389ca99f4f83f4593ffaa43d948ea21"
+      "sha256": "72d58b5e55ddff19db1f9d5b9bfbbaa10b2922dd957110d89031c385e0628676"
     },
     "UpdateDsuImages.java": {
       "bytes": 6832,
@@ -87,9 +117,9 @@
       "sha256": "6e1241695fc296984aa58d407811e0d21ac00cc7fe1552bb70af19eac709d6c9"
     },
     "build_native_rom.py": {
-      "bytes": 36161,
+      "bytes": 35712,
       "executable": false,
-      "sha256": "e2576b1e29a72180acbc45d21fb092d2f90a536875cf4163d9b201e2ef84c2e8"
+      "sha256": "f46ceac5321f1b1125a06b6d4ee84e36aab4c7ac14dc41b1055ccd9ae8a1dbc9"
     },
     "build_native_userspace.py": {
       "bytes": 42842,
@@ -916,20 +946,25 @@
       "executable": false,
       "sha256": "21f68bdf7cea9e5b3588aa24be1e00f08d04490a42d42c4cf1c8cb8aade44eb2"
     },
+    "discover_updates.py": {
+      "bytes": 8078,
+      "executable": false,
+      "sha256": "2b15ca2ac6e38b5644ca0cba89c9bc195b4150acc41157cb3e3f609ca3067960"
+    },
     "erofs_overlay.py": {
       "bytes": 13599,
       "executable": false,
       "sha256": "985631d227e0c98d4cb3451b2255d694de425190f9422448a65d5e59870b1ef2"
     },
     "erofs_sanitize.py": {
-      "bytes": 9204,
+      "bytes": 8862,
       "executable": false,
-      "sha256": "e3c0549a7c759e061a1687360665789df5a5662515b01bb1733a65651fda246c"
+      "sha256": "bfa08816025b38267a4bf53754e597d8e7d6057241d5aaf8887d533c83ad2dac"
     },
     "export_public.py": {
-      "bytes": 80352,
+      "bytes": 81349,
       "executable": false,
-      "sha256": "9f90eba528dbfed4d3230cbad2f64d79b4d14670d8165594483e1061b73767b3"
+      "sha256": "382d1fa24051444b7ebba2df5b1f0def6762fe8151bb4f6a6c8ea74bd1918393"
     },
     "ext4_source.py": {
       "bytes": 2262,
@@ -945,6 +980,26 @@
       "bytes": 2078,
       "executable": false,
       "sha256": "296c1c9444b8cd01f1574a61bbd2c9aa90334efb67d335b2014ba326f86e4487"
+    },
+    "maintenance/job.example.json": {
+      "bytes": 267,
+      "executable": false,
+      "sha256": "780fd0241ee1bbdbae5826f58423bb7e09fb752adce96db1def0206c3e3f8de1"
+    },
+    "maintenance/upstream.json": {
+      "bytes": 995,
+      "executable": false,
+      "sha256": "835852378f149c84cd8e8b9c60aaddb1841376741cf302de821899d68a789371"
+    },
+    "maintenance_job.py": {
+      "bytes": 19166,
+      "executable": false,
+      "sha256": "b3c0c2f12e09ab51d4d47f5372957ca470de673d9f87c554c3f31b6a753a0956"
+    },
+    "maintenance_workspace.py": {
+      "bytes": 4919,
+      "executable": false,
+      "sha256": "a5f637ce0a0a329da30a6b9f9ee0a140b02dd22f245b77b107b3ff8932eaef9c"
     },
     "native_install/INITIAL_INSTALL.md": {
       "bytes": 2450,
@@ -1132,9 +1187,9 @@
       "sha256": "56a75ad93cc664ae705ae928c2947bd7992b9d3c19eb90303c6945cf7a78e871"
     },
     "patch_taskmanager.py": {
-      "bytes": 19918,
+      "bytes": 19184,
       "executable": false,
-      "sha256": "1a2e219010d39c0217e3d174f7c74388b480e87276702fd2639c7abc628516a0"
+      "sha256": "fa0318d636d7fe24c9543dae933e2e38d8c2c9ed6854b637aae904393da22ee3"
     },
     "pen_policy.py": {
       "bytes": 10421,
@@ -1150,6 +1205,11 @@
       "bytes": 3430,
       "executable": false,
       "sha256": "b84bfaf38ac12800336a2abb2efd979b12ee7083c7d56d2334ef0a7419eabe25"
+    },
+    "privacy_audit.py": {
+      "bytes": 6997,
+      "executable": false,
+      "sha256": "ce257d722923123390ede791cccbf922d50c7f87fa7858519f434b493488bbbf"
     },
     "profiles/build-seed.json": {
       "bytes": 278,
@@ -1200,6 +1260,11 @@
       "bytes": 433,
       "executable": false,
       "sha256": "8229f19847316059e0298505c83a6543afcca7d62f3421d1bbb0194976e89710"
+    },
+    "propose_update.py": {
+      "bytes": 8232,
+      "executable": false,
+      "sha256": "c0f3c2ff1a441a8271bac5f76c14b03e496bf84f36f0579ff4ebccd21dd90aad"
     },
     "qa/serve_probe.py": {
       "bytes": 10281,
@@ -1306,6 +1371,11 @@
       "executable": false,
       "sha256": "56626f84c86b6045a63bf8022ee693e930703cbad9c3abdbffac96cbb1757ec2"
     },
+    "test_discover_updates.py": {
+      "bytes": 5718,
+      "executable": false,
+      "sha256": "a5378189f47eea2a031bc8a2c959388a302d9caf9969240f5e29492b0d53c3e8"
+    },
     "test_engine_libraries.py": {
       "bytes": 21964,
       "executable": false,
@@ -1336,6 +1406,16 @@
       "executable": false,
       "sha256": "67524af2883e5ea2f015fe5984ea579ce8bf81b4846b9d4a3bc80c7935c08fa8"
     },
+    "test_maintenance_job.py": {
+      "bytes": 23463,
+      "executable": false,
+      "sha256": "0a51dfa2c5880d4e22d860ce57414d997fa29b7d384614eff91024a5e2db8ff1"
+    },
+    "test_maintenance_workspace.py": {
+      "bytes": 6322,
+      "executable": false,
+      "sha256": "212447f650c3a716aa7ba7af4bfee6e769dd4df9cb8176aaf53bc0d31c204f10"
+    },
     "test_native_r5_userspace.py": {
       "bytes": 16163,
       "executable": false,
@@ -1360,6 +1440,16 @@
       "bytes": 1454,
       "executable": false,
       "sha256": "4444cb0035dd7df501e2edd831435ede1ac6cf53f8fc6b3edb529d40f0754c26"
+    },
+    "test_privacy_audit.py": {
+      "bytes": 5030,
+      "executable": false,
+      "sha256": "1b085657021724c582f8bf4f82648bdcfb95cbdf4af6ae292ae41bbd5f2662e1"
+    },
+    "test_propose_update.py": {
+      "bytes": 5130,
+      "executable": false,
+      "sha256": "a07897514e473e53432468548eae281ddfe35d8e708431c411147039c9ffe807"
     },
     "test_source_copy.py": {
       "bytes": 29863,

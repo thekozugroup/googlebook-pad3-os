@@ -43,6 +43,10 @@ test_check_updates.py test_cold_build_dsu.py test_desktop_repair_gate.py
 test_erofs_overlay.py test_erofs_sanitize.py test_flash_test.py test_pen_policy.py test_port_changes.py
 test_prepare_inputs.py test_stability_probe.py export_public.py test_export_public.py
 PUBLIC_RELEASE.md LAUNCH_READINESS.md COMMUNITY_NOTES.md tablet_state.py test_tablet_state.py
+AGENTS.md MAINTAINING.md PRIVACY_AUDIT.md
+discover_updates.py test_discover_updates.py privacy_audit.py test_privacy_audit.py
+propose_update.py test_propose_update.py maintenance_job.py test_maintenance_job.py
+maintenance_workspace.py test_maintenance_workspace.py
 """.split()
 COMPONENT = "components/oplus-pen/"
 COMPONENT_FILES = """
@@ -152,6 +156,8 @@ ALLOWLIST = tuple(sorted(ROOT_FILES + [COMPONENT + n for n in COMPONENT_FILES]
                          + ["components/photos-spoof/" + n for n in PHOTOS_FILES]
                          + ["components/diagnostics-compat/" + n for n in DIAGNOSTICS_FILES]
                          + ["components/photos-native/" + n for n in PHOTOS_NATIVE_FILES]
+                         + ["maintenance/upstream.json", "maintenance/job.example.json"]
+                         + [".github/workflows/" + n for n in ("source-checks.yml", "upstream-watch.yml", "native-maintenance.yml")]
                          + ["qa/serve_probe.py", "qa/test_serve_probe.py", "qa/tablet-probe.html"]))
 JSON_TRANSFORMS = {COMPONENT + n for n in ("toolchain.json", "donor-inputs.json", "integration/requirements.json")} | {
     "components/updater/toolchain.json", "native_install/tools.example.json", "native_install/plan.example.json"}
@@ -220,6 +226,8 @@ Keep this checkout in a local development folder such as
 Read [LAUNCH_READINESS.md](LAUNCH_READINESS.md) before inviting new installs.
 Read [PUBLIC_RELEASE.md](PUBLIC_RELEASE.md), [BUILDING.md](BUILDING.md),
 [TESTING.md](TESTING.md), and [UPDATING.md](UPDATING.md) before building.
+See [MAINTAINING.md](MAINTAINING.md) for portable update jobs and automation,
+and [PRIVACY_AUDIT.md](PRIVACY_AUDIT.md) for the publication audit and its limits.
 
 No firmware, APK, owner credential, ADB authorization key, signing private key,
 owner certificate file, raw device report, backup, or prior Git history is included.
@@ -229,8 +237,10 @@ Pinned upstream pen sources and their Apache 2.0 license are retained under
     "BUILDING.md": """# Local build inputs
 
 Use an existing local SDK and JDK; do not copy full toolchains into this checkout.
-Create a CleanOS task for disposable build output, and verify its backup-copy
-exclusion. Pass that task's resolved scratch path to builders that require it.
+On macOS, create a CleanOS task for disposable build output and verify its
+backup-copy exclusion. On Linux, use maintenance_workspace.py to create an
+explicitly owned private task. See MAINTAINING.md for both host paths.
+Pass that task's resolved scratch path to builders that require it.
 Install prerequisites separately; this source export downloads and installs nothing.
 
 The portable toolchain lock retains exact dependency hashes. It refers to
@@ -283,15 +293,19 @@ Flashing, DSU activation, rebooting and hardware tests require a separate proced
 """,
     "UPDATING.md": """# Reviewing upstream changes
 
-Run `python3 check_updates.py --help` to inspect the available update commands.
-Update checks are informational; they do not establish compatibility or install
-an update. Review donor image hashes, native policy linkage, kernel compatibility,
-pen upstream pins, SELinux rules, and third party licenses together.
+Use [MAINTAINING.md](MAINTAINING.md) for the update workflow, runner setup,
+private input handoff, qualification and release procedure. The daily hosted
+workflow discovers public metadata; it never signs or installs an unknown ROM.
+The reviewed job runner reuses the existing offline native builders.
 
-Other agents may still be changing the private working source. Rerun the exporter
-after those changes settle, review the complete allowlist and output hashes, and
-verify the final candidate before creating a fresh public repository.
-Never reuse the private repository's Git directory, commits, branches or remotes.
+The full recovery catalog currently pins mica R2. The separately reviewed
+incremental OTA baseline is mica R5. A catalog match to R2 does not mean the
+installed R5 base is out of date. Discovery failure is reported as incomplete.
+New versions require signature verification and a reviewed source/profile change.
+Existing image, method, policy, kernel and Product pins remain mandatory.
+
+Export only reviewed source and sanitized evidence. Never copy the private
+repository's Git directory, raw reports, signing material or device identifiers.
 """,
     "native_install/README.md": """# Native installer source and private build inputs
 

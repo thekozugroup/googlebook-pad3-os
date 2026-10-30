@@ -1,11 +1,15 @@
 # Reviewing upstream changes
 
-Run `python3 check_updates.py --help` to inspect the available update commands.
-Update checks are informational; they do not establish compatibility or install
-an update. Review donor image hashes, native policy linkage, kernel compatibility,
-pen upstream pins, SELinux rules, and third party licenses together.
+Use [MAINTAINING.md](MAINTAINING.md) for the update workflow, runner setup,
+private input handoff, qualification and release procedure. The daily hosted
+workflow discovers public metadata; it never signs or installs an unknown ROM.
+The reviewed job runner reuses the existing offline native builders.
 
-Other agents may still be changing the private working source. Rerun the exporter
-after those changes settle, review the complete allowlist and output hashes, and
-verify the final candidate before creating a fresh public repository.
-Never reuse the private repository's Git directory, commits, branches or remotes.
+The full recovery catalog currently pins mica R2. The separately reviewed
+incremental OTA baseline is mica R5. A catalog match to R2 does not mean the
+installed R5 base is out of date. Discovery failure is reported as incomplete.
+New versions require signature verification and a reviewed source/profile change.
+Existing image, method, policy, kernel and Product pins remain mandatory.
+
+Export only reviewed source and sanitized evidence. Never copy the private
+repository's Git directory, raw reports, signing material or device identifiers.

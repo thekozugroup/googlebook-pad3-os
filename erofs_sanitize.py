@@ -12,6 +12,7 @@ import uuid
 
 from android_disk import read_at, require
 from erofs_overlay import content, metadata, tar_info
+from maintenance_workspace import task_root
 
 FIELDS = ("mode", "uid", "gid", "mtime", "mtime_nsec", "xattrs")
 
@@ -101,12 +102,7 @@ def rewrite(image, output, removals, scratch):
     require(image.is_file() and not image.is_symlink(), "expected a regular source image")
     require(not output.exists() and not output.is_symlink() and output.resolve().is_relative_to(scratch.resolve()),
             "output must be a fresh path under task scratch")
-    owners = [p for p in (scratch, *scratch.parents) if (p / ".cleanos-task.json").is_file()]
-    require(len(owners) == 1, "active CleanOS task required")
-    owner = json.loads((owners[0] / ".cleanos-task.json").read_text())
-    require(owner.get("owner") == os.getuid() and not owner.get("finished")
-            and Path(owner.get("project", "")).resolve() == Path(__file__).resolve().parent,
-            "wrong or finished CleanOS task")
+    task_root(scratch, Path(__file__).resolve().parent)
     require(isinstance(removals, set) and all(isinstance(p, str) and p.startswith("/")
             and str(PurePosixPath(p)) == p and ".." not in PurePosixPath(p).parts for p in removals),
             "removals must contain canonical absolute image paths")

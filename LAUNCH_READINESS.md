@@ -1,6 +1,6 @@
 # Community launch readiness
 
-Audit date: 2026-10-29. The project is suitable for a development/research discussion. A general flashing release is not ready.
+Audit date: 2026-10-30. The project is suitable for a development/research discussion. A general flashing release is not ready.
 
 The published native3 OTA updates only its exact existing native2 fingerprint and slot. It is not a first-install package for stock OxygenOS or an arbitrary crDroid build. The maintainer's successful native update and snapshot merge are documented in PUBLIC_RELEASE.md.
 
@@ -15,6 +15,13 @@ Before inviting new owners to install:
 7. Keep native2-to3's separate shared-daemon migration prominent. A normal manager APK upgrade is not a kernel/module/daemon migration.
 
 The public source has hash-bound patches and fail-closed image/signature/source checks. Those are useful safeguards; they do not establish stable everyday operation or a safe first install on another tablet.
+
+Native8 currently has a Google services compliance failure: the Google app and
+some other Google apps show an uncertified-device blocker. Official custom-ROM
+device registration succeeded, but a subsequent check and service restart did
+not clear it. No Play Integrity pass is established. Treat this as an unresolved
+daily-use/release blocker; registration does not grant manufacturer certification.
+See MAINTAINING.md for the portable workflow and PRIVACY_AUDIT.md for audit scope.
 
 A 66.77-second native3 baseline showed about 5.5 GiB available RAM, 4.62% aggregate CPU load, 2.31 GiB occupied zRAM slots using about 778 MiB actual RAM, zero swap-outs and negligible memory-pressure stalls. No tuning was justified. This is a short baseline, not a heavy-load or battery benchmark.
 

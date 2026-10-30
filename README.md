@@ -10,6 +10,8 @@ Keep this checkout in a local development folder such as
 Read [LAUNCH_READINESS.md](LAUNCH_READINESS.md) before inviting new installs.
 Read [PUBLIC_RELEASE.md](PUBLIC_RELEASE.md), [BUILDING.md](BUILDING.md),
 [TESTING.md](TESTING.md), and [UPDATING.md](UPDATING.md) before building.
+See [MAINTAINING.md](MAINTAINING.md) for portable update jobs and automation,
+and [PRIVACY_AUDIT.md](PRIVACY_AUDIT.md) for the publication audit and its limits.
 
 No firmware, APK, owner credential, ADB authorization key, signing private key,
 owner certificate file, raw device report, backup, or prior Git history is included.

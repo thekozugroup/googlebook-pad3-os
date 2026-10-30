@@ -1,0 +1,37 @@
+name: Source tests and privacy
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: source-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  checks:
+    if: github.event.repository.private == false
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Scan working files and complete reachable history
+        run: python3 -B privacy_audit.py --repo . --history --output "$RUNNER_TEMP/privacy.json"
+      - name: Run offline regression checks
+        env:
+          TMPDIR: ${{ runner.temp }}
+        run: >-
+          python3 -B -m unittest -q
+          test_discover_updates test_privacy_audit test_propose_update
+          test_maintenance_workspace test_maintenance_job
+          test_build_photos_native test_build_photos_boot
+          test_build_native_userspace test_build_native_rom
+          test_diagnostics_compat test_export_public
+      - name: Summarize without raw logs or private artifacts
+        if: always()
+        run: |
+          echo 'Source/privacy checks finished. Optional firmware/tool-dependent tests need provisioned private inputs.' >> "$GITHUB_STEP_SUMMARY"

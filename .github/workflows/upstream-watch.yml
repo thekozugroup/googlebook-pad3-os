@@ -1,0 +1,58 @@
+name: Discover upstream changes
+on:
+  schedule:
+    - cron: '17 9 * * *'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: upstream-watch
+  cancel-in-progress: false
+jobs:
+  discover:
+    if: github.event.repository.private == false
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    outputs:
+      status: ${{ steps.discover.outputs.status }}
+      report: ${{ steps.discover.outputs.report }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+      - name: Query bounded public metadata only
+        id: discover
+        run: |
+          status=0
+          python3 -B discover_updates.py --output "$RUNNER_TEMP/discovery.json" || status=$?
+          python3 - <<'PY'
+          import base64, json, os
+          from pathlib import Path
+          p = Path(os.environ['RUNNER_TEMP']) / 'discovery.json'
+          data = p.read_bytes()
+          result = json.loads(data)
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as out:
+              out.write('status=' + result['status'] + '\n')
+              out.write('report=' + base64.b64encode(data).decode() + '\n')
+          with open(os.environ['GITHUB_STEP_SUMMARY'], 'a') as out:
+              out.write('Upstream discovery: **' + result['status'] + '**. No firmware was built, signed or installed.\n')
+          PY
+          exit "$status"
+  propose:
+    needs: discover
+    if: needs.discover.outputs.status == 'review_required' && vars.ENABLE_UPDATE_PROPOSALS == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: write
+      pull-requests: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      DISCOVERY_REPORT: ${{ needs.discover.outputs.report }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+      - name: Maintain a metadata-only review branch
+        run: python3 -B propose_update.py

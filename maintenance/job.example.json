@@ -1,0 +1,11 @@
+{
+  "schema": 1,
+  "source_commit": "REPLACE_WITH_EXACT_REVIEWED_COMMIT",
+  "profile": "mica-r5-16693588",
+  "stage": "assemble",
+  "recipe": {
+    "path": "input:recipe.json",
+    "sha256": "REPLACE_WITH_REVIEWED_RECIPE_SHA256"
+  },
+  "output": "output:userspace"
+}

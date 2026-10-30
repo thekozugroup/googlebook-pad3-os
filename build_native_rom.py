@@ -23,6 +23,7 @@ from native_install.fstab import (filesystem_decision, patch_vendor_boot, unpack
                                   patch_recovery, recovery_filesystem_decision)
 from native_install.payload import (SOURCE_COPY_ALLOWED, openssl, public_key, require, sha256, sign_digest,
                                     verify_digest, write_payload)
+from maintenance_workspace import task_root
 
 ROOT = Path(__file__).resolve().parent
 BOOT_SHA = "15e43ca52b939d9780438d32d302f1575c3e99c2df4836d500fe2940cab64448"
@@ -75,12 +76,7 @@ def scratch_output(path):
     path = Path(path)
     require(path.is_absolute() and not path.exists() and not path.is_symlink(), "output must be a new absolute path")
     resolved = path.resolve()
-    require(resolved.is_relative_to(Path("/private/tmp/ai-development")), "output must be in CleanOS scratch")
-    owners = [p for p in resolved.parents if (p / ".cleanos-task.json").is_file()]
-    require(len(owners) == 1, "output needs one existing CleanOS task owner")
-    owner = json.loads((owners[0] / ".cleanos-task.json").read_text())
-    require(owner.get("owner") == os.getuid() and not owner.get("finished")
-            and Path(owner.get("project", "")).resolve() == ROOT, "wrong or finished CleanOS task")
+    task_root(path, ROOT)
     return resolved
 
 

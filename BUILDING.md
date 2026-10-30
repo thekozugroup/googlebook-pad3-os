@@ -1,8 +1,10 @@
 # Local build inputs
 
 Use an existing local SDK and JDK; do not copy full toolchains into this checkout.
-Create a CleanOS task for disposable build output, and verify its backup-copy
-exclusion. Pass that task's resolved scratch path to builders that require it.
+On macOS, create a CleanOS task for disposable build output and verify its
+backup-copy exclusion. On Linux, use maintenance_workspace.py to create an
+explicitly owned private task. See MAINTAINING.md for both host paths.
+Pass that task's resolved scratch path to builders that require it.
 Install prerequisites separately; this source export downloads and installs nothing.
 
 The portable toolchain lock retains exact dependency hashes. It refers to

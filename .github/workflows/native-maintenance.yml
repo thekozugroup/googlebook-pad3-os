@@ -1,0 +1,46 @@
+name: Reviewed native build
+on:
+  workflow_dispatch:
+    inputs:
+      operation:
+        description: Validate the configured job or execute its reviewed offline stage
+        type: choice
+        options: [plan, execute]
+        default: plan
+        required: true
+permissions:
+  contents: read
+concurrency:
+  group: native-maintenance
+  cancel-in-progress: false
+jobs:
+  native:
+    if: vars.ENABLE_NATIVE_RUNNER == 'true' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+    runs-on: [self-hosted, pad3-maintainer]
+    environment: native-maintenance
+    timeout-minutes: 120
+    env:
+      OPERATION: ${{ inputs.operation }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+      - name: Run the externally provisioned job without publishing logs or keys
+        shell: bash
+        run: |
+          set -eu
+          for item in GOOGLEBOOK_JOB_FILE GOOGLEBOOK_JOB_SHA256 GOOGLEBOOK_INPUT_ROOT GOOGLEBOOK_TOOL_ROOT GOOGLEBOOK_WORK_ROOT GOOGLEBOOK_OUTPUT_ROOT; do
+            if test -z "${!item:-}"; then
+              echo 'Trusted runner inputs are not provisioned.'
+              exit 1
+            fi
+          done
+          python3 -B maintenance_job.py "$OPERATION" \
+            --job "$GOOGLEBOOK_JOB_FILE" --job-sha256 "$GOOGLEBOOK_JOB_SHA256" \
+            --input-root "$GOOGLEBOOK_INPUT_ROOT" --tool-root "$GOOGLEBOOK_TOOL_ROOT" \
+            --work-root "$GOOGLEBOOK_WORK_ROOT" --output-root "$GOOGLEBOOK_OUTPUT_ROOT" \
+            --trusted-runner
+      - name: Record qualification boundary
+        if: always()
+        shell: bash
+        run: echo 'Offline native stage only. Runtime qualification, privacy review and signed-feed promotion are separate gates.' >> "$GITHUB_STEP_SUMMARY"

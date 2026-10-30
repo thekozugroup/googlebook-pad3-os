@@ -12,6 +12,7 @@ import sys
 import tempfile
 import zipfile
 import zlib
+from maintenance_workspace import task_root
 
 sys.dont_write_bytecode = True
 ROOT = Path(__file__).resolve().parent
@@ -64,17 +65,8 @@ def guard_original(path):
 
 def verify_scratch(path):
     path = Path(path).absolute()
-    require(path == path.resolve() and not path.is_symlink(), 'scratch must use its real path')
-    require(path.parent == Path('/private/tmp/ai-development'), 'scratch must be an owned CleanOS task root')
-    require(path.is_dir() and path.stat().st_uid == os.getuid(), 'scratch owner mismatch')
-    marker = path / '.cleanos-task.json'
-    require(marker.is_file() and not marker.is_symlink(), 'CleanOS manifest missing')
-    task = json.loads(marker.read_text())
-    require(task.get('schema') == 1 and task.get('id') == path.name
-            and task.get('owner') == os.getuid() and task.get('project') == str(ROOT)
-            and task.get('finished') is False, 'inactive or foreign CleanOS task')
-    result = subprocess.run(['tmutil', 'isexcluded', str(path)], capture_output=True, text=True, check=True)
-    require('[Excluded]' in result.stdout, 'scratch backup-copy exclusion not verified')
+    require(path.is_dir(), 'scratch directory is missing')
+    task_root(path, ROOT, root_only=True, backup_excluded=True)
     return path
 
 

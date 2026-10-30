@@ -123,6 +123,11 @@ native/README.md native/main.c native/metrics.c native/metrics.h native/host_tes
 native/NativeProcStatsSelfTest.java native/googlebook_taskmanager_metrics.rc
 native/taskmanager_metrics.cil native/file_contexts
 """.split()
+PHOTOS_FILES = """
+README.md LICENSE FORK_NOTICE.md THIRD_PARTY_NOTICES.md licenses/Apache-2.0.txt
+source-lock.json photos-strict.patch prepare.py verify.py build.sh
+build-support.gradle tests/test_contract.py
+""".split()
 ALLOWLIST = tuple(sorted(ROOT_FILES + [COMPONENT + n for n in COMPONENT_FILES]
                          + [COMPONENT + "upstream/" + n for n in UPSTREAM_FILES]
                          + [PROFILE + n for n in PROFILE_FILES]
@@ -130,10 +135,11 @@ ALLOWLIST = tuple(sorted(ROOT_FILES + [COMPONENT + n for n in COMPONENT_FILES]
                          + ["components/updater/" + n for n in UPDATER_FILES]
                          + ["components/face-preview-overlay/" + n for n in FACE_FILES]
                          + ["components/taskmanager-compat/" + n for n in TASKMANAGER_FILES]
+                         + ["components/photos-spoof/" + n for n in PHOTOS_FILES]
                          + ["qa/serve_probe.py", "qa/test_serve_probe.py", "qa/tablet-probe.html"]))
 JSON_TRANSFORMS = {COMPONENT + n for n in ("toolchain.json", "donor-inputs.json", "integration/requirements.json")} | {
     "components/updater/toolchain.json", "native_install/tools.example.json", "native_install/plan.example.json"}
-INTEGRATION_DIRS = ("native_install", "components/oplus-pen", "components/updater", "components/face-preview-overlay", "components/taskmanager-compat")
+INTEGRATION_DIRS = ("native_install", "components/oplus-pen", "components/updater", "components/face-preview-overlay", "components/taskmanager-compat", "components/photos-spoof")
 ANNOUNCED_BUILDERS = ("build_face_overlay.py", "patch_taskmanager.py", "build_native_userspace.py")
 ANNOUNCED_TESTS = ("test_build_face_overlay.py", "test_patch_taskmanager.py", "test_build_native_userspace.py")
 PRIVATE_CAPTURE = "native_install/capture-manifest.json"
@@ -273,8 +279,11 @@ Never reuse the private repository's Git directory, commits, branches or remotes
 """,
     "native_install/README.md": """# Native installer source and private build inputs
 
-The private native5 candidate rebases userspace onto mica R5/build 16693588.
-It has passed host checks but has not been installed. Schema 2 composes clean R5
+Private native5/native6 rebase userspace onto mica R5/build 16693588.
+Native5 preserved apps/accounts and passed layout and pen-service checks; its
+15-minute probe captured one Diagnostics crash. Native6 addresses the absent
+laptop vendor service and booted with all 15 live image hashes matching its
+signed payload. Its app checks await owner sign-in. Schema 2 composes clean R5
 images with the reviewed tablet graft; see [donor-extractor](donor-extractor/README.md).
 The public binary feed remains native3.
 

@@ -1,0 +1,68 @@
+{
+  "schema_version": 1,
+  "upstream": {
+    "repository": "https://github.com/samson910022/pixelify-google-photos-modern",
+    "revision": "c7420090eb144b17268453909b2ee1626957f586",
+    "published_1_4_1_revision": "6b9b8f7af863e14c93c29bd8d89b3e7b0f0d151b"
+  },
+  "archive": {
+    "url": "https://codeload.github.com/samson910022/pixelify-google-photos-modern/tar.gz/c7420090eb144b17268453909b2ee1626957f586",
+    "bytes": 3928858,
+    "sha256": "8df29124ba1b3ea7c8c56360408ebc0f5ae892efaeeaa7de0b560f50e9bd2470"
+  },
+  "patch": {
+    "file": "photos-strict.patch",
+    "sha256": "7d690654faf305d6e9af5fc5f2fe040286cdcb58f9f4464bbc5edbe0aa7f6c23",
+    "replay_verified": true,
+    "changed_files_sha256": {
+      "STRICT_PHOTOS_PROOF.md": "55a831cf57c95723f97c43c4e9bd1baeb276d8c9c7147febb213b1e4862ed7c0",
+      "app/build.gradle.kts": "d96f77738d121dcb672c03b618c962f72048c604f9f1d57b7499c0a233d19958",
+      "app/src/main/java/io/github/samson910022/pixelifyphotos/AdvancedOptionsActivity.kt": "f0d75ce0875c4fc5a2d67478ccf3c95299fc311c19fc25b721e022db63e129dd",
+      "app/src/main/java/io/github/samson910022/pixelifyphotos/DeviceSpoofer.kt": "0155584406c3260c810454b1a0fb941df81a51465ad87c8383c2173671bb0efc",
+      "app/src/main/java/io/github/samson910022/pixelifyphotos/FeatureSpoofer.kt": "757a4eaf2336011b2de2062e67030ab00d46fbeb41b751e90cef6a7b386f430c",
+      "app/src/main/java/io/github/samson910022/pixelifyphotos/PixelifyModule.kt": "43718c2602f23bb674ab154fd9c57c2efc1bc900929a79808f8f409ba49c8556",
+      "app/src/main/java/io/github/samson910022/pixelifyphotos/ScopePolicy.kt": "3b7928dd1a50c5bfddf27b17d73144b034e96c7650ef1f55bb7fa270e8611e81",
+      "app/src/main/java/io/github/samson910022/pixelifyphotos/SpoofedPackageTracker.kt": "1239f5f2a20346b9e30f2459ac235e8c41a738d6b0c78b596e27ee792c44670d",
+      "app/src/main/res/values-ja/strings.xml": "76d5346db9ff3090215ca291131b40496cf0496828f5977c2aedb6f22e9d3502",
+      "app/src/main/res/values-zh-rCN/strings.xml": "0b1213c51a988e47e5c46b46da0c8f60b98c2bd7563a996f6e71002466223601",
+      "app/src/main/res/values-zh-rTW/strings.xml": "cd8681fc8bae99b31f30712c0065aa5eafddffb0a967a620d5e07a8459c8ea78",
+      "app/src/main/res/values/strings.xml": "b97415254e45c69d57b1212b49a0d4fa1fddcaa2f4f251609ae1298269228d2c",
+      "app/src/main/resources/META-INF/xposed/module.prop": "3f78e353a211d9ee8f1b5a0481a6fdcd20e8fae21325ac87b3e07201a50a3791",
+      "app/src/test/java/io/github/samson910022/pixelifyphotos/DeviceSpooferTest.kt": "0ec3638c954488f9ce934f527cca9af9343a37b63353344baa06e322b70c66fe",
+      "app/src/test/java/io/github/samson910022/pixelifyphotos/ScopePolicyTest.kt": "da1d746271c17d089ad9912dd8fa3a949da1dc50c6504f624390b66dd9b49aec",
+      "app/src/test/java/io/github/samson910022/pixelifyphotos/SpoofedPackageTrackerTest.kt": "6cec6b78330e6e2ecee4d553d3769a89e589fbf9061838617bf06220ed9364f4"
+    }
+  },
+  "licenses_sha256": {
+    "LICENSE": "52e0daaa4aacc89774554117634d5e8697ff7784586f55655a25bdaf6e4a32b6",
+    "FORK_NOTICE.md": "72622d98a39ef61c3c0d981776c0859deb936490331e1043dfc87019a0d67a18",
+    "THIRD_PARTY_NOTICES.md": "00dc479a1bf6625cf1e1ccdd9fb7660f90929dfc107872d6b03d2ba7e5669757",
+    "licenses/Apache-2.0.txt": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+  },
+  "build": {
+    "jdk": 17,
+    "gradle": "8.11.1",
+    "agp": "8.10.1",
+    "kotlin": "2.1.0",
+    "compileSdk": 36,
+    "targetSdk": 35,
+    "minSdk": 26,
+    "ndk": "30.0.16248370",
+    "cmake": "3.22.1",
+    "libxposed_api": "101.0.0",
+    "libxposed_service": "101.0.0",
+    "source_version_name": "1.4.1",
+    "source_version_code": 10
+  },
+  "module": {
+    "package": "io.github.samson910022.pixelifyphotos",
+    "minimum_modern_libxposed_api": 101,
+    "target_modern_libxposed_api": 101,
+    "scope": [
+      "com.google.android.apps.photos"
+    ],
+    "static_scope": true,
+    "default_profile": "Pixel XL",
+    "real_os_api_security_versions_preserved": true
+  }
+}

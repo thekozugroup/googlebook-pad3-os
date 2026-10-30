@@ -12,19 +12,19 @@
       "sha256": "dbd9b469b6a70f3aff02679c0521913dcc6c8a2349e3f4dafda0dc395921abf7"
     },
     "COMMUNITY_NOTES.md": {
-      "bytes": 2228,
+      "bytes": 2432,
       "executable": false,
-      "sha256": "337b6b1732afd7d4ddcade798570784245310548b6baf48cf35fbcb745b8e962"
+      "sha256": "3370685e95fb25ccb161b0893c0f569d84dec5e313f80ddb53cb34f67fa48b93"
     },
     "LAUNCH_READINESS.md": {
-      "bytes": 3591,
+      "bytes": 3571,
       "executable": false,
-      "sha256": "8915a739728e66b305511b45c706a772ae274b53fa1ba4e7698cf2c434c2a82b"
+      "sha256": "d4a90d4b76aec5bb41287a57dccbb803db13eb02f9bdfe2820f0877f43b8573a"
     },
     "PUBLIC_RELEASE.md": {
-      "bytes": 22541,
+      "bytes": 24708,
       "executable": false,
-      "sha256": "85d0913e4e4fd3a06496ea9f3a27b5cfcaff167d2f06fa5c530bdc5dcc9300e4"
+      "sha256": "70c2111898d559db3cf14027ded93cdd82f1d3f4836f48ad77277267d02de272"
     },
     "README.md": {
       "bytes": 1044,
@@ -536,20 +536,80 @@
       "executable": false,
       "sha256": "2e799a05fa22cfe02f99f34739f495cd4d2d79369b61e0fa55f8edb83eefc846"
     },
+    "components/photos-spoof/FORK_NOTICE.md": {
+      "bytes": 1226,
+      "executable": false,
+      "sha256": "72622d98a39ef61c3c0d981776c0859deb936490331e1043dfc87019a0d67a18"
+    },
+    "components/photos-spoof/LICENSE": {
+      "bytes": 1098,
+      "executable": false,
+      "sha256": "52e0daaa4aacc89774554117634d5e8697ff7784586f55655a25bdaf6e4a32b6"
+    },
+    "components/photos-spoof/README.md": {
+      "bytes": 4310,
+      "executable": false,
+      "sha256": "b7b4074993befbdb292a735d4d2bb6439cc1afe01cdbe30dda50fa930e80d38f"
+    },
+    "components/photos-spoof/THIRD_PARTY_NOTICES.md": {
+      "bytes": 1950,
+      "executable": false,
+      "sha256": "00dc479a1bf6625cf1e1ccdd9fb7660f90929dfc107872d6b03d2ba7e5669757"
+    },
+    "components/photos-spoof/build-support.gradle": {
+      "bytes": 821,
+      "executable": false,
+      "sha256": "3c345b5dc4b6e587f808f64633bbd34425c58f3aa6948a42273301acf952a0d7"
+    },
+    "components/photos-spoof/build.sh": {
+      "bytes": 2734,
+      "executable": true,
+      "sha256": "5d54ad357c45f256efb593f67ed06912d2306ba16e85d3f228c7ed79e51b9698"
+    },
+    "components/photos-spoof/licenses/Apache-2.0.txt": {
+      "bytes": 11358,
+      "executable": false,
+      "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+    },
+    "components/photos-spoof/photos-strict.patch": {
+      "bytes": 69387,
+      "executable": false,
+      "sha256": "7d690654faf305d6e9af5fc5f2fe040286cdcb58f9f4464bbc5edbe0aa7f6c23"
+    },
+    "components/photos-spoof/prepare.py": {
+      "bytes": 3351,
+      "executable": true,
+      "sha256": "f4aeae5d0379bbaa1f24fb9711ca45ca4d8076ca8faa3fd3da044ac808930c92"
+    },
+    "components/photos-spoof/source-lock.json": {
+      "bytes": 3975,
+      "executable": false,
+      "sha256": "8a4056c9893c41d320c8c789bead1b619d647a31a9abe4042ba37af3dab986b6"
+    },
+    "components/photos-spoof/tests/test_contract.py": {
+      "bytes": 3284,
+      "executable": false,
+      "sha256": "1dfd6f39983db9b57d8c2b434b5286a73058886ede048fc31286f4992b56c545"
+    },
+    "components/photos-spoof/verify.py": {
+      "bytes": 3320,
+      "executable": true,
+      "sha256": "d872730e14fa6d20bf083e3e9206203c6cdf4b562c3d8e826f111c2eae9ee998"
+    },
     "components/taskmanager-compat/.gitignore": {
       "bytes": 11,
       "executable": false,
       "sha256": "48c44c861b58bc623e9603882c09c61cb2bf31ab1c48774d6918f8807185019c"
     },
     "components/taskmanager-compat/README.md": {
-      "bytes": 5695,
+      "bytes": 6909,
       "executable": false,
-      "sha256": "1d2d20d01377fe480a668ff48cfa8d6d759489863d4f259965d121a3555a321e"
+      "sha256": "a91998b3a3ff48d2b4eb87cc3275983b2a9741b18c759c41356d4237fdc20ebb"
     },
     "components/taskmanager-compat/build-support/GraftClient.java": {
-      "bytes": 13998,
+      "bytes": 14478,
       "executable": false,
-      "sha256": "545df0ea0a7485d568199d80e42cccb2f290f7efbe8edc7574f2cf8c9eff91f5"
+      "sha256": "4ea2df62f392ded1a1a35749cbb3179fee96a98af5c3c6e8b0c576ca63049cbf"
     },
     "components/taskmanager-compat/compile-api/vendor/google/libraries/desktop/serviceability/ServiceabilityManager.java": {
       "bytes": 2576,
@@ -607,14 +667,14 @@
       "sha256": "82954447b753fb95a7883294fee89f9b50b90b2f994bccc9c1fd25cbb61a5442"
     },
     "components/taskmanager-compat/src/vendor/google/libraries/desktop/serviceability/TaskManagerCompat.java": {
-      "bytes": 15100,
+      "bytes": 15333,
       "executable": false,
-      "sha256": "b9bf9d1700becb8179c2405d6c0a996f675d1fbd0a6282aeabb67e98323a97bf"
+      "sha256": "45947b148bd6baf142ad4f04cf5823a5f23e5010666bf498439857d8d0703555"
     },
     "components/taskmanager-compat/tests/vendor/google/libraries/desktop/serviceability/MetricsSelfTest.java": {
-      "bytes": 9680,
+      "bytes": 10441,
       "executable": false,
-      "sha256": "527748e17d99a5dd1acb628b6e9b42b1c38552c340d1d96cd16c3b8adbea1c48"
+      "sha256": "ee627e818bcb21389dc48bbe5710653b6128cda1573f403c3c77767b1d7d5b1c"
     },
     "components/updater/AndroidManifest.xml": {
       "bytes": 1819,
@@ -762,9 +822,9 @@
       "sha256": "e3c0549a7c759e061a1687360665789df5a5662515b01bb1733a65651fda246c"
     },
     "export_public.py": {
-      "bytes": 77890,
+      "bytes": 78443,
       "executable": false,
-      "sha256": "8b6f61ba946f4613f5cf98c662018e37bb615f1fd318ad6d0069a902d24c73c3"
+      "sha256": "c85d2f2d389d7f4e280a261a6b7898e7b250932f039b89e8125a31e309d3f383"
     },
     "ext4_source.py": {
       "bytes": 2262,
@@ -787,9 +847,9 @@
       "sha256": "9efecff4f72a2e90fc4618e7bc10b3f2fd6e07fe47651d5a04ca3c321cee0c82"
     },
     "native_install/README.md": {
-      "bytes": 4847,
+      "bytes": 5069,
       "executable": false,
-      "sha256": "11d17b4c60858adc610eef2090b583e3d4ad21fead38cba0598dc0ec2d65190d"
+      "sha256": "35b19c3da97bed2485f75faca11a65396e672d3fbfe242fe9f75bbf7ae0157b7"
     },
     "native_install/avb.py": {
       "bytes": 7070,
@@ -907,9 +967,9 @@
       "sha256": "64dada72fd7544e554410209bd5acf96daefc88e9e749e783e48c8fa45305db4"
     },
     "native_install/product_cleanup.py": {
-      "bytes": 2085,
+      "bytes": 2405,
       "executable": false,
-      "sha256": "2c52cdafc08d5edbb9865e3e08a04c3e99875b41c5b53307b613fdbadac9826f"
+      "sha256": "69fd1296b9524d6bbac9cca12fc0ea5e17c280934cd2475d06de9a54aef21213"
     },
     "native_install/public_image.py": {
       "bytes": 3467,
@@ -967,9 +1027,9 @@
       "sha256": "56a75ad93cc664ae705ae928c2947bd7992b9d3c19eb90303c6945cf7a78e871"
     },
     "patch_taskmanager.py": {
-      "bytes": 19429,
+      "bytes": 19839,
       "executable": false,
-      "sha256": "58a69fd3dcb794cdf0838392d9cf9d79403d1321f3123b2b0a6a74c596308917"
+      "sha256": "31216ded9d8d8e51383dc0df9d548371db0b94d80e92bb8aa6054340b70e6b84"
     },
     "pen_policy.py": {
       "bytes": 10421,
@@ -1082,14 +1142,14 @@
       "sha256": "487a8dfbb850f2d1d55699f36bb290d72895421df16cf5ab6fab440e6c004b9b"
     },
     "test_build_native_rom.py": {
-      "bytes": 54950,
+      "bytes": 55158,
       "executable": false,
-      "sha256": "aa67775387984490df35bbc9a987511e382e0cc75b274354a8b3ae478a37c616"
+      "sha256": "a9fd2dd2463b23d92c60f0438c6e82a302ec3721a5c3d9fbbeab3302ba42302b"
     },
     "test_build_native_userspace.py": {
       "bytes": 28186,
       "executable": false,
-      "sha256": "73a5de0000c3ee1dea141cc5f38c4b17befd1205741cad54578b178dde006037"
+      "sha256": "b4e27fdb4cd479d357b541e51b9f8646ad37828f6bdaa1723226972eaa368ada"
     },
     "test_build_oplus_pen.py": {
       "bytes": 11674,
@@ -1142,9 +1202,9 @@
       "sha256": "4bb87fb47df003fca8a93f17000ac204ed0da83591ecde46c78971347ba75ed8"
     },
     "test_export_public.py": {
-      "bytes": 30647,
+      "bytes": 30938,
       "executable": false,
-      "sha256": "683fedca49c85d53f0f4cfef17bd549f06911bc601b45178913464a267affa3a"
+      "sha256": "29fea99a662b0bb85c636c4f99da54361ad4f7fdb6a0a6c7c2bc864e012b4d45"
     },
     "test_flash_test.py": {
       "bytes": 4968,
@@ -1162,9 +1222,9 @@
       "sha256": "5abf37856edf576e5f946a1bed16998dbb72aca0df10dfb80b572bbe36652c92"
     },
     "test_patch_taskmanager.py": {
-      "bytes": 7977,
+      "bytes": 8451,
       "executable": false,
-      "sha256": "3521ecf9974f48fda68953c9172d660df72157fbc22ea948680c099937bc0ba9"
+      "sha256": "05d9d29a88584051c005f485a22d9d78315c170a19ecffc4fbe2c3d880bbd97f"
     },
     "test_pen_policy.py": {
       "bytes": 13124,

@@ -1,7 +1,10 @@
 # Native installer source and private build inputs
 
-The private native5 candidate rebases userspace onto mica R5/build 16693588.
-It has passed host checks but has not been installed. Schema 2 composes clean R5
+Private native5/native6 rebase userspace onto mica R5/build 16693588.
+Native5 preserved apps/accounts and passed layout and pen-service checks; its
+15-minute probe captured one Diagnostics crash. Native6 addresses the absent
+laptop vendor service and booted with all 15 live image hashes matching its
+signed payload. Its app checks await owner sign-in. Schema 2 composes clean R5
 images with the reviewed tablet graft; see [donor-extractor](donor-extractor/README.md).
 The public binary feed remains native3.
 

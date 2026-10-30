@@ -35,6 +35,7 @@ TARGET_COUNTS = {
     'fetchCpuUsageInfoWithProcessUsage([I)L' + PACKAGE + 'ServiceabilityManager$CpuUsageInfoWithProcessUsage;': 9,
     'fetchPhysicalCpusInfo()Ljava/util/List;': 6,
     'getProcessMemoryUsage([I)Ljava/util/List;': 9,
+    'stopLongRunningTest(Ljava/lang/String;)V': 4,
 }
 METHODS = re.compile(r'^\.method [^\n]+\n.*?^\.end method\n?', re.M | re.S)
 
@@ -207,7 +208,7 @@ def preservation(original, patched):
                 and not (remove_mode and l.strip() == MODE_LINE)]
     require(outer(outer_before) == outer(outer_after, True), 'Manager field/class/annotation ABI changed')
     changed = {key for key in old if old[key] != new[key]}
-    require(changed == TARGET_COUNTS.keys(), 'changed method set is not exactly the five targets')
+    require(changed == TARGET_COUNTS.keys(), 'changed method set differs from the exact targets')
     for signature in changed:
         require(old[signature].splitlines()[0] == new[signature].splitlines()[0], 'method declaration changed')
         require(re.findall(r'(?ms)^    \.annotation .*?^    \.end annotation', old[signature])
@@ -224,7 +225,12 @@ def preservation(original, patched):
         count = TARGET_COUNTS[signature]
         _, candidate_instructions, label_indices = code_records(new[signature])
         guard = candidate_instructions[insertion:insertion + count]
-        require(any('L' + HELPER + ';->' in ins for ins in guard), 'helper call missing')
+        if signature == 'stopLongRunningTest(Ljava/lang/String;)V':
+            require(guard[0].startswith('move-object/from16 v0, p0')
+                    and guard[1] == 'iget-boolean v0, v0, L' + PACKAGE + 'ServiceabilityManager;->mTaskManagerCompat:Z'
+                    and guard[3] == 'return-void', 'local cancellation guard drift')
+        else:
+            require(any('L' + HELPER + ';->' in ins for ins in guard), 'helper call missing')
         branch = next(ins for ins in guard if ins.startswith('if-eqz '))
         require(label_indices[branch.split()[-1]] == insertion + count, 'guard does not continue at original body')
         candidate_records, _, _ = code_records(new[signature], range(insertion, insertion + count))

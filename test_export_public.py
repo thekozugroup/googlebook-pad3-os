@@ -117,6 +117,8 @@ class PublicExport(unittest.TestCase):
                      "profiles/pad3-components/certificate.der", "test_owner_pin.py", ".git/config",
                      "native_install/capture-manifest.json", "native_install/bootcontrol/NativeBootControlProbe.dex.jar",
                      "components/updater/Pad3Updater-unsigned.apk",
+                     "components/photos-spoof/photos-strict-proof.apk",
+                     "components/photos-spoof/upstream.tar.gz",
                      "components/taskmanager-compat/candidate/private.verification.json"):
             self.put(name, "private fixture only")
         report = self.run_export()
@@ -132,6 +134,8 @@ class PublicExport(unittest.TestCase):
         self.assertEqual(report["provided_pattern_count"], 0)
         self.assertEqual(report["derived_device_pattern_count"], 1)
         self.assertNotIn("components/taskmanager-compat/candidate/private.verification.json", report["pending_review_paths"])
+        self.assertIn("components/photos-spoof/source-lock.json", actual)
+        self.assertIn("components/photos-spoof/licenses/Apache-2.0.txt", actual)
 
     def test_portability_rules_are_explicit_and_preserve_source_and_hashes(self):
         original = {n: (self.source / n).read_bytes() for n in public.ALLOWLIST}

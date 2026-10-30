@@ -273,15 +273,16 @@ class ValidationTests(unittest.TestCase):
         from native_install import product_cleanup
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            old, current, updated = [root / name for name in ("old", "current", "updated")]
-            for path in (old, current, updated):
+            old, current, updated, fixed = [root / name for name in ("old", "current", "updated", "fixed")]
+            for path in (old, current, updated, fixed):
                 path.write_bytes(path.name.encode())
             with patch.object(product_cleanup, "SOURCE_SHA", payload.sha256(old)), \
                  patch.object(product_cleanup, "TARGET_SHA", payload.sha256(current)), \
-                 patch.object(product_cleanup, "R5_TARGET_SHA", payload.sha256(updated)):
-                for target, source in ((current, None), (updated, None), (current, old), (updated, current)):
+                 patch.object(product_cleanup, "R5_TARGET_SHA", payload.sha256(updated)), \
+                 patch.object(product_cleanup, "R5_DIAGNOSTICS_TARGET_SHA", payload.sha256(fixed)):
+                for target, source in ((current, None), (updated, None), (fixed, None), (current, old), (updated, current), (fixed, updated)):
                     product_cleanup.validate_release(target, source)
-                for target, source in ((updated, old), (current, updated)):
+                for target, source in ((updated, old), (current, updated), (fixed, old), (fixed, current), (updated, fixed)):
                     with self.assertRaises(ValueError):
                         product_cleanup.validate_release(target, source)
                 updated.write_bytes(b"unreviewed target")

@@ -64,8 +64,13 @@ public final class MetricsSelfTest {
         check(TaskManagerCompat.selectMode(TaskManagerCompat.PACKAGE, 1000, 1000, () -> true), "system user");
         check(TaskManagerCompat.selectMode(TaskManagerCompat.PACKAGE, 1001000, 1001000, () -> true), "desktop user 10");
         check(!TaskManagerCompat.selectMode(TaskManagerCompat.PACKAGE, 1001000, 1001000, () -> false), "present service");
+        check(TaskManagerCompat.selectMode(TaskManagerCompat.DIAGNOSTICS_PACKAGE, 1001000, 1001000, () -> true), "Diagnostics desktop system uid");
+        check(!TaskManagerCompat.selectMode(TaskManagerCompat.DIAGNOSTICS_PACKAGE, 1001000, 1001000, () -> false), "Diagnostics preserves present vendor service");
         TaskManagerCompat.MissingService forbidden = () -> { throw new AssertionError("lookup must not run"); };
         check(!TaskManagerCompat.selectMode("com.android.settings", 1000, 1000, forbidden), "another system package");
+        check(!TaskManagerCompat.selectMode(TaskManagerCompat.DIAGNOSTICS_PACKAGE + ".other", 1000, 1000, forbidden), "Diagnostics exact package only");
+        check(!TaskManagerCompat.selectMode(TaskManagerCompat.DIAGNOSTICS_PACKAGE, 10123, 10123, forbidden), "Diagnostics ordinary uid refused");
+        check(!TaskManagerCompat.selectMode(TaskManagerCompat.DIAGNOSTICS_PACKAGE, 1001000, 1000, forbidden), "Diagnostics foreign context refused");
         check(!TaskManagerCompat.selectMode(TaskManagerCompat.PACKAGE, 10123, 10123, forbidden), "ordinary uid");
         check(!TaskManagerCompat.selectMode(TaskManagerCompat.PACKAGE, 1001000, 1000, forbidden), "foreign context");
         check(!TaskManagerCompat.selectMode(TaskManagerCompat.PACKAGE, 0, 0, forbidden), "root is not Task Manager");

@@ -48,9 +48,16 @@ class TaskManagerPatchTest(unittest.TestCase):
         self.assertEqual(proof['public_manager_methods'], 79)
         self.assertEqual(proof['public_manager_fields'], 30)
         self.assertEqual(set(proof['changed_methods']), patch.TARGET_COUNTS.keys())
-        self.assertEqual(proof['untouched_manager_methods'], 84)
+        self.assertEqual(proof['untouched_manager_methods'], 83)
         self.assertTrue(proof['original_target_instructions_branches_try_debug_preserved'])
         self.assertFalse(proof['compile_only_classes_in_candidate'])
+
+    def test_local_cancellation_is_guarded_and_returns_no_fake_token(self):
+        methods, _ = patch.split_methods((self.work / 'patched-smali' / patch.MANAGER).read_text())
+        _, instructions, _ = patch.code_records(methods['stopLongRunningTest(Ljava/lang/String;)V'])
+        self.assertTrue(instructions[1].endswith('->mTaskManagerCompat:Z'))
+        self.assertTrue(instructions[2].startswith('if-eqz '))
+        self.assertEqual(instructions[3], 'return-void')
 
     def test_helper_links_to_original_public_dtos(self):
         self.assertGreaterEqual(self.receipt['transform']['validated_client_references'], 9)

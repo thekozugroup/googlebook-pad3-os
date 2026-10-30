@@ -1,0 +1,827 @@
+--- /dev/null
++++ b/STRICT_PHOTOS_PROOF.md
+@@ -0,0 +1,3 @@
++Strict Photos-only proof candidate. Changes: exact Google Photos gate at shared policy and hook entries, fixed scope metadata, actual OS/API/security versions retained, UI version options disabled, UI quota claims qualified, boundary and affected regression tests updated. Modified files identify this change; original LICENSE, FORK_NOTICE.md, THIRD_PARTY_NOTICES.md, and licenses/Apache-2.0.txt are preserved unchanged. This candidate is derived from samson910022/pixelify-google-photos-modern revision c7420090eb144b17268453909b2ee1626957f586, not the published 1.4.1 binary. No device or server eligibility test was performed.
++
++Build configuration: user-authorized NDK 30.0.16248370 from the existing local SDK. The parent supplies CMake 3.22.1-g37088a8 in its separate photos-cmake-sdk directory, selected explicitly through cmake.dir. Gradle/JDK17 built all three JNI ABIs and the signed debug APK; all 299 Android JVM unit tests passed. No device or Google server eligibility test was performed. Source/tool hashes and signing provenance are retained with the proof bundle.
+--- a/app/build.gradle.kts
++++ b/app/build.gradle.kts
+@@ -1,3 +1,4 @@
++// Modified for strict Photos proof: explicit installed NDK r30 pin.
+ import java.io.File
+ import java.security.KeyStore
+ import java.security.MessageDigest
+@@ -104,7 +105,7 @@
+         }
+     }
+ 
+-    ndkVersion = "27.0.12077973"
++    ndkVersion = "30.0.16248370"
+ 
+     signingConfigs {
+         if (releaseSigningConfigured) {
+--- a/app/src/main/java/io/github/samson910022/pixelifyphotos/AdvancedOptionsActivity.kt
++++ b/app/src/main/java/io/github/samson910022/pixelifyphotos/AdvancedOptionsActivity.kt
+@@ -1,3 +1,4 @@
++// Modified for the strict Photos-only proof candidate; see STRICT_PHOTOS_PROOF.md.
+ package io.github.samson910022.pixelifyphotos
+ 
+ import android.app.Activity
+@@ -89,6 +90,20 @@
+             )
+         }
+ 
++        androidVersionRadioGroup.check(R.id.dont_spoof_android_version)
++        for (i in 0 until androidVersionRadioGroup.childCount) {
++            androidVersionRadioGroup.getChildAt(i).isEnabled = false
++        }
++        androidVersionSpinner.isEnabled = false
++        deviceAndroidVersion.text = android.os.Build.VERSION.RELEASE
++
++        androidVersionRadioGroup.check(R.id.dont_spoof_android_version)
++        for (i in 0 until androidVersionRadioGroup.childCount) {
++            androidVersionRadioGroup.getChildAt(i).isEnabled = false
++        }
++        androidVersionSpinner.isEnabled = false
++        deviceAndroidVersion.text = android.os.Build.VERSION.RELEASE
++
+         save.setOnClickListener {
+             savePreferences()
+         }
+--- a/app/src/main/java/io/github/samson910022/pixelifyphotos/DeviceSpoofer.kt
++++ b/app/src/main/java/io/github/samson910022/pixelifyphotos/DeviceSpoofer.kt
+@@ -1,3 +1,4 @@
++// Modified for the strict Photos-only proof candidate; see STRICT_PHOTOS_PROOF.md.
+ package io.github.samson910022.pixelifyphotos
+ 
+ import android.annotation.SuppressLint
+@@ -70,7 +71,7 @@
+     /**
+      * @param allowFailureUi when false (early package load), VERIFY still logs but does not
+      * toast/notify — package-ready re-apply may succeed after host Application exists.
+-     * @param packageName optional package the hook runs in, recorded with diagnostics.
++     * @param packageName exact package from the injector callback; absent identity fails closed.
+      */
+     fun hook(
+         module: XposedModule?,
+@@ -78,6 +79,7 @@
+         allowFailureUi: Boolean = true,
+         packageName: String? = null,
+     ) {
++        if (!ScopePolicy.shouldSpoof(packageName)) return
+         if (prefs == null) {
+             Log.w(TAG, "Remote preferences unavailable, using defaults")
+         }
+@@ -98,10 +100,12 @@
+             Log.d(TAG, "Applying Build spoof for $deviceName")
+         }
+ 
++        // Preserve the actual OS/API/security version even with imported preferences.
++        val profileProps = deviceEntries.props.filterKeys { it !in VERSION_FIELD_NAMES }
+         ensureNativeLoaded(module)
+         exemptHiddenApis()
+ 
+-        deviceEntries.props.forEach { (key, value) ->
++        profileProps.forEach { (key, value) ->
+             val targetClass = targetClassForField(key)
+             val ok = setStaticField(targetClass, key, value)
+             if (verboseLog) {
+@@ -109,35 +113,15 @@
+             }
+         }
+ 
+-        val followDevice = prefs?.getBoolean(
+-            Constants.PREF_SPOOF_ANDROID_VERSION_FOLLOW_DEVICE, false
+-        ) ?: false
+-        val androidVersion = if (followDevice) {
+-            deviceEntries.androidVersion
+-        } else {
+-            prefs?.getString(Constants.PREF_SPOOF_ANDROID_VERSION_MANUAL, null)
+-                ?.let { DeviceProps.getAndroidVersionFromLabel(it) }
+-        }
+-        val versionProps = linkedMapOf<String, String>()
+-        androidVersion?.getAsMap()?.forEach { (key, value) ->
+-            val ok = setStaticField(Build.VERSION::class.java, key, value)
+-            if (verboseLog) Log.d(TAG, "VERSION SPOOF: $key - $value (ok=$ok)")
+-            versionProps[key] = value.toString()
+-        }
+-
+         if (module != null) {
+             try {
+-                hookSystemProperties(module, deviceEntries.props, verboseLog)
++                hookSystemProperties(module, profileProps, verboseLog)
+             } catch (t: Throwable) {
+                 Log.e(TAG, "SystemProperties hooks failed", t)
+             }
+         }
+ 
+-        val verifyProps = linkedMapOf<String, String>()
+-        verifyProps.putAll(deviceEntries.props)
+-        // VERSION_* keys share names with Build fields; verify against Build.VERSION class via key set.
+-        verifyProps.putAll(versionProps)
+-        val failed = verifySpoof(verifyProps, verboseLog)
++        val failed = verifySpoof(profileProps, verboseLog)
+         recordVerifyResult(deviceName, failed, packageName)
+         if (failed.isNotEmpty()) {
+             Log.e(
+@@ -527,8 +511,6 @@
+         putKey("ro.build.id", props["ID"])
+         putKey("ro.build.type", props["TYPE"])
+         putKey("ro.build.tags", props["TAGS"])
+-        putKey("ro.build.version.incremental", props["INCREMENTAL"])
+-        putKey("ro.build.version.security_patch", props["SECURITY_PATCH"])
+         return out
+     }
+ 
+--- a/app/src/main/java/io/github/samson910022/pixelifyphotos/FeatureSpoofer.kt
++++ b/app/src/main/java/io/github/samson910022/pixelifyphotos/FeatureSpoofer.kt
+@@ -1,3 +1,4 @@
++// Modified for the strict Photos-only proof candidate; see STRICT_PHOTOS_PROOF.md.
+ package io.github.samson910022.pixelifyphotos
+ 
+ import android.content.SharedPreferences
+@@ -94,7 +95,8 @@
+      * @param module      The module instance used to register hooks and read prefs.
+      * @param classLoader The class loader of the target package (Google Photos).
+      */
+-    fun hook(module: XposedModule, classLoader: ClassLoader) {
++    fun hook(module: XposedModule, classLoader: ClassLoader, packageName: String) {
++        if (!ScopePolicy.shouldSpoof(packageName)) return
+         try {
+             val prefs = module.getRemotePreferences(Constants.SHARED_PREF_FILE_NAME)
+             initFromPrefs(prefs)
+--- a/app/src/main/java/io/github/samson910022/pixelifyphotos/PixelifyModule.kt
++++ b/app/src/main/java/io/github/samson910022/pixelifyphotos/PixelifyModule.kt
+@@ -1,3 +1,4 @@
++// Modified for the strict Photos-only proof candidate; see STRICT_PHOTOS_PROOF.md.
+ package io.github.samson910022.pixelifyphotos
+ 
+ import android.os.Build
+@@ -46,13 +47,7 @@
+      * Early entry (closest to legacy handleLoadPackage). Apply Build spoof +
+      * SystemProperties hooks as soon as the package class loader exists.
+      *
+-     * Multi-app Option B: trust LSPosed scope for any first package, then apply
+-     * soft [ScopePolicy] denylist (skip spoof, still allow module load).
+-     *
+-     * Owner decision (locked): the module is intentionally NOT restricted to
+-     * Google Photos or to the developer. Scoping extra apps is documented as
+-     * advanced/unsupported; non-Photos spoof is therefore logged explicitly so
+-     * the behavior stays auditable.
++     * The shared exact-package gate applies independently of manager scope.
+      */
+     override fun onPackageLoaded(params: XposedModuleInterface.PackageLoadedParam) {
+         // PackageLoadedParam.isFirstPackage() is part of libxposed API 101.
+@@ -64,12 +59,11 @@
+         if (!ScopePolicy.shouldSpoof(params.packageName)) {
+             Log.w(
+                 TAG,
+-                "Skipping device spoof for denylisted/invalid package: ${params.packageName}"
++                "Skipping device spoof for ineligible package: ${params.packageName}"
+             )
+             return
+         }
+ 
+-        logIfNonPhotosPackage(params.packageName, "early device spoof")
+         Log.d(TAG, "Package loaded (${params.packageName}). Early device spoof...")
+         try {
+             val prefs = getRemotePreferences(Constants.SHARED_PREF_FILE_NAME)
+@@ -84,11 +78,11 @@
+         // On Android 10+ (API 29, Q), Google Photos and system libraries query PackageManager
+         // features during early static initializers and ContentProvider startups (prior to
+         // Application.onCreate). Hooking early via params.defaultClassLoader ensures feature
+-        // capabilities like Unlimited Backup are spoofed before early caching takes place.
++        // local feature answers are available before early caching takes place.
+         // On Android 9 and older, class resolution is deferred to onPackageReady.
+         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+             try {
+-                FeatureSpoofer.hook(this, params.defaultClassLoader)
++                FeatureSpoofer.hook(this, params.defaultClassLoader, params.packageName)
+                 Log.d(TAG, "FeatureSpoofer early apply done for ${params.packageName}")
+             } catch (t: Throwable) {
+                 Log.e(TAG, "Failed early FeatureSpoofer apply for ${params.packageName}", t)
+@@ -100,14 +94,13 @@
+     }
+ 
+     /**
+-     * Package ready: register FeatureSpoofer + re-apply DeviceSpoofer for any
+-     * non-denylisted scoped package (same global prefs as Photos).
++     * Package ready: re-apply hooks only for the exact Google Photos package.
+      */
+     override fun onPackageReady(params: XposedModuleInterface.PackageReadyParam) {
+         if (!ScopePolicy.shouldSpoof(params.packageName)) {
+             Log.w(
+                 TAG,
+-                "Skipping feature/device spoof on ready for denylisted/invalid package: ${params.packageName}"
++                "Skipping feature/device spoof on ready for ineligible package: ${params.packageName}"
+             )
+             return
+         }
+@@ -115,10 +108,9 @@
+         Log.d(TAG, "Package ready (${params.packageName}). Applying hooks...")
+ 
+         // Each hook is individually guarded so one failure doesn't block the other.
+-        logIfNonPhotosPackage(params.packageName, "feature/device spoof on ready")
+         try {
+             try {
+-                FeatureSpoofer.hook(this, params.classLoader)
++                FeatureSpoofer.hook(this, params.classLoader, params.packageName)
+                 Log.d(TAG, "FeatureSpoofer hook registered for ${params.packageName}")
+             } catch (t: Throwable) {
+                 Log.e(TAG, "Failed to register FeatureSpoofer hooks for ${params.packageName}", t)
+@@ -141,18 +133,4 @@
+         }
+     }
+ 
+-    /**
+-     * Audit log for the deliberate multi-app behavior: Photos is the recommended
+-     * scope, but scoping extra apps is allowed (advanced/unsupported). Spoofing
+-     * any non-Photos package is intentional and must stay visible in logs.
+-     */
+-    private fun logIfNonPhotosPackage(packageName: String, phase: String) {
+-        if (packageName != Constants.PACKAGE_NAME_GOOGLE_PHOTOS) {
+-            Log.w(
+-                TAG,
+-                "Applying $phase to non-Photos package $packageName " +
+-                    "(advanced multi-app scope; not restricted to developer/Photos by design)"
+-            )
+-        }
+-    }
+ }
+--- a/app/src/main/java/io/github/samson910022/pixelifyphotos/ScopePolicy.kt
++++ b/app/src/main/java/io/github/samson910022/pixelifyphotos/ScopePolicy.kt
+@@ -1,26 +1,10 @@
++// Modified for the strict Photos-only proof candidate; see STRICT_PHOTOS_PROOF.md.
+ package io.github.samson910022.pixelifyphotos
+ 
+-/**
+- * Pure scope / denylist policy for multi-app Option B (B0 + denylist).
+- *
+- * LSPosed decides which packages load the module. This policy only decides
+- * whether Device+Feature spoof should run inside an already-loaded process.
+- *
+- * Keep this object free of Android framework dependencies so unit tests can
+- * run on the host JVM.
+- */
++/** Pure policy: only the exact Google Photos package may receive spoof hooks. */
+ object ScopePolicy {
+ 
+-    /**
+-     * Packages that must never receive Build/feature spoof even if the user
+-     * scopes them in LSPosed, and that the module UI must never force-stop.
+-     *
+-     * Exact match only (v1): near-miss packages (e.g. `com.google.android.gms.unstable`)
+-     * are intentionally not matched, so they still pass `shouldSpoof`. This is a
+-     * deliberate trade-off: prefix matching would silently block legitimate
+-     * third-party apps, while the documented stance is that extra scoped apps are
+-     * advanced/unsupported. Users should keep the scope list to Photos.
+-     */
++    /** Existing soft denylist retained for diagnostics/UI compatibility. */
+     val DENYLIST: Set<String> = setOf(
+         "com.google.android.gms",
+         "com.android.vending",
+@@ -51,8 +35,7 @@
+      * @return true if spoof hooks should be applied for [packageName].
+      */
+     fun shouldSpoof(packageName: String?): Boolean {
+-        if (packageName.isNullOrEmpty()) return false
+-        return packageName !in DENYLIST
++        return packageName == Constants.PACKAGE_NAME_GOOGLE_PHOTOS
+     }
+ 
+     /**
+--- a/app/src/main/java/io/github/samson910022/pixelifyphotos/SpoofedPackageTracker.kt
++++ b/app/src/main/java/io/github/samson910022/pixelifyphotos/SpoofedPackageTracker.kt
+@@ -1,3 +1,4 @@
++// Modified for the strict Photos-only proof candidate; see STRICT_PHOTOS_PROOF.md.
+ package io.github.samson910022.pixelifyphotos
+ 
+ /**
+@@ -19,9 +20,8 @@
+     }
+ 
+     /**
+-     * Packages the UI should force-stop: always Photos, plus [scopePackages] from
+-     * LSPosed that pass name validation and [ScopePolicy.shouldSpoof]. The module's
+-     * own package is never included, even if a scope query somehow reports it.
++     * Only Photos may be force-stopped; extra manager scope entries are rejected
++     * by [ScopePolicy.shouldSpoof].
+      *
+      * @param scopePackages typically [io.github.libxposed.service.XposedService.getScope];
+      * null/empty still yields Photos-only.
+--- a/app/src/main/res/values-ja/strings.xml
++++ b/app/src/main/res/values-ja/strings.xml
+@@ -1,3 +1,4 @@
++<!-- Modified for the strict Photos-only proof candidate; see STRICT_PHOTOS_PROOF.md. -->
+ <resources>
+     <string name="app_name">Pixelify Infinity</string>
+ 
+@@ -23,7 +24,7 @@
+     <string name="changelog">変更履歴</string>
+ 
+     <!-- 設定のインポート／エクスポート -->
+-    <string name="please_force_stop_google_photos">変更を適用するには、スコープ内のアプリ（Google フォトおよび LSPosed モジュールのスコープに含まれるその他のアプリ）を強制停止して再度開いてください。</string>
++    <string name="please_force_stop_google_photos">Force-stop Google Photos and reopen it to apply this change.</string>
+     <string name="export_config">設定のエクスポート</string>
+     <string name="export_config_desc">このモジュールの設定を JSON ファイルとして保存または共有します。</string>
+     <string name="export_complete">エクスポート完了</string>
+@@ -45,8 +46,8 @@
+     <!-- 詳細オプション -->
+     <string name="enable_verbose_logging">詳細ログを有効化</string>
+     <string name="enable_verbose_logging_desc">Xposed および Android のログに診断詳細を追加します。問題を再現する場合にのみ有効にし、ログを共有する前に個人情報を削除してください。</string>
+-    <string name="spoof_android_version">Android バージョンを偽装</string>
+-    <string name="spoof_android_version_desc">端末の実際のバージョンよりも新しい Android バージョンを選択しないでください。</string>
++    <string name="spoof_android_version">Android version: unchanged</string>
++    <string name="spoof_android_version_desc">This proof preserves the actual Android API, release and security patch versions. Imported version overrides are ignored.</string>
+     <string name="this_might_cause_crash">互換性のない値を指定すると Google フォトがクラッシュする可能性があります。</string>
+     <string name="dont_spoof_android_version">Android バージョンを偽装しない <b>（推奨）</b></string>
+     <string name="follow_spoof_device_version">選択した Pixel プロファイルの Android バージョンを使用</string>
+@@ -62,7 +63,7 @@
+     <!-- 初回オンボーディング -->
+     <string name="onboarding_title">Pixelify Infinity へようこそ</string>
+     <string name="onboarding_default_profile_title">初期設定として Pixel XL が選択されています</string>
+-    <string name="onboarding_default_profile_desc">Pixel XL では保存容量を消費しない&lt;b&gt;無制限の元の画質バックアップ&lt;/b&gt;が有効になります。最新の編集機能（消しゴムマジックや Ultra HDR など）を利用したい場合は、設定からいつでも新しい Pixel モデルに切り替えられます。</string>
++    <string name="onboarding_default_profile_desc">This proof applies a local Pixel XL profile only inside Google Photos. It does not establish Google server quota eligibility.</string>
+     <string name="onboarding_force_stop_warning_title">重要: Google フォトの強制停止</string>
+     <string name="onboarding_force_stop_warning_desc">Pixel XL がすでに選択されている場合でも、Google フォトを完全に停止して再起動するまで偽装は適用されません。下のボタンをタップして変更を今すぐ適用してください。</string>
+     <string name="onboarding_action_force_stop_and_launch">強制停止してフォトを起動</string>
+@@ -76,41 +77,41 @@
+     <!-- モダン UI テキスト -->
+     <string name="module_status_active">LSPosed モジュール有効</string>
+     <string name="module_status_inactive">モジュール無効</string>
+-    <string name="module_scope_info">スコープ: Google フォト</string>
++    <string name="module_scope_info">Strict scope: Google Photos only</string>
+     <string name="section_device_profile">端末プロファイル</string>
+     <string name="section_features">機能フラグ</string>
+     <string name="section_actions">操作</string>
+     <string name="customize_flags_summary">設定済み機能フラグ</string>
+     <string name="device_spoofed_active">現在の偽装プロファイル: %1$s</string>
+-    <string name="reopen_photos_hint">設定変更後はスコープ内アプリを強制停止して適用してください</string>
++    <string name="reopen_photos_hint">Force-stop Google Photos after changing settings to apply</string>
+ 
+     <!-- 端末特典とバックアップ確認 -->
+-    <string name="entitlement_badge_unlimited_original">無制限の元の画質（容量消費なし）</string>
+-    <string name="entitlement_badge_unlimited_storage_saver">保存容量の節約画質のみ無制限（高画質）</string>
+-    <string name="entitlement_badge_no_unlimited">無料バックアップなし（編集機能のみ）</string>
+-    <string name="entitlement_desc_unlimited_original">Pixel XL からバックアップされた写真と動画は、「元の画質」および「保存容量の節約画質」のいずれでも Google アカウントの保存容量を消費しません。</string>
+-    <string name="entitlement_desc_unlimited_storage_saver">無料無制限バックアップは、Google フォトのバックアップ画質が「保存容量の節約画質」に設定されている場合に「のみ」適用されます。「元の画質」でバックアップすると Google アカウントの保存容量を消費します！</string>
+-    <string name="entitlement_desc_no_unlimited">Pixel 6 以降の端末には無料の無制限クラウド バックアップ特典はありません。すべてのアップロードで Google アカウントの保存容量を消費します。無制限のバックアップ容量が必要な場合は、Pixel XL（元の画質）または Pixel 2〜5（保存容量の節約画質）を選択してください。</string>
+-    <string name="entitlement_tag_original">（元の画質で無制限）</string>
+-    <string name="entitlement_tag_storage_saver">（保存容量の節約画質で無制限）</string>
+-    <string name="entitlement_tag_editing_only">（編集機能のみ／無料バックアップなし）</string>
++    <string name="entitlement_badge_unlimited_original">Local Original quality profile (quota unverified)</string>
++    <string name="entitlement_badge_unlimited_storage_saver">Local Storage saver profile (quota unverified)</string>
++    <string name="entitlement_badge_no_unlimited">Local editing profile (quota unverified)</string>
++    <string name="entitlement_desc_unlimited_original">Local profile selection only. Device spoofing, a backup banner and local VERIFY do not prove Google server quota eligibility.</string>
++    <string name="entitlement_desc_unlimited_storage_saver">Local profile selection only. Storage saver selection does not prove that uploads are exempt from Google storage quota.</string>
++    <string name="entitlement_desc_no_unlimited">This profile changes local device signals only. No Google server backup entitlement is verified or guaranteed.</string>
++    <string name="entitlement_tag_original">(Original quality profile; quota unverified)</string>
++    <string name="entitlement_tag_storage_saver">(Storage saver profile; quota unverified)</string>
++    <string name="entitlement_tag_editing_only">(Editing profile; quota unverified)</string>
+     <string name="entitlement_tag_none">（偽装なし）</string>
+-    <string name="verification_guide_btn">バックアップ成功の確認方法</string>
+-    <string name="verification_guide_title">無制限バックアップの確認方法</string>
+-    <string name="verification_guide_content_html">&lt;b&gt;無制限バックアップを確認する 2 つの方法:&lt;/b&gt;&lt;br&gt;&lt;br&gt;&lt;b&gt;1. Google フォトのバックアップ設定を確認&lt;/b&gt;&lt;br&gt;- &lt;b&gt;Google フォト&lt;/b&gt;を開きます。&lt;br&gt;- 右上のアカウント アイコン &gt; &lt;b&gt;バックアップ&lt;/b&gt;をタップします。&lt;br&gt;- 右上の歯車アイコンをタップします。&lt;br&gt;- バナーに &lt;i&gt;「この Pixel からは写真や動画を無料で無制限にバックアップできます」&lt;/i&gt; と表示されていることを確認します。&lt;br&gt;&lt;br&gt;&lt;b&gt;2. 写真をアップロードして容量詳細を確認&lt;/b&gt;&lt;br&gt;- Google フォトで新しい写真や動画をバックアップします。&lt;br&gt;- その写真を開いて上にスワイプし、詳細を表示します（または &lt;i&gt;photos.google.com&lt;/i&gt; で詳細を確認します）。&lt;br&gt;- 保存容量の項目に &lt;i&gt;「このアイテムはアカウントの保存容量を使用しません」&lt;/i&gt; （0 バイト使用）と表示されていることを確認します。&lt;br&gt;&lt;br&gt;&lt;b&gt;トラブルシューティングと診断:&lt;/b&gt;&lt;br&gt;- &lt;b&gt;診断を確認:&lt;/b&gt; 診断画面を開き、モジュールが有効で VERIFY に合格していることを確認します。&lt;br&gt;- &lt;b&gt;バックアップ画質を確認:&lt;/b&gt; Pixel 2〜5 で無料の無制限容量を利用するには、画質を&lt;b&gt;保存容量の節約画質&lt;/b&gt;にする必要があります。元の画質では Google アカウントの容量を消費します。&lt;br&gt;- &lt;b&gt;アプリのキャッシュを消去:&lt;/b&gt; Google フォトが古い端末情報をキャッシュしている場合は、&lt;b&gt;スコープ内アプリを強制停止&lt;/b&gt;をタップするか、Google フォトのキャッシュを消去して再起動してください。</string>
++    <string name="verification_guide_btn">Local proof limits</string>
++    <string name="verification_guide_title">Local signals and server quota</string>
++    <string name="verification_guide_content_html">Local VERIFY checks process-local Build field readback. Photos banners and feature answers can change locally; they do not establish Google server quota eligibility. This proof performs no account access, backup or upload.</string>
+ 
+     <!-- 診断 -->
+     <string name="diagnostics">診断</string>
+     <string name="diagnostics_title">Pixelify Infinity 診断</string>
+     <string name="diagnostics_section_status">モジュール状態</string>
+-    <string name="diagnostics_section_entitlement">バックアップ特典と確認手順</string>
++    <string name="diagnostics_section_entitlement">Local profile and proof limits</string>
+     <string name="diagnostics_entitlement_profile_format">現在の偽装プロファイル: %1$s — %2$s</string>
+-    <string name="diagnostics_verification_methods_title">バックアップ成功の確認方法:</string>
+-    <string name="diagnostics_verification_methods_desc">1. Google フォト &gt; アカウント アイコン &gt; バックアップ &gt; バックアップ設定（歯車アイコン）: 無制限バックアップ バナーを確認します。\n2. 写真をアップロード &gt; 写真を上にスワイプ: 「このアイテムはアカウントの保存容量を使用しません」（0 バイト使用）を確認します。\n\n保存容量が消費されている場合は、以下の VERIFY 結果が OK であることを確認し、バックアップ画質がモデルの条件（例: Pixel 2〜5 は保存容量の節約画質）に合致していることを確認した上で、Google フォトを強制停止してキャッシュを消去してください。</string>
++    <string name="diagnostics_verification_methods_title">What this proof checks</string>
++    <string name="diagnostics_verification_methods_desc">Exact Photos package isolation and local version preservation. Local VERIFY is a field readback, not a Google server quota check. This proof performs no backup or upload.</string>
+     <string name="diagnostics_section_milestones">フックのマイルストーン</string>
+     <string name="diagnostics_section_verify">直近の端末偽装 VERIFY</string>
+     <string name="diagnostics_section_build">Build フィールド: 実機 vs 偽装ターゲット</string>
+-    <string name="diagnostics_section_build_desc">値はこのアプリ プロセス（実機）内で読み取られます。偽装は Google フォトなどのスコープ内アプリ内でのみ適用されます。上の VERIFY 結果はフック プロセスの状態を反映しています。</string>
++    <string name="diagnostics_section_build_desc">This module UI reads the real device values. The candidate applies profile identity only inside Google Photos. Actual API and security versions remain unchanged.</string>
+     <string name="diagnostics_section_howto">この画面の見方</string>
+     <string name="diagnostics_howto_desc">「フックのマイルストーンが記録されていません」は通常、モジュールが Google フォトに読み込まれていないことを意味します。LSPosed の有効化とスコープを確認して再起動してください。「パッケージは読み込まれましたが準備完了になりませんでした」は、お使いの Xposed バリアントのフレームワーク/API 互換性の問題を示しています。VERIFY の失敗は、モジュールは実行されたものの Build フィールドに書き込めなかったことを意味します。問題を報告する際は「診断レポートをコピー」を使用してください。レポートにはモジュールのスコープ一覧や端末の Build 値が含まれますが、アカウント情報は含まれません。</string>
+     <string name="diagnostics_copy_report">診断レポートをコピー</string>
+--- a/app/src/main/res/values-zh-rCN/strings.xml
++++ b/app/src/main/res/values-zh-rCN/strings.xml
+@@ -1,3 +1,4 @@
++<!-- Modified for the strict Photos-only proof candidate; see STRICT_PHOTOS_PROOF.md. -->
+ <resources>
+     <string name="app_name">Pixelify Infinity</string>
+ 
+@@ -23,7 +24,7 @@
+     <string name="changelog">更新日志</string>
+ 
+     <!-- 配置导入／导出 -->
+-    <string name="please_force_stop_google_photos">请强行停止作用域 App（Google 相册及 LSPosed 模块作用域内的其他应用）并重新打开，以使更改生效。</string>
++    <string name="please_force_stop_google_photos">Force-stop Google Photos and reopen it to apply this change.</string>
+     <string name="export_config">导出配置</string>
+     <string name="export_config_desc">将此模块的设置保存或分享为 JSON 文件。</string>
+     <string name="export_complete">导出完成</string>
+@@ -45,8 +46,8 @@
+     <!-- 高级选项 -->
+     <string name="enable_verbose_logging">启用详细日志</string>
+     <string name="enable_verbose_logging_desc">在 Xposed 和 Android 日志中添加详细诊断信息。仅在复现问题时启用，并在分享日志前移除个人敏感信息。</string>
+-    <string name="spoof_android_version">模拟 Android 版本</string>
+-    <string name="spoof_android_version_desc">请勿选择高于设备实际版本的 Android 版本。</string>
++    <string name="spoof_android_version">Android version: unchanged</string>
++    <string name="spoof_android_version_desc">This proof preserves the actual Android API, release and security patch versions. Imported version overrides are ignored.</string>
+     <string name="this_might_cause_crash">不兼容的值可能会导致 Google 相册崩溃。</string>
+     <string name="dont_spoof_android_version">不模拟 Android 版本 <b>（推荐）</b></string>
+     <string name="follow_spoof_device_version">使用所选 Pixel 配置文件的 Android 版本</string>
+@@ -62,7 +63,7 @@
+     <!-- 首次启动引导 -->
+     <string name="onboarding_title">欢迎使用 Pixelify Infinity</string>
+     <string name="onboarding_default_profile_title">已默认选择 Pixel XL</string>
+-    <string name="onboarding_default_profile_desc">Pixel XL 可解锁&lt;b&gt;无限原画质 Google 相册备份&lt;/b&gt;且不消耗存储空间。如果您更青睐较新的照片编辑功能（例如魔术橡皮擦、Ultra HDR），可随时在设置中切换为较新的 Pixel 机型。</string>
++    <string name="onboarding_default_profile_desc">This proof applies a local Pixel XL profile only inside Google Photos. It does not establish Google server quota eligibility.</string>
+     <string name="onboarding_force_stop_warning_title">重要提醒：必须强行停止 Google 相册</string>
+     <string name="onboarding_force_stop_warning_desc">尽管已默认选择 Pixel XL，但 Google 相册在彻底停止并重新打开前不会应用伪装。点击下方按钮即可立即应用更改。</string>
+     <string name="onboarding_action_force_stop_and_launch">强行停止并打开相册</string>
+@@ -76,41 +77,41 @@
+     <!-- 现代界面文本 -->
+     <string name="module_status_active">LSPosed 模块已激活</string>
+     <string name="module_status_inactive">模块未激活</string>
+-    <string name="module_scope_info">作用域：Google 相册</string>
++    <string name="module_scope_info">Strict scope: Google Photos only</string>
+     <string name="section_device_profile">设备配置文件</string>
+     <string name="section_features">功能标志</string>
+     <string name="section_actions">快捷操作</string>
+     <string name="customize_flags_summary">已配置的功能标志</string>
+     <string name="device_spoofed_active">当前模拟机型：%1$s</string>
+-    <string name="reopen_photos_hint">更改设置后请强行停止作用域 App 以应用更改</string>
++    <string name="reopen_photos_hint">Force-stop Google Photos after changing settings to apply</string>
+ 
+     <!-- 设备权益与备份验证 -->
+-    <string name="entitlement_badge_unlimited_original">无限制原画质备份（不占空间）</string>
+-    <string name="entitlement_badge_unlimited_storage_saver">仅限无限制省存储空间备份（高画质）</string>
+-    <string name="entitlement_badge_no_unlimited">无免费备份（仅解锁照片编辑功能）</string>
+-    <string name="entitlement_desc_unlimited_original">从 Pixel XL 备份的照片和视频，以“原画质”或“省存储空间画质”上传均不计入您的 Google 账号存储空间配额。</string>
+-    <string name="entitlement_desc_unlimited_storage_saver">免费无限备份“仅在”Google 相册备份画质设为“省存储空间”时生效。若设为“原画质”，上传仍将正常消耗您的 Google 账号存储空间配额！</string>
+-    <string name="entitlement_desc_no_unlimited">Pixel 6 及更新机型不包含免费无限制云端备份权益。所有上传均会正常消耗 Google 账号存储空间配额。如需无限相册存储空间，请选择 Pixel XL（原画质）或 Pixel 2–5（省存储空间）。</string>
+-    <string name="entitlement_tag_original">（原画质无限）</string>
+-    <string name="entitlement_tag_storage_saver">（省空间画质无限）</string>
+-    <string name="entitlement_tag_editing_only">（仅编辑功能／无免费备份）</string>
++    <string name="entitlement_badge_unlimited_original">Local Original quality profile (quota unverified)</string>
++    <string name="entitlement_badge_unlimited_storage_saver">Local Storage saver profile (quota unverified)</string>
++    <string name="entitlement_badge_no_unlimited">Local editing profile (quota unverified)</string>
++    <string name="entitlement_desc_unlimited_original">Local profile selection only. Device spoofing, a backup banner and local VERIFY do not prove Google server quota eligibility.</string>
++    <string name="entitlement_desc_unlimited_storage_saver">Local profile selection only. Storage saver selection does not prove that uploads are exempt from Google storage quota.</string>
++    <string name="entitlement_desc_no_unlimited">This profile changes local device signals only. No Google server backup entitlement is verified or guaranteed.</string>
++    <string name="entitlement_tag_original">(Original quality profile; quota unverified)</string>
++    <string name="entitlement_tag_storage_saver">(Storage saver profile; quota unverified)</string>
++    <string name="entitlement_tag_editing_only">(Editing profile; quota unverified)</string>
+     <string name="entitlement_tag_none">（不模拟）</string>
+-    <string name="verification_guide_btn">如何验证备份成功</string>
+-    <string name="verification_guide_title">如何验证无限制备份</string>
+-    <string name="verification_guide_content_html">&lt;b&gt;验证无限制备份的两种方法：&lt;/b&gt;&lt;br&gt;&lt;br&gt;&lt;b&gt;1. 检查 Google 相册备份设置&lt;/b&gt;&lt;br&gt;- 打开 &lt;b&gt;Google 相册&lt;/b&gt;。&lt;br&gt;- 点击右上角头像 &gt; &lt;b&gt;备份&lt;/b&gt;。&lt;br&gt;- 点击右上角齿轮图标进入备份设置。&lt;br&gt;- 检查横幅是否显示：&lt;i&gt;“这台 Pixel 可免费备份无限量的照片和视频”&lt;/i&gt;。&lt;br&gt;&lt;br&gt;&lt;b&gt;2. 上传照片并检查存储详情&lt;/b&gt;&lt;br&gt;- 在 Google 相册中备份一张新照片或视频。&lt;br&gt;- 打开照片并上滑查看详情（或在 &lt;i&gt;photos.google.com&lt;/i&gt; 上查看详情）。&lt;br&gt;- 检查存储空间一栏是否显示：&lt;i&gt;“此内容不占用您的账号存储空间”&lt;/i&gt;（使用 0 字节）。&lt;br&gt;&lt;br&gt;&lt;b&gt;疑难解答与诊断：&lt;/b&gt;&lt;br&gt;- &lt;b&gt;查看诊断：&lt;/b&gt;打开“诊断”界面以确认模块处于激活状态且 VERIFY 通过。&lt;br&gt;- &lt;b&gt;检查备份画质：&lt;/b&gt;Pixel 2–5 需要设置为&lt;b&gt;省存储空间&lt;/b&gt;画质才能享有免费无限制配额。原画质将消耗 Google 账号存储空间。&lt;br&gt;- &lt;b&gt;清除应用缓存：&lt;/b&gt;若 Google 相册缓存了旧设备属性，请点击“&lt;b&gt;强行停止作用域 App&lt;/b&gt;”或清除 Google 相册应用缓存并重启。</string>
++    <string name="verification_guide_btn">Local proof limits</string>
++    <string name="verification_guide_title">Local signals and server quota</string>
++    <string name="verification_guide_content_html">Local VERIFY checks process-local Build field readback. Photos banners and feature answers can change locally; they do not establish Google server quota eligibility. This proof performs no account access, backup or upload.</string>
+ 
+     <!-- 诊断 -->
+     <string name="diagnostics">诊断</string>
+     <string name="diagnostics_title">Pixelify Infinity 诊断</string>
+     <string name="diagnostics_section_status">模块状态</string>
+-    <string name="diagnostics_section_entitlement">备份权益与验证说明</string>
++    <string name="diagnostics_section_entitlement">Local profile and proof limits</string>
+     <string name="diagnostics_entitlement_profile_format">当前模拟机型：%1$s — %2$s</string>
+-    <string name="diagnostics_verification_methods_title">如何确认备份成功：</string>
+-    <string name="diagnostics_verification_methods_desc">1. Google 相册 &gt; 个人头像 &gt; 备份 &gt; 备份设置（齿轮图标）：检查是否存在无限制备份横幅。\n2. 上传照片 &gt; 上滑查看详情：确认显示“此内容不占用您的账号存储空间”（使用 0 字节）。\n\n若仍消耗存储空间，请确认下方 VERIFY 结果为成功（OK）、备份画质符合机型要求（例如 Pixel 2–5 须设为省存储空间），并强行停止 Google 相册以清除旧缓存。</string>
++    <string name="diagnostics_verification_methods_title">What this proof checks</string>
++    <string name="diagnostics_verification_methods_desc">Exact Photos package isolation and local version preservation. Local VERIFY is a field readback, not a Google server quota check. This proof performs no backup or upload.</string>
+     <string name="diagnostics_section_milestones">Hook 里程碑</string>
+     <string name="diagnostics_section_verify">上次设备模拟 VERIFY</string>
+     <string name="diagnostics_section_build">Build 字段：实际值 vs 模拟目标</string>
+-    <string name="diagnostics_section_build_desc">数值是在本应用进程内读取（实际设备）。模拟仅应用于作用域内的应用（例如 Google 相册）——上方的 VERIFY 结果反映的是 Hook 进程。</string>
++    <string name="diagnostics_section_build_desc">This module UI reads the real device values. The candidate applies profile identity only inside Google Photos. Actual API and security versions remain unchanged.</string>
+     <string name="diagnostics_section_howto">如何解读此界面</string>
+     <string name="diagnostics_howto_desc">“未记录任何 Hook 里程碑”通常表示模块从未加载到 Google 相册中——请检查 LSPosed 是否启用及作用域设置，然后重启设备。“已加载软件包但从未就绪”表明您的 Xposed 版本存在框架／API 兼容性问题。VERIFY 失败表示模块已运行但无法写入 Build 字段。反馈问题时请使用“复制诊断报告”——报告包含模块作用域列表与设备 Build 数值，但不含任何账户数据。</string>
+     <string name="diagnostics_copy_report">复制诊断报告</string>
+--- a/app/src/main/res/values-zh-rTW/strings.xml
++++ b/app/src/main/res/values-zh-rTW/strings.xml
+@@ -1,3 +1,4 @@
++<!-- Modified for the strict Photos-only proof candidate; see STRICT_PHOTOS_PROOF.md. -->
+ <resources>
+     <string name="app_name">Pixelify Infinity</string>
+ 
+@@ -23,7 +24,7 @@
+     <string name="changelog">變更記錄</string>
+ 
+     <!-- 設定匯入／匯出 -->
+-    <string name="please_force_stop_google_photos">請強制停止作用範圍 App（Google 相簿及 LSPosed 模組作用範圍內的其他 App）並重新開啟，讓變更生效。</string>
++    <string name="please_force_stop_google_photos">Force-stop Google Photos and reopen it to apply this change.</string>
+     <string name="export_config">匯出設定</string>
+     <string name="export_config_desc">將本模組的設定儲存或分享為 JSON 檔案。</string>
+     <string name="export_complete">匯出完成</string>
+@@ -45,8 +46,8 @@
+     <!-- 進階選項 -->
+     <string name="enable_verbose_logging">啟用詳細記錄</string>
+     <string name="enable_verbose_logging_desc">在 Xposed 與 Android 記錄中加入更多診斷資訊。只在重現問題時啟用，分享前請移除個人資訊。</string>
+-    <string name="spoof_android_version">模擬 Android 版本</string>
+-    <string name="spoof_android_version_desc">不要選擇比裝置實際版本更新的 Android 版本。</string>
++    <string name="spoof_android_version">Android version: unchanged</string>
++    <string name="spoof_android_version_desc">This proof preserves the actual Android API, release and security patch versions. Imported version overrides are ignored.</string>
+     <string name="this_might_cause_crash">不相容的值可能導致 Google 相簿崩潰。</string>
+     <string name="dont_spoof_android_version">不要模擬 Android 版本 <b>（建議）</b></string>
+     <string name="follow_spoof_device_version">使用所選 Pixel 設定檔的 Android 版本</string>
+@@ -62,7 +63,7 @@
+     <!-- 首次啟動引導 -->
+     <string name="onboarding_title">歡迎使用 Pixelify Infinity</string>
+     <string name="onboarding_default_profile_title">已預設選擇 Pixel XL</string>
+-    <string name="onboarding_default_profile_desc">Pixel XL 可為 Google 相簿解鎖&lt;b&gt;無限原始畫質備份&lt;/b&gt;且不佔用雲端空間。若您偏好較新的編輯功能（如魔術橡皮擦、Ultra HDR），可隨時在設定中切換為較新的 Pixel 機型。</string>
++    <string name="onboarding_default_profile_desc">This proof applies a local Pixel XL profile only inside Google Photos. It does not establish Google server quota eligibility.</string>
+     <string name="onboarding_force_stop_warning_title">重要提醒：必須強制停止 Google 相簿</string>
+     <string name="onboarding_force_stop_warning_desc">即使已預設選取 Pixel XL，Google 相簿仍必須「強制停止並重新開啟」才能清除舊快取使偽裝生效。請點擊下方按鈕立即套用。</string>
+     <string name="onboarding_action_force_stop_and_launch">強制停止並開啟相簿</string>
+@@ -76,41 +77,41 @@
+     <!-- 現代介面文字 -->
+     <string name="module_status_active">LSPosed 模組已啟用</string>
+     <string name="module_status_inactive">模組尚未啟用</string>
+-    <string name="module_scope_info">作用範圍：Google 相簿</string>
++    <string name="module_scope_info">Strict scope: Google Photos only</string>
+     <string name="section_device_profile">裝置設定檔</string>
+     <string name="section_features">功能旗標</string>
+     <string name="section_actions">快捷操作</string>
+     <string name="customize_flags_summary">已自訂之功能旗標</string>
+     <string name="device_spoofed_active">目前模擬機型：%1$s</string>
+-    <string name="reopen_photos_hint">變更設定後請強制停止作用範圍 App 讓變更生效</string>
++    <string name="reopen_photos_hint">Force-stop Google Photos after changing settings to apply</string>
+ 
+     <!-- 裝置權益與備份驗證 -->
+-    <string name="entitlement_badge_unlimited_original">無限制原始畫質備份（不佔空間）</string>
+-    <string name="entitlement_badge_unlimited_storage_saver">僅限無限制省儲存空間備份（高畫質）</string>
+-    <string name="entitlement_badge_no_unlimited">無免費備份（僅解鎖相片編輯功能）</string>
+-    <string name="entitlement_desc_unlimited_original">以 Pixel XL 備份的照片與影片，以「原始畫質」或「省儲存空間畫質」上傳皆完全不佔用 Google 帳號空間。</string>
+-    <string name="entitlement_desc_unlimited_storage_saver">免費無限備份「僅在」Google 相簿備份畫質設為「省儲存空間（高畫質）」時生效。若設為「原始畫質」，上傳將會正常扣除 Google 帳號空間！</string>
+-    <string name="entitlement_desc_no_unlimited">Pixel 6 及後續機型不具備免費相簿備份權益，上傳會正常扣除 Google 帳號空間。若需要無限相簿空間，請改選 Pixel XL（原始畫質）或 Pixel 2–5（省儲存空間）。</string>
+-    <string name="entitlement_tag_original">（原始畫質無限）</string>
+-    <string name="entitlement_tag_storage_saver">（省空間畫質無限）</string>
+-    <string name="entitlement_tag_editing_only">（僅相片功能／無免費備份）</string>
++    <string name="entitlement_badge_unlimited_original">Local Original quality profile (quota unverified)</string>
++    <string name="entitlement_badge_unlimited_storage_saver">Local Storage saver profile (quota unverified)</string>
++    <string name="entitlement_badge_no_unlimited">Local editing profile (quota unverified)</string>
++    <string name="entitlement_desc_unlimited_original">Local profile selection only. Device spoofing, a backup banner and local VERIFY do not prove Google server quota eligibility.</string>
++    <string name="entitlement_desc_unlimited_storage_saver">Local profile selection only. Storage saver selection does not prove that uploads are exempt from Google storage quota.</string>
++    <string name="entitlement_desc_no_unlimited">This profile changes local device signals only. No Google server backup entitlement is verified or guaranteed.</string>
++    <string name="entitlement_tag_original">(Original quality profile; quota unverified)</string>
++    <string name="entitlement_tag_storage_saver">(Storage saver profile; quota unverified)</string>
++    <string name="entitlement_tag_editing_only">(Editing profile; quota unverified)</string>
+     <string name="entitlement_tag_none">（不模擬）</string>
+-    <string name="verification_guide_btn">如何確認備份成功</string>
+-    <string name="verification_guide_title">如何確認備份是否成功</string>
+-    <string name="verification_guide_content_html">&lt;b&gt;判斷備份是否成功的兩種方法：&lt;/b&gt;&lt;br&gt;&lt;br&gt;&lt;b&gt;1. 檢查 Google 相簿備份設定&lt;/b&gt;&lt;br&gt;- 開啟 &lt;b&gt;Google 相簿&lt;/b&gt;。&lt;br&gt;- 點選右上角個人頭像 &gt; &lt;b&gt;備份&lt;/b&gt;。&lt;br&gt;- 點選右上角齒輪圖示進入備份設定。&lt;br&gt;- 檢查橫幅是否正確顯示：&lt;i&gt;「這部 Pixel 可免費備份無限量的相片和影片」&lt;/i&gt;。&lt;br&gt;&lt;br&gt;&lt;b&gt;2. 實際上傳相片並檢查詳細資料&lt;/b&gt;&lt;br&gt;- 在 Google 相簿中實際上傳備份一張相片或影片。&lt;br&gt;- 點開該相片並向上滑動查看詳細資訊（或至 &lt;i&gt;photos.google.com&lt;/i&gt; 查看相片詳細資訊）。&lt;br&gt;- 檢查儲存空間是否顯示：&lt;i&gt;「這個項目不佔用你的帳戶儲存空間」&lt;/i&gt;（使用 0 個位元組）。&lt;br&gt;&lt;br&gt;&lt;b&gt;疑難排解與診斷：&lt;/b&gt;&lt;br&gt;- &lt;b&gt;檢查模組診斷：&lt;/b&gt;進入「診斷」畫面，確認模組狀態為啟用且 VERIFY 成功。&lt;br&gt;- &lt;b&gt;檢查備份畫質：&lt;/b&gt;Pixel 2–5「必須」設定為&lt;b&gt;省儲存空間（高畫質）&lt;/b&gt;才能享有免費權益；設為原始畫質會扣除帳號空間。&lt;br&gt;- &lt;b&gt;清除快取：&lt;/b&gt;若相簿仍顯示舊機型狀態，請點擊「&lt;b&gt;強制停止作用範圍 App&lt;/b&gt;」或至系統清除 Google 相簿快取後重新開啟。</string>
++    <string name="verification_guide_btn">Local proof limits</string>
++    <string name="verification_guide_title">Local signals and server quota</string>
++    <string name="verification_guide_content_html">Local VERIFY checks process-local Build field readback. Photos banners and feature answers can change locally; they do not establish Google server quota eligibility. This proof performs no account access, backup or upload.</string>
+ 
+     <!-- 診斷 -->
+     <string name="diagnostics">診斷</string>
+     <string name="diagnostics_title">Pixelify Infinity 診斷</string>
+     <string name="diagnostics_section_status">模組狀態</string>
+-    <string name="diagnostics_section_entitlement">備份權益與驗證說明</string>
++    <string name="diagnostics_section_entitlement">Local profile and proof limits</string>
+     <string name="diagnostics_entitlement_profile_format">目前模擬機型：%1$s — %2$s</string>
+-    <string name="diagnostics_verification_methods_title">如何確認備份成功：</string>
+-    <string name="diagnostics_verification_methods_desc">1. Google 相簿 &gt; 個人頭像 &gt; 備份 &gt; 備份設定（齒輪圖示）：檢查是否有無限制備份橫幅。\n2. 上傳相片 &gt; 向上滑動查看詳細資訊：確認顯示「這個項目不佔用你的帳戶儲存空間」（使用 0 個位元組）。\n\n若仍扣除雲端空間，請確認下方 VERIFY 結果為成功、備份畫質符合該機型條件（如 Pixel 2–5 需設為省儲存空間），並強制停止 Google 相簿以清除快取。</string>
++    <string name="diagnostics_verification_methods_title">What this proof checks</string>
++    <string name="diagnostics_verification_methods_desc">Exact Photos package isolation and local version preservation. Local VERIFY is a field readback, not a Google server quota check. This proof performs no backup or upload.</string>
+     <string name="diagnostics_section_milestones">Hook 里程碑</string>
+     <string name="diagnostics_section_verify">上次裝置模擬 VERIFY</string>
+     <string name="diagnostics_section_build">Build 欄位：實際值 vs 模擬目標</string>
+-    <string name="diagnostics_section_build_desc">數值是在本 App 程序內讀取（實際裝置）。模擬只會套用於作用範圍內的 App（例如 Google 相簿）——上方的 VERIFY 結果反映的是 Hook 程序。</string>
++    <string name="diagnostics_section_build_desc">This module UI reads the real device values. The candidate applies profile identity only inside Google Photos. Actual API and security versions remain unchanged.</string>
+     <string name="diagnostics_section_howto">如何解讀此畫面</string>
+     <string name="diagnostics_howto_desc">「未記錄任何 Hook 里程碑」通常代表模組從未載入 Google 相簿——請檢查 LSPosed 是否啟用與作用範圍，然後重新啟動。「已載入套件但從未 ready」指向您的 Xposed 版本的框架／API 相容性問題。VERIFY 失敗代表模組有執行但無法寫入 Build 欄位。回報問題時請使用「複製診斷報告」——報告包含模組作用範圍清單與裝置 Build 數值，但不含任何帳號資料。</string>
+     <string name="diagnostics_copy_report">複製診斷報告</string>
+--- a/app/src/main/res/values/strings.xml
++++ b/app/src/main/res/values/strings.xml
+@@ -1,3 +1,4 @@
++<!-- Modified for the strict Photos-only proof candidate; see STRICT_PHOTOS_PROOF.md. -->
+ <resources>
+     <string name="app_name">Pixelify Infinity</string>
+ 
+@@ -23,7 +24,7 @@
+     <string name="changelog">Change log</string>
+ 
+     <!-- Configuration import/export -->
+-    <string name="please_force_stop_google_photos">Force-stop scoped apps (Google Photos and any other apps in the LSPosed module scope) and reopen them for this change to take effect.</string>
++    <string name="please_force_stop_google_photos">Force-stop Google Photos and reopen it to apply this change.</string>
+     <string name="export_config">Export configuration</string>
+     <string name="export_config_desc">Save or share this module\'s settings as a JSON file.</string>
+     <string name="export_complete">Export complete</string>
+@@ -45,8 +46,8 @@
+     <!-- Advanced options -->
+     <string name="enable_verbose_logging">Enable verbose logging</string>
+     <string name="enable_verbose_logging_desc">Adds diagnostic details to Xposed and Android logs. Enable only while reproducing a problem, and remove personal information before sharing logs.</string>
+-    <string name="spoof_android_version">Spoof Android version</string>
+-    <string name="spoof_android_version_desc">Do not select an Android version newer than the device\'s real version.</string>
++    <string name="spoof_android_version">Android version: unchanged</string>
++    <string name="spoof_android_version_desc">This proof preserves the actual Android API, release and security patch versions. Imported version overrides are ignored.</string>
+     <string name="this_might_cause_crash">An incompatible value may cause Google Photos to crash.</string>
+     <string name="dont_spoof_android_version">Don\'t spoof the Android version <b>(Recommended)</b></string>
+     <string name="follow_spoof_device_version">Use the selected Pixel profile\'s Android version</string>
+@@ -62,7 +63,7 @@
+     <!-- First-run onboarding -->
+     <string name="onboarding_title">Welcome to Pixelify Infinity</string>
+     <string name="onboarding_default_profile_title">Pixel XL is selected by default</string>
+-    <string name="onboarding_default_profile_desc">Pixel XL enables &lt;b&gt;Unlimited Original Quality Google Photos backup&lt;/b&gt; at no storage cost. If you prefer newer editing features (e.g. Magic Eraser, Ultra HDR), you can switch to a newer Pixel in the settings anytime.</string>
++    <string name="onboarding_default_profile_desc">This proof applies a local Pixel XL profile only inside Google Photos. It does not establish Google server quota eligibility.</string>
+     <string name="onboarding_force_stop_warning_title">Important: Force-stop Google Photos</string>
+     <string name="onboarding_force_stop_warning_desc">Even though Pixel XL is already selected, Google Photos will not apply the spoofing until it is completely stopped and reopened. Tap the button below to apply changes immediately.</string>
+     <string name="onboarding_action_force_stop_and_launch">Force-Stop &amp; Launch Photos</string>
+@@ -76,41 +77,41 @@
+     <!-- Modern UI Strings -->
+     <string name="module_status_active">LSPosed Module Active</string>
+     <string name="module_status_inactive">Module Not Active</string>
+-    <string name="module_scope_info">Scope: Google Photos</string>
++    <string name="module_scope_info">Strict scope: Google Photos only</string>
+     <string name="section_device_profile">Device Profile</string>
+     <string name="section_features">Feature Flags</string>
+     <string name="section_actions">Actions</string>
+     <string name="customize_flags_summary">Configured feature flags</string>
+     <string name="device_spoofed_active">Active Profile: %1$s</string>
+-    <string name="reopen_photos_hint">Force-stop scoped apps after changing settings to apply</string>
++    <string name="reopen_photos_hint">Force-stop Google Photos after changing settings to apply</string>
+ 
+     <!-- Device Entitlements & Verification -->
+-    <string name="entitlement_badge_unlimited_original">Unlimited Original Quality (0 quota used)</string>
+-    <string name="entitlement_badge_unlimited_storage_saver">Unlimited Storage Saver only (High Quality)</string>
+-    <string name="entitlement_badge_no_unlimited">No Free Backup (Editing perks only)</string>
+-    <string name="entitlement_desc_unlimited_original">Photos and videos backed up from Pixel XL do not count toward your Google Account storage quota at Original Quality or Storage Saver quality.</string>
+-    <string name="entitlement_desc_unlimited_storage_saver">Free backup applies ONLY when Google Photos backup quality is set to "Storage saver". Original Quality will consume your Google Account storage quota!</string>
+-    <string name="entitlement_desc_no_unlimited">Pixel 6 and newer devices do NOT include free unlimited cloud backup. All uploads consume Google Account storage quota. If you want unlimited album storage, select Pixel XL (Original quality) or Pixel 2–5 (Storage saver).</string>
+-    <string name="entitlement_tag_original">(Original Quality Unlimited)</string>
+-    <string name="entitlement_tag_storage_saver">(Storage Saver Unlimited)</string>
+-    <string name="entitlement_tag_editing_only">(Editing Perks / No Free Backup)</string>
++    <string name="entitlement_badge_unlimited_original">Local Original quality profile (quota unverified)</string>
++    <string name="entitlement_badge_unlimited_storage_saver">Local Storage saver profile (quota unverified)</string>
++    <string name="entitlement_badge_no_unlimited">Local editing profile (quota unverified)</string>
++    <string name="entitlement_desc_unlimited_original">Local profile selection only. Device spoofing, a backup banner and local VERIFY do not prove Google server quota eligibility.</string>
++    <string name="entitlement_desc_unlimited_storage_saver">Local profile selection only. Storage saver selection does not prove that uploads are exempt from Google storage quota.</string>
++    <string name="entitlement_desc_no_unlimited">This profile changes local device signals only. No Google server backup entitlement is verified or guaranteed.</string>
++    <string name="entitlement_tag_original">(Original quality profile; quota unverified)</string>
++    <string name="entitlement_tag_storage_saver">(Storage saver profile; quota unverified)</string>
++    <string name="entitlement_tag_editing_only">(Editing profile; quota unverified)</string>
+     <string name="entitlement_tag_none">(No Spoofing)</string>
+-    <string name="verification_guide_btn">How to verify backup success</string>
+-    <string name="verification_guide_title">How to Verify Unlimited Backup</string>
+-    <string name="verification_guide_content_html">&lt;b&gt;Two Ways to Verify Unlimited Backup:&lt;/b&gt;&lt;br&gt;&lt;br&gt;&lt;b&gt;1. Check Google Photos Backup Settings&lt;/b&gt;&lt;br&gt;- Open &lt;b&gt;Google Photos&lt;/b&gt;.&lt;br&gt;- Tap your profile icon at top-right &gt; &lt;b&gt;Backup&lt;/b&gt;.&lt;br&gt;- Tap the gear icon at top-right.&lt;br&gt;- Check that the banner displays: &lt;i&gt;“This Pixel can back up unlimited photos &amp; videos at no charge.”&lt;/i&gt;&lt;br&gt;&lt;br&gt;&lt;b&gt;2. Upload a Photo &amp; Check Storage Details&lt;/b&gt;&lt;br&gt;- Back up a new photo or video in Google Photos.&lt;br&gt;- Open the photo and swipe up to view details (or view info on &lt;i&gt;photos.google.com&lt;/i&gt;).&lt;br&gt;- Check that the storage section states: &lt;i&gt;“This item doesn’t take up space in your account storage”&lt;/i&gt; (0 bytes used).&lt;br&gt;&lt;br&gt;&lt;b&gt;Troubleshooting &amp; Diagnostics:&lt;/b&gt;&lt;br&gt;- &lt;b&gt;Check Diagnostics:&lt;/b&gt; Open Diagnostics to ensure the module is active and VERIFY passed.&lt;br&gt;- &lt;b&gt;Check Backup Quality:&lt;/b&gt; Pixel 2–5 require &lt;b&gt;Storage saver&lt;/b&gt; quality for free unlimited quota. Original quality will consume Google Account storage.&lt;br&gt;- &lt;b&gt;Clear App Cache:&lt;/b&gt; If Google Photos cached old device properties, tap &lt;b&gt;Force-stop scoped apps&lt;/b&gt; or clear Google Photos app cache and restart.</string>
++    <string name="verification_guide_btn">Local proof limits</string>
++    <string name="verification_guide_title">Local signals and server quota</string>
++    <string name="verification_guide_content_html">Local VERIFY checks process-local Build field readback. Photos banners and feature answers can change locally; they do not establish Google server quota eligibility. This proof performs no account access, backup or upload.</string>
+ 
+     <!-- Diagnostics -->
+     <string name="diagnostics">Diagnostics</string>
+     <string name="diagnostics_title">Pixelify Infinity Diagnostics</string>
+     <string name="diagnostics_section_status">Module status</string>
+-    <string name="diagnostics_section_entitlement">Backup entitlement &amp; verification</string>
++    <string name="diagnostics_section_entitlement">Local profile and proof limits</string>
+     <string name="diagnostics_entitlement_profile_format">Active Profile: %1$s — %2$s</string>
+-    <string name="diagnostics_verification_methods_title">How to confirm backup success:</string>
+-    <string name="diagnostics_verification_methods_desc">1. Google Photos &gt; Avatar &gt; Backup &gt; Backup settings (gear icon): check for the unlimited backup banner.\n2. Upload a photo &gt; swipe up on photo: confirm “This item doesn’t take up space in your account storage” (0 bytes used).\n\nIf quota is consumed, verify that the VERIFY result below is OK, ensure backup quality matches model conditions (e.g. Storage saver for Pixel 2–5), and force-stop Google Photos to clear stale cache.</string>
++    <string name="diagnostics_verification_methods_title">What this proof checks</string>
++    <string name="diagnostics_verification_methods_desc">Exact Photos package isolation and local version preservation. Local VERIFY is a field readback, not a Google server quota check. This proof performs no backup or upload.</string>
+     <string name="diagnostics_section_milestones">Hook milestones</string>
+     <string name="diagnostics_section_verify">Last device-spoof VERIFY</string>
+     <string name="diagnostics_section_build">Build fields: real vs spoof target</string>
+-    <string name="diagnostics_section_build_desc">Values are read in this app process (the real device). Spoofing is applied only inside scoped apps such as Google Photos — the VERIFY result above reflects the hook process.</string>
++    <string name="diagnostics_section_build_desc">This module UI reads the real device values. The candidate applies profile identity only inside Google Photos. Actual API and security versions remain unchanged.</string>
+     <string name="diagnostics_section_howto">How to read this screen</string>
+     <string name="diagnostics_howto_desc">"No hook milestones recorded" usually means the module never loaded into Google Photos — check LSPosed enable + scope, then reboot. "Package loaded but never ready" points to a framework/API compatibility problem in your Xposed variant. A failed VERIFY means the module ran but could not write Build fields. Use "Copy diagnostics report" when reporting an issue — the report includes the module scope list and device Build values, but no account data.</string>
+     <string name="diagnostics_copy_report">Copy diagnostics report</string>
+--- a/app/src/main/resources/META-INF/xposed/module.prop
++++ b/app/src/main/resources/META-INF/xposed/module.prop
+@@ -1,3 +1,3 @@
+ minApiVersion=101
+ targetApiVersion=101
+-staticScope=false
++staticScope=true
+--- a/app/src/test/java/io/github/samson910022/pixelifyphotos/DeviceSpooferTest.kt
++++ b/app/src/test/java/io/github/samson910022/pixelifyphotos/DeviceSpooferTest.kt
+@@ -1,3 +1,4 @@
++// Modified for the strict Photos-only proof candidate; see STRICT_PHOTOS_PROOF.md.
+ package io.github.samson910022.pixelifyphotos
+ 
+ import android.os.Build
+@@ -280,6 +281,8 @@
+         assertEquals("google/husky/husky:14/UD1A.230803.022/10666019:user/release-keys", overrides["ro.product.build.fingerprint"])
+         assertEquals("user", overrides["ro.build.type"])
+         assertEquals("release-keys", overrides["ro.build.tags"])
++        assertNull(overrides["ro.build.version.incremental"])
++        assertNull(overrides["ro.build.version.security_patch"])
+     }
+ 
+     @Test
+--- a/app/src/test/java/io/github/samson910022/pixelifyphotos/ScopePolicyTest.kt
++++ b/app/src/test/java/io/github/samson910022/pixelifyphotos/ScopePolicyTest.kt
+@@ -1,10 +1,11 @@
++// Modified for the strict Photos-only proof candidate; see STRICT_PHOTOS_PROOF.md.
+ package io.github.samson910022.pixelifyphotos
+ 
+ import org.junit.Assert.*
+ import org.junit.Test
+ 
+ /**
+- * Unit tests for [ScopePolicy] multi-app denylist (Option B).
++ * Unit tests for [ScopePolicy] strict Photos-only policy.
+  */
+ class ScopePolicyTest {
+ 
+@@ -15,8 +16,8 @@
+     }
+ 
+     @Test
+-    fun `random third-party app is allowed`() {
+-        assertTrue(ScopePolicy.shouldSpoof("com.example.gallery"))
++    fun `random third-party app is rejected`() {
++        assertFalse(ScopePolicy.shouldSpoof("com.example.gallery"))
+         assertFalse(ScopePolicy.isDenied("com.example.gallery"))
+     }
+ 
+@@ -68,19 +69,33 @@
+     }
+ 
+     @Test
+-    fun `denylist match is exact not prefix`() {
+-        // Near-miss packages should still be allowed (exact-match policy).
+-        assertTrue(ScopePolicy.shouldSpoof("com.google.android.gms.unstable"))
+-        assertTrue(ScopePolicy.shouldSpoof("com.android.vending.foo"))
+-        assertTrue(ScopePolicy.shouldSpoof("com.android.settings.intelligence"))
++    fun `denylist near misses are still ineligible`() {
++        // A manager scope entry must not bypass the exact Photos gate.
++        assertFalse(ScopePolicy.shouldSpoof("com.google.android.gms.unstable"))
++        assertFalse(ScopePolicy.shouldSpoof("com.android.vending.foo"))
++        assertFalse(ScopePolicy.shouldSpoof("com.android.settings.intelligence"))
+     }
+ 
+     @Test
+     fun `module package is not denylisted — self-exclusion lives in SpoofedPackageTracker`() {
+-        // The module's own package is intentionally allowed by ScopePolicy (it is not
+-        // a dangerous package). Force-stop self-exclusion is handled separately in
+-        // SpoofedPackageTracker.packagesToForceStop, not in the denylist.
+-        assertTrue(ScopePolicy.shouldSpoof(Constants.PACKAGE_NAME_MODULE))
++        // The module UI is never a spoof target.
++        assertFalse(ScopePolicy.shouldSpoof(Constants.PACKAGE_NAME_MODULE))
+         assertFalse(ScopePolicy.isDenied(Constants.PACKAGE_NAME_MODULE))
+     }
++    @Test
++    fun `exact Photos identity is the only eligible package regardless of manager scope`() {
++        val photos = Constants.PACKAGE_NAME_GOOGLE_PHOTOS
++        assertTrue(ScopePolicy.shouldSpoof(photos))
++        val rejected = listOf(
++            null, "", " ", "android", "system_server", Constants.PACKAGE_NAME_MODULE,
++            "com.google.android.gms", "com.google.android.gms.unstable",
++            "com.android.systemui", "com.example.gallery", "com.android.vending",
++            "$photos.extra", "$photos:remote", "${photos}beta", "x$photos",
++            " $photos", "$photos ", "$photos\n", "$photos\u0000",
++            photos.uppercase(), photos.replace("photos", "photo"),
++        ) + photos.indices.map { photos.removeRange(it, it + 1) }
++        rejected.forEach { candidate ->
++            assertFalse("Unexpected eligibility: $candidate", ScopePolicy.shouldSpoof(candidate))
++        }
++    }
+ }
+--- a/app/src/test/java/io/github/samson910022/pixelifyphotos/SpoofedPackageTrackerTest.kt
++++ b/app/src/test/java/io/github/samson910022/pixelifyphotos/SpoofedPackageTrackerTest.kt
+@@ -1,3 +1,4 @@
++// Modified for the strict Photos-only proof candidate; see STRICT_PHOTOS_PROOF.md.
+ package io.github.samson910022.pixelifyphotos
+ 
+ import org.junit.Assert.*
+@@ -18,12 +19,12 @@
+     }
+ 
+     @Test
+-    fun `packagesToForceStop includes LSPosed scope third-party apps`() {
++    fun `packagesToForceStop rejects LSPosed scope third-party apps`() {
+         val result = SpoofedPackageTracker.packagesToForceStop(
+             setOf("com.example.gallery", Constants.PACKAGE_NAME_GOOGLE_PHOTOS),
+         )
+         assertEquals(
+-            setOf(Constants.PACKAGE_NAME_GOOGLE_PHOTOS, "com.example.gallery"),
++            setOf(Constants.PACKAGE_NAME_GOOGLE_PHOTOS),
+             result,
+         )
+     }
+@@ -40,7 +41,7 @@
+             ),
+         )
+         assertEquals(
+-            setOf(Constants.PACKAGE_NAME_GOOGLE_PHOTOS, "com.example.ok"),
++            setOf(Constants.PACKAGE_NAME_GOOGLE_PHOTOS),
+             result,
+         )
+     }
+@@ -56,7 +57,7 @@
+         )
+         assertFalse(result.contains(Constants.PACKAGE_NAME_MODULE))
+         assertEquals(
+-            setOf(Constants.PACKAGE_NAME_GOOGLE_PHOTOS, "com.example.gallery"),
++            setOf(Constants.PACKAGE_NAME_GOOGLE_PHOTOS),
+             result,
+         )
+     }

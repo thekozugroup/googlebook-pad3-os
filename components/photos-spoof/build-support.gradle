@@ -1,0 +1,15 @@
+// All generated data is confined to the caller's disposable workspace.
+def outputRoot = new File(System.getenv('PHOTOS_OUTPUT_ROOT'))
+gradle.beforeProject { p ->
+    p.layout.buildDirectory.set(new File(outputRoot, p.path == ':' ? 'root' : p.path.substring(1).replace(':', '/')))
+    p.plugins.withId('com.android.application') {
+        def android = p.extensions.getByName('android')
+        android.externalNativeBuild.cmake.buildStagingDirectory = new File(outputRoot, 'native')
+        android.signingConfigs.getByName('debug').storeFile = new File(System.getenv('PHOTOS_DEBUG_KEYSTORE'))
+    }
+    p.tasks.withType(org.gradle.api.tasks.testing.Test).configureEach {
+        maxHeapSize = '768m'
+        maxParallelForks = 1
+        jvmArgs '-XX:-UsePerfData', "-Djava.io.tmpdir=${System.getenv('TMPDIR')}"
+    }
+}

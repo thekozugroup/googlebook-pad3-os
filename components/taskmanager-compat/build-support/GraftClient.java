@@ -46,7 +46,8 @@ public final class GraftClient {
             "<init>(" + CONTEXT + ")V",
             "fetchCpuUsageInfo()" + MANAGER.substring(0, MANAGER.length() - 1) + "$CpuUsageInfo;",
             "fetchCpuUsageInfoWithProcessUsage([I)" + MANAGER.substring(0, MANAGER.length() - 1) + "$CpuUsageInfoWithProcessUsage;",
-            "fetchPhysicalCpusInfo()Ljava/util/List;", "getProcessMemoryUsage([I)Ljava/util/List;"));
+            "fetchPhysicalCpusInfo()Ljava/util/List;", "getProcessMemoryUsage([I)Ljava/util/List;",
+            "stopLongRunningTest(Ljava/lang/String;)V"));
 
     private static void require(boolean value, String message) {
         if (!value) throw new IllegalArgumentException(message);
@@ -68,7 +69,8 @@ public final class GraftClient {
         MutableMethodImplementation code = new MutableMethodImplementation(original.getImplementation());
         int parameters = original.getParameters().size() + 1;
         int self = code.getRegisterCount() - parameters;
-        require(self >= 2, "two dead entry temporaries required");
+        require(self >= (original.getName().equals("stopLongRunningTest") ? 1 : 2),
+                "dead entry temporaries required");
         List<BuilderInstruction> prefix = new ArrayList<>();
         int insertion = 0;
         if (original.getName().equals("<init>")) {
@@ -102,29 +104,34 @@ public final class GraftClient {
             prefix.add(new BuilderInstruction22x(Opcode.MOVE_OBJECT_FROM16, 0, self));
             prefix.add(new BuilderInstruction22c(Opcode.IGET_BOOLEAN, 0, 0, MODE_FIELD));
             prefix.add(new BuilderInstruction21t(Opcode.IF_EQZ, 0, continuation));
-            switch (original.getName()) {
-                case "fetchCpuUsageInfo":
-                    prefix.add(call("cpu", Collections.emptyList(), original.getReturnType(), 0, 0, 0));
-                    break;
-                case "fetchPhysicalCpusInfo":
-                    prefix.add(call("physicalCpus", Collections.emptyList(), original.getReturnType(), 0, 0, 0));
-                    break;
-                case "fetchCpuUsageInfoWithProcessUsage":
-                    prefix.add(new BuilderInstruction22x(Opcode.MOVE_OBJECT_FROM16, 0, self));
-                    prefix.add(new BuilderInstruction22c(Opcode.IGET_OBJECT, 0, 0, CONTEXT_FIELD));
-                    prefix.add(new BuilderInstruction22x(Opcode.MOVE_OBJECT_FROM16, 1, self + 1));
-                    prefix.add(call("cpuWithProcesses", Arrays.asList(CONTEXT, "[I"), original.getReturnType(), 2, 0, 1));
-                    break;
-                case "getProcessMemoryUsage":
-                    prefix.add(new BuilderInstruction22x(Opcode.MOVE_OBJECT_FROM16, 0, self));
-                    prefix.add(new BuilderInstruction22c(Opcode.IGET_OBJECT, 0, 0, CONTEXT_FIELD));
-                    prefix.add(new BuilderInstruction22x(Opcode.MOVE_OBJECT_FROM16, 1, self + 1));
-                    prefix.add(call("memory", Arrays.asList(CONTEXT, "[I"), original.getReturnType(), 2, 0, 1));
-                    break;
-                default: throw new IllegalArgumentException("unexpected target");
+            if (original.getName().equals("stopLongRunningTest")) {
+                // No local routine can create a token; cancellation is idempotent.
+                prefix.add(new BuilderInstruction10x(Opcode.RETURN_VOID));
+            } else {
+                switch (original.getName()) {
+                    case "fetchCpuUsageInfo":
+                        prefix.add(call("cpu", Collections.emptyList(), original.getReturnType(), 0, 0, 0));
+                        break;
+                    case "fetchPhysicalCpusInfo":
+                        prefix.add(call("physicalCpus", Collections.emptyList(), original.getReturnType(), 0, 0, 0));
+                        break;
+                    case "fetchCpuUsageInfoWithProcessUsage":
+                        prefix.add(new BuilderInstruction22x(Opcode.MOVE_OBJECT_FROM16, 0, self));
+                        prefix.add(new BuilderInstruction22c(Opcode.IGET_OBJECT, 0, 0, CONTEXT_FIELD));
+                        prefix.add(new BuilderInstruction22x(Opcode.MOVE_OBJECT_FROM16, 1, self + 1));
+                        prefix.add(call("cpuWithProcesses", Arrays.asList(CONTEXT, "[I"), original.getReturnType(), 2, 0, 1));
+                        break;
+                    case "getProcessMemoryUsage":
+                        prefix.add(new BuilderInstruction22x(Opcode.MOVE_OBJECT_FROM16, 0, self));
+                        prefix.add(new BuilderInstruction22c(Opcode.IGET_OBJECT, 0, 0, CONTEXT_FIELD));
+                        prefix.add(new BuilderInstruction22x(Opcode.MOVE_OBJECT_FROM16, 1, self + 1));
+                        prefix.add(call("memory", Arrays.asList(CONTEXT, "[I"), original.getReturnType(), 2, 0, 1));
+                        break;
+                    default: throw new IllegalArgumentException("unexpected target");
+                }
+                prefix.add(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0));
+                prefix.add(new BuilderInstruction11x(Opcode.RETURN_OBJECT, 0));
             }
-            prefix.add(new BuilderInstruction11x(Opcode.MOVE_RESULT_OBJECT, 0));
-            prefix.add(new BuilderInstruction11x(Opcode.RETURN_OBJECT, 0));
         }
         for (BuilderInstruction instruction : prefix) code.addInstruction(insertion++, instruction);
         return new ImmutableMethod(original.getDefiningClass(), original.getName(), original.getParameters(),
@@ -212,7 +219,7 @@ public final class GraftClient {
             classes.add(new ImmutableClassDef(cls.getType(), cls.getAccessFlags(), cls.getSuperclass(),
                     cls.getInterfaces(), cls.getSourceFile(), cls.getAnnotations(), fields, methods));
         }
-        require(managers == 1 && changed.equals(TARGETS), "five-method target set drift");
+        require(managers == 1 && changed.equals(TARGETS), "exact method target set drift");
         int added = 0;
         boolean found = false;
         for (ClassDef cls : helper.getClasses()) {
@@ -225,7 +232,7 @@ public final class GraftClient {
         }
         require(found, "helper missing");
         DexPool.writeTo(args[2], new ImmutableDexFile(original.getOpcodes(), classes));
-        System.out.println("{\"grafted_methods\":5,\"original_classes\":" + original.getClasses().size()
+        System.out.println("{\"grafted_methods\":6,\"original_classes\":" + original.getClasses().size()
                 + ",\"helper_classes\":" + added + ",\"validated_client_references\":"
                 + checkedReferences.size() + "}");
     }

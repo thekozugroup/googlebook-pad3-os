@@ -27,9 +27,10 @@ import vendor.google.libraries.desktop.serviceability.ServiceabilityManager.Phys
 import vendor.google.libraries.desktop.serviceability.ServiceabilityManager.ProcessCpuUsageInfo;
 import vendor.google.libraries.desktop.serviceability.ServiceabilityManager.ProcessMemoryUsageInfo;
 
-/** Read-only fallback for the audited Task Manager, under its existing process identity. */
+/** Read-only fallback for the audited system tools, under their existing process identity. */
 final class TaskManagerCompat {
     static final String PACKAGE = "com.google.android.factory.taskmanager";
+    static final String DIAGNOSTICS_PACKAGE = "com.google.android.factory.diagnostics";
     private static final Path PROC = Paths.get("/proc");
     private static final Path CPU = Paths.get("/sys/devices/system/cpu");
 
@@ -60,15 +61,19 @@ final class TaskManagerCompat {
         };
     }
 
+    private static boolean supportedPackage(String name) {
+        return PACKAGE.equals(name) || DIAGNOSTICS_PACKAGE.equals(name);
+    }
+
     static boolean selectMode(String packageName, int uid, int contextUid, MissingService lookup) {
-        if (!PACKAGE.equals(packageName) || uid < 0 || uid % 100000 != 1000 || contextUid != uid) {
+        if (!supportedPackage(packageName) || uid < 0 || uid % 100000 != 1000 || contextUid != uid) {
             return false;
         }
         return lookup.missing();
     }
 
     static boolean shouldUse(Context context) {
-        if (!PACKAGE.equals(context.getPackageName())) return false;
+        if (!supportedPackage(context.getPackageName())) return false;
         Context application = context.getApplicationContext();
         final Context app = application == null ? context : application;
         return selectMode(app.getPackageName(), Process.myUid(), app.getApplicationInfo().uid,

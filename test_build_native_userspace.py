@@ -139,9 +139,9 @@ class TextTests(unittest.TestCase):
                      "original_jar_sha256": userspace.TASKMANAGER_BASE_SHA,
                      "original_dex_sha256": taskmanager.ORIGINAL_DEX_SHA256,
                      "sources": {source.name: userspace.sha256(source)}, "dex": dex,
-                     "transform": {"grafted_methods": 5}, "preservation": {
+                     "transform": {"grafted_methods": 6}, "preservation": {
                          "changed_methods": list(taskmanager.TARGET_COUNTS), "manager_methods": 89,
-                         "untouched_manager_methods": 84,
+                         "untouched_manager_methods": 83,
                          "original_target_instructions_branches_try_debug_preserved": True,
                          "original_fields_dtos_annotations_parameters_preserved": True,
                          "compile_only_classes_in_candidate": False}}

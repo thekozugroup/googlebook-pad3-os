@@ -1,17 +1,17 @@
-# Task Manager shared-client fallback
+# Tablet system-tools shared-client fallback
 
-This offline builder grafts the constructor and four metrics methods in the exact
+This offline builder grafts the constructor, four metrics methods and routine cancellation in the exact
 GoogleBook client JAR. It keeps every original class, public declaration, DTO and
-untouched method. The Google-signed Task Manager APK is not an input to the
-transform and is not modified.
+untouched method. The Google-signed Task Manager and Diagnostics APKs are not inputs to the
+transform and are not modified.
 
 Original JAR SHA-256:
 `5e4d4c6336e18a3228b4ac4960ea5ecddcc556865d530db7a7094903f62695ba`.
 The audited client is Task Manager `1.0.943140883` / versionCode `2`.
 
 The constructor initializes its original fields, then sets one private per-instance
-flag. Local mode requires the exact application package
-`com.google.android.factory.taskmanager`, the existing system appId in the current
+flag. Local mode requires either exact application package
+`com.google.android.factory.taskmanager` or `com.google.android.factory.diagnostics`, the existing system appId in the current
 user, a matching context UID, and `NameNotFoundException` from the explicit vendor
 service lookup. Disabled and uninstalled components are included in the lookup;
 their presence does not enable fallback. Other packages return to the original
@@ -32,6 +32,22 @@ after the request. A genuinely exited PID uses the original `-1` PSS sentinel;
 inaccessible live data never becomes successful zero metrics. Zero current
 frequency is used only for a CPU explicitly reported offline. The original
 four-int topology DTO legitimately omits optional cpuidle telemetry.
+
+## Diagnostics limits
+
+The donor Diagnostics constructor failed because the laptop vendor service is
+absent. The same exact-package/system-appId/context guard now admits Diagnostics.
+Its CPU usage and topology calls use the existing real native metrics. Standard
+battery, memory, storage, audio, camera and network information continues to use
+Android APIs. Missing vendor full/design battery capacities remain unavailable.
+
+No local factory routine creates a token. Cancellation is therefore an idempotent
+no-op only in local compatibility mode; the original vendor branch is preserved.
+This also avoids the donor app's defective unsupported-cache/memory branch, which
+waits and reports PASSED without running a test. Unsupported vendor routine entry
+points still fail synchronously; the app can report failure instead of a false
+pass. These factory routines do not certify Pad 3 hardware health. The laptop
+keyboard event stream/layout remains unsupported.
 
 ## Build and test
 
@@ -68,7 +84,7 @@ It does not rename classes or edit DEX strings. Compile-only DTO stubs are exclu
 from the production DEX; the helper's references resolve against original public
 DTO declarations.
 
-Verification compares all other class disassemblies exactly. In the five targets,
+Verification compares all other class disassemblies exactly. In the six targets,
 it removes only the specified guard instructions and compares original
 instructions, branch targets, try ranges and debug locations. Method sets,
 declarations, annotations, parameters, registers and all fields remain unchanged
@@ -79,9 +95,11 @@ must be byte-identical.
 
 ## Parent integration limits
 
-The candidate is not installed or ART-verified. Parent must confirm the actual
-shared-library classloader and Task Manager's existing proc/sysfs/PSS authority,
-including user 10 and user switching. The companion service adds only the reviewed
+The native5 owner test verified real Task Manager counters and its UI. Native6
+includes the Diagnostics extension and has booted with the expected live image
+hashes; its app UI and factory failure handling still await owner sign-in.
+Those checks must confirm the actual shared-library classloader and Diagnostics
+CPU/temperature behavior in the personal user. The companion service adds only the reviewed
 read-only proc authority described above. No policy bypass, shell/root process or
 writer operation is supplied. Strict topology/frequency reads can fail
 when a tablet driver does not expose the required files; that is a failure to fix

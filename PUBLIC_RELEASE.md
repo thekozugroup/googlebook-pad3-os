@@ -6,29 +6,54 @@ GitHub. The public target is `thekozugroup/googlebook-pad3-os`; the parent publi
 reviewed source there using fresh history. Do not copy the private `.git` directory.
 The exporter never changes Git identity, initializes a repository or publishes.
 
-## Native5 R5 candidate: installation pending
+## Native6 R5 owner installation: app validation pending
 
-The private native5 package rebases the three userspace partitions onto Google's
-signed mica R5/build 16693588 (CL3B.260622.276.R5, security patch 2026-10-01).
-The clean targets were reconstructed from exact signed R2 inputs. Every complete
-raw target hash matches the signed upstream manifest. The existing tablet graft,
-pen, native updater, Task Manager, tablet-posture correction and Dell removal
-were reapplied with exact source guards. Kernel, vendor, firmware and SukiSU
-41100/UAPI 6 are retained.
+Private native5 rebased the three userspace partitions onto Google's signed
+mica R5/build 16693588 (CL3B.260622.276.R5, security patch 2026-10-01).
+Complete clean targets matched the signed upstream manifest. The tablet graft,
+pen, updater, Task Manager, tablet posture and Dell removal use exact source
+guards. Kernel, vendor, firmware and SukiSU 41100/UAPI 6 are retained.
 
-Host validation ran 198 tests: 193 passed and five optional cases skipped. The
-actual candidate separately passed filesystem/AVB/root checks, strict SELinux
-neverallow and runtime-linkage checks. An independent streaming verifier checked
-all 15 reconstructed payload targets, operation/source hashes, destination
-coverage, and metadata/payload/feed signatures. Product content review found
-only build.prop and boot animation changes plus the three removed Dell APKs.
+Native5 installed on B. After a physical USB reconnect restored ADB, the owner
+checks preserved all 348 existing package UIDs and the account counts, exercised
+the actual fullscreen/freeform tile, and observed the pen foreground service and
+connected BLE pen. Settings, Chrome, camera and Task Manager launched. A
+15-minute/31-sample probe had no query errors, ANRs, native fatal signals or
+system restarts, but captured one Diagnostics Java crash. It was not crash-free.
+A separate idle sample averaged 3.19% CPU, had at least 6,350,844 KiB available
+memory and approximately 616 MiB actual zram RAM use. PSI averages and thermal
+status were zero. No memory tuning was justified by that sample.
 
-The package accepts only native4's exact fingerprint and source slot A. It is a
-private owner test preserving userdata. Installation has not started: USB was
-disconnected immediately before staging. Host checks do not establish boot or
-runtime stability. The public native3 feed is unchanged; no R5 binary is public.
-Build instructions and the GPLv2 donor extractor patch are under
-[native_install/donor-extractor](native_install/donor-extractor/README.md).
+Diagnostics tried to bind an absent laptop vendor service. Native6 extends the
+existing exact-package/system-UID shared-client fallback to Diagnostics, retaining
+real CPU metrics. Missing vendor battery capacities and factory routines remain
+unsupported. A local-only cancellation guard prevents the donor's unsupported
+cache/memory branch from reporting a timed false pass. These routines cannot
+certify Pad 3 hardware health. Original Google APKs are unchanged.
+
+Native6 passed 127 host checks without skips. Independent payload verification
+checked all 15 targets and signatures. Strict image-policy inputs were identical
+to the previously compiled set. Product5-to-6 changed only build.prop across all
+757 paths/610 file contents. The private data-preserving owner OTA applied from
+native5/B to A, booted in 25.9 seconds, and matched all 15 live target hashes.
+Snapshot state is NONE and A is successful/bootable; B is not a usable slot-only
+rollback after merge. Root and enforcing SELinux remain active. Diagnostics UI
+and post-fix stability checks await owner sign-in; initial boot is insufficient.
+
+A separate owner Photos experiment installed official pinned ZygiskNext 1.5.2
+and Vector 2.2, plus a locally built module enabled only for
+com.google.android.apps.photos in the personal user. The exact scope was read
+back through Vector's supported CLI. Its default profile is Pixel XL, and the
+proof preserves real Android version/security fields. Its 299 JVM tests passed.
+The root injection engines operate globally and add live policy allowances;
+only the module's spoof logic is restricted to Photos. Neither the Photos runtime
+behavior nor Google server-side storage entitlement has been verified. These
+add-ons are separate from the ROM payload and have a disable/reboot recovery path.
+
+The public native3 feed is unchanged; no R5/native6 binary is public. No reset or
+erase was performed in these updates. First-install recovery, licensing and
+release-readiness work remain open. Build instructions and the GPLv2 donor
+extractor patch are under [donor-extractor](native_install/donor-extractor/README.md).
 
 ## Native4 maintainer-only tablet-mode verification
 
@@ -170,6 +195,11 @@ added after review. The selection consists of:
   inventory, and remains owned by the parent.
 - The six named native policy/profile inputs under
   `profiles/erhai-crdroid-20261025`, with their original verification hashes.
+- The 12 exact `PHOTOS_FILES` under `components/photos-spoof`: locked source
+  provenance, strict patch, reconstruction/build/verification helpers, contract
+  tests and unchanged licenses/notices. The scope is exactly Google Photos;
+  real Android version/security fields are preserved. Original upstream archives,
+  APKs, root-provider ZIPs and private signing/device evidence stay excluded.
 - The named pen build-support, integration, patch and protocol-test sources;
   `donor-inputs.json`, `toolchain.json`, `upstream-manifest.json`, and `LICENSE`.
   The reviewed `tests/PenRuntimeSelfTest.kt` lifecycle/permission fixture and

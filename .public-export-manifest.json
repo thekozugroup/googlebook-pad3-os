@@ -36,15 +36,20 @@
       "executable": false,
       "sha256": "3690032ef7a75bfabbfd2aa9a7789d8886fb34f7ac4e2704c290d1b3f9f60dcd"
     },
-    "LAUNCH_READINESS.md": {
-      "bytes": 4592,
+    "GOOGLE_SERVICES.md": {
+      "bytes": 4269,
       "executable": false,
-      "sha256": "6def190460fd4ee4799a6a943a0ea8eddae7259dcaf3d3b4bebfc70ab929705e"
+      "sha256": "21513500443252e655870072777ca5d49bf4ff89087cece0429e73430d13dc32"
+    },
+    "LAUNCH_READINESS.md": {
+      "bytes": 4965,
+      "executable": false,
+      "sha256": "432e83f67de1a2345c5491a13437544d2bbd81ea11eb59e919ded2d021a555ae"
     },
     "MAINTAINING.md": {
-      "bytes": 9387,
+      "bytes": 9483,
       "executable": false,
-      "sha256": "56fbefcbae8d8ede6ca35b19f43a82fec68fe3c6833311eed50b8e19a5d27317"
+      "sha256": "92c12f7cd0ce284f6489ec722c91a04062d4a3c72869e1b0f46464a9fb38d2e8"
     },
     "PRIVACY_AUDIT.md": {
       "bytes": 2583,
@@ -962,9 +967,9 @@
       "sha256": "bfa08816025b38267a4bf53754e597d8e7d6057241d5aaf8887d533c83ad2dac"
     },
     "export_public.py": {
-      "bytes": 81531,
+      "bytes": 81550,
       "executable": false,
-      "sha256": "f796a39a0dabf504afc86648ba65e3b1f124b6f97b587f78c0fe78005627d45f"
+      "sha256": "556b61e9fc33d4ddc1b4bb1bbf70df9ccde32e8d113ea631e086dbfb863ac371"
     },
     "ext4_source.py": {
       "bytes": 2262,

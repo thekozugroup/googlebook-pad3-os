@@ -16,11 +16,16 @@ Before inviting new owners to install:
 
 The public source has hash-bound patches and fail-closed image/signature/source checks. Those are useful safeguards; they do not establish stable everyday operation or a safe first install on another tablet.
 
-Native8 currently has a Google services compliance failure: the Google app and
-some other Google apps show an uncertified-device blocker. Official custom-ROM
-device registration succeeded, but a subsequent check and service restart did
-not clear it. No Play Integrity pass is established. Treat this as an unresolved
-daily-use/release blocker; registration does not grant manufacturer certification.
+Native8's Google-app access blocker was resolved on the maintainer tablet after
+official custom-ROM registration and a targeted refresh of stale generated
+compliance caches. Google services then returned a non-provisional allow result;
+the Google app and Play Store reopened normally after process restarts. Drive,
+Docs, Sheets and Slides reached their expected Google web interfaces through
+Chrome. Play Store still reports that the device is not certified, and its own
+diagnostic requires a locked bootloader. No Play Integrity pass is established.
+Do not relock this custom system to try to obtain certification. App access is
+distinct from manufacturer certification; see GOOGLE_SERVICES.md. General
+release and security-sensitive app compatibility remain unqualified.
 See MAINTAINING.md for the portable workflow and PRIVACY_AUDIT.md for audit scope.
 
 A 66.77-second native3 baseline showed about 5.5 GiB available RAM, 4.62% aggregate CPU load, 2.31 GiB occupied zRAM slots using about 778 MiB actual RAM, zero swap-outs and negligible memory-pressure stalls. No tuning was justified. This is a short baseline, not a heavy-load or battery benchmark.

@@ -5,6 +5,7 @@ one chat. Hosted Actions run source/privacy tests and daily metadata discovery.
 An opt-in trusted runner validates or executes the existing offline native build
 stages. Device qualification and production feed promotion remain explicit gates.
 Unknown Google builds cannot safely be patched and shipped without review.
+For Google-app access and certification failures, see [GOOGLE_SERVICES.md](GOOGLE_SERVICES.md).
 
 ## 1. Discover changes
 

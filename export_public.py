@@ -43,7 +43,7 @@ test_check_updates.py test_cold_build_dsu.py test_desktop_repair_gate.py
 test_erofs_overlay.py test_erofs_sanitize.py test_flash_test.py test_pen_policy.py test_port_changes.py
 test_prepare_inputs.py test_stability_probe.py export_public.py test_export_public.py
 PUBLIC_RELEASE.md LAUNCH_READINESS.md COMMUNITY_NOTES.md tablet_state.py test_tablet_state.py
-AGENTS.md MAINTAINING.md PRIVACY_AUDIT.md
+AGENTS.md MAINTAINING.md PRIVACY_AUDIT.md GOOGLE_SERVICES.md
 discover_updates.py test_discover_updates.py privacy_audit.py test_privacy_audit.py
 propose_update.py test_propose_update.py maintenance_job.py test_maintenance_job.py
 maintenance_workspace.py test_maintenance_workspace.py

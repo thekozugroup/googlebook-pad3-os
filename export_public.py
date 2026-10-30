@@ -30,6 +30,7 @@ ROOT_FILES = """
 android_disk.py assemble_port.py bootanimation_geometry.py build.sh
 build_dsu_diagnostic.py build_native_rom.py build_native_userspace.py build_oplus_pen.py build_pen_dsu.py build_secilc.sh build_updater.py build_face_overlay.py
 patch_taskmanager.py build_taskmanager_metrics.py build_diagnostics_compat.py test_diagnostics_compat.py
+build_photos_native.py test_build_photos_native.py build_photos_boot.py test_build_photos_boot.py
 check_policy.py check_sukisu_layout.py check_updates.py cold_build_dsu.py
 desktop_repair_gate.py erofs_overlay.py erofs_sanitize.py ext4_source.py flash_test.py inputs.json
 package_port.py pen_policy.py port_changes.py prepare_inputs.py stability_probe.py
@@ -135,6 +136,12 @@ src/org/googlebook/pad3/diagnostics/MetricValues.java
 src/org/googlebook/pad3/diagnostics/DiagnosticsModule.java
 tests/MetricValuesSelfTest.java
 """.split()
+PHOTOS_NATIVE_FILES = """
+README.md LICENSE source-lock.json boot-paths.json
+src/com/android/internal/util/googlebook/PhotosCompat.java
+tests/PhotosCompatSelfTest.java build-support/GraftFramework.java
+device-test/PhotosNativeProbe.java
+""".split()
 ALLOWLIST = tuple(sorted(ROOT_FILES + [COMPONENT + n for n in COMPONENT_FILES]
                          + [COMPONENT + "upstream/" + n for n in UPSTREAM_FILES]
                          + [PROFILE + n for n in PROFILE_FILES]
@@ -144,10 +151,11 @@ ALLOWLIST = tuple(sorted(ROOT_FILES + [COMPONENT + n for n in COMPONENT_FILES]
                          + ["components/taskmanager-compat/" + n for n in TASKMANAGER_FILES]
                          + ["components/photos-spoof/" + n for n in PHOTOS_FILES]
                          + ["components/diagnostics-compat/" + n for n in DIAGNOSTICS_FILES]
+                         + ["components/photos-native/" + n for n in PHOTOS_NATIVE_FILES]
                          + ["qa/serve_probe.py", "qa/test_serve_probe.py", "qa/tablet-probe.html"]))
 JSON_TRANSFORMS = {COMPONENT + n for n in ("toolchain.json", "donor-inputs.json", "integration/requirements.json")} | {
     "components/updater/toolchain.json", "native_install/tools.example.json", "native_install/plan.example.json"}
-INTEGRATION_DIRS = ("native_install", "components/oplus-pen", "components/updater", "components/face-preview-overlay", "components/taskmanager-compat", "components/photos-spoof", "components/diagnostics-compat")
+INTEGRATION_DIRS = ("native_install", "components/oplus-pen", "components/updater", "components/face-preview-overlay", "components/taskmanager-compat", "components/photos-spoof", "components/photos-native", "components/diagnostics-compat")
 ANNOUNCED_BUILDERS = ("build_face_overlay.py", "patch_taskmanager.py", "build_native_userspace.py")
 ANNOUNCED_TESTS = ("test_build_face_overlay.py", "test_patch_taskmanager.py", "test_build_native_userspace.py")
 PRIVATE_CAPTURE = "native_install/capture-manifest.json"
@@ -291,7 +299,12 @@ Private native5/native6 rebase userspace onto mica R5/build 16693588.
 Native5 preserved apps/accounts and passed layout and pen-service checks; its
 15-minute probe captured one Diagnostics crash. Native6 addresses the absent
 laptop vendor service and booted with all 15 live image hashes matching its
-signed payload. Its app checks await owner sign-in. Schema 2 composes clean R5
+signed payload. Private native8 adds Photos-only framework compatibility and
+metric corrections. It booted, matched all 15 target hashes, retained root and
+enforcing SELinux, and passed installed framework scope probes. Photos and
+Diagnostics app checks passed; the old Photos module is removed. A three-minute
+probe had no errors or new crashes. Diagnostics still requires its scoped adapter.
+Schema 2 composes clean R5
 images with the reviewed tablet graft; see [donor-extractor](donor-extractor/README.md).
 The public binary feed remains native3.
 
@@ -652,6 +665,12 @@ class Scanner:
                         continue
                     if kind == "email" and re.fullmatch(rb"android\.(?:hardware|hidl)\.[A-Za-z0-9_.]+@[0-9]+\.[0-9]+\.so", match.group()):
                         continue  # Versioned Android libraries; known-secret scans still run below.
+                    if kind == "email" and path == "components/photos-native/boot-paths.json":
+                        start = view.rfind(b"\n", 0, match.start()) + 1
+                        end = view.find(b"\n", match.end())
+                        line = view[start:end if end != -1 else len(view)].strip()
+                        if re.fullmatch(rb'"/system/framework/oat/arm64/apex@com\.android\.[a-z0-9_.]+@javalib@[A-Za-z0-9_.-]+\.jar@classes\.(?:art|odex|vdex)(?:\.fsv_meta)?",?', line):
+                            continue  # Encoded APEX preopt paths; known-secret scans still run below.
                     if kind == "credential_literal" and match.group(1).lower() in placeholders:
                         continue
                     record(kind, match.start(), view)

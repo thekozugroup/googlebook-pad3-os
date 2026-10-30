@@ -27,12 +27,13 @@ public final class MetricValuesSelfTest {
             check(rejected);
         }
         MetricValues.CpuHistory cpu = new MetricValues.CpuHistory();
-        check(cpu.sample(10, 20, 100) == null && cpu.series().get(0).isEmpty());
+        check(cpu.sample(10, 20, 100) == null && cpu.series().isEmpty());
         check(Arrays.equals(cpu.sample(30, 30, 200), new int[]{20, 10, 30}));
         check(cpu.series().get(0).equals(Arrays.asList(30)));
+        check(cpu.series().stream().allMatch(series -> series.get(0) >= 0));
         for (int i = 1; i <= 100; i++) cpu.sample(30 + i, 30 + i, 200 + 100 * i);
         check(cpu.series().get(0).size() == 61 && cpu.series().get(1).size() == 61);
-        check(cpu.sample(1, 1, 10) == null && cpu.series().get(0).isEmpty());
+        check(cpu.sample(1, 1, 10) == null && cpu.series().isEmpty());
         System.out.println(checks + " Diagnostics metric and scope checks passed");
     }
 }

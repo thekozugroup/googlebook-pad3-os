@@ -12,6 +12,8 @@ Schema 2 adds lineage="mica-r5-16693588" and files.tablet_graft_source, pins
 the three clean signed R5 targets, and composes functional tablet changes directly.
 Sequence 7 and later also require files.diagnostics_compat and its source-bound
 diagnostics_compat_verification receipt for the exact Diagnostics-only adapter.
+Sequence 8 and later require the Photos-only framework and coherent boot bundle,
+each with a source/candidate-bound verification receipt.
 Supply JAVA_HOME for the installed apksigner. Trust files come from the parent's
 trust_overlay call; components and the one-shot shell service are reviewed inputs.
 """
@@ -19,6 +21,7 @@ import argparse
 import hashlib
 import io
 import json
+import posixpath
 import re
 import shutil
 import stat
@@ -71,6 +74,14 @@ FILE_INPUTS = {"face_overlay", "updater", "pen_apk", "pen_unsigned", "taskmanage
                "taskmanager_metrics", "taskmanager_metrics_verification",
                "manager_service", "apksigner", "aapt2"}
 DIAGNOSTICS_INPUTS = {"diagnostics_compat", "diagnostics_compat_verification"}
+PHOTOS_INPUTS = {"photos_framework", "photos_framework_verification", "photos_boot_bundle", "photos_boot_verification"}
+PHOTOS_COMPONENT = native.ROOT / "components/photos-native"
+PHOTOS_BASE_SHA = "18419dba5cd7bc48e67c5ace4c162a817ef9126ea628276def8ff5535a51ce49"
+PHOTOS_TARGETS = [
+    "Landroid/app/ActivityThread;->handleBindApplication(Landroid/app/ActivityThread$AppBindData;)V",
+    "Landroid/app/ApplicationPackageManager;->hasSystemFeature(Ljava/lang/String;I)Z"]
+PHOTOS_BOOT_ENTRIES = {"arm64/" + group + suffix for group in ("boot", "boot-framework-adservices")
+                      for suffix in (".art", ".oat", ".vdex")}
 DIAGNOSTICS_SOURCES = {"build_diagnostics_compat.py", "test_diagnostics_compat.py"} | {
     "components/diagnostics-compat/" + name for name in (
         "AndroidManifest.xml", "README.md", "LICENSE", "source-lock.json",
@@ -207,6 +218,7 @@ def load_recipe(path):
     require(set(recipe["images"]) == set(PARTITIONS)
             and set(recipe["files"]) == FILE_INPUTS | ({"tablet_graft_source"} if clean else set())
                 | (DIAGNOSTICS_INPUTS if recipe["sequence"] >= 7 else set())
+                | (PHOTOS_INPUTS if recipe["sequence"] >= 8 else set())
             and set(recipe["trust"]) == set(TRUST_PATHS), "missing or unexpected pinned inputs")
     if clean:
         r5_userspace.validate_lineage(recipe)
@@ -298,6 +310,9 @@ def verify_inputs(inputs):
     verify_metrics(files["taskmanager_metrics"], files["taskmanager_metrics_verification"])
     if "diagnostics_compat" in files:
         verify_diagnostics(files["diagnostics_compat"], files["diagnostics_compat_verification"], files)
+    if "photos_framework" in files:
+        verify_photos(files["photos_framework"], files["photos_framework_verification"])
+        photos_boot_payloads(files["photos_framework"], files["photos_boot_bundle"], files["photos_boot_verification"])
     manifest = json.loads(files["trust_manifest"].read_text())
     require(manifest.get("status") == "PUBLIC_TRUST_OVERLAY_ONLY_NOT_ROM_OR_FLASHABLE"
             and manifest["files"] == {name: sha256(path) for name, path in trust.items()}, "trust_overlay manifest differs from pinned files")
@@ -327,6 +342,128 @@ def verify_inputs(inputs):
             and b"on property:sys.boot_completed=1\n" in service
             and b"    start " + command[1] in service.splitlines(), "reviewed one-shot shell manager service required")
     public_image.audit_text(service)
+
+
+def verify_photos(framework, receipt):
+    require(framework.stat().st_size <= 128 * 1024**2, "Photos framework exceeds size limit")
+    proof = json.loads(receipt.read_text())
+    lock = json.loads((PHOTOS_COMPONENT / "source-lock.json").read_text())
+    require(lock.get("source_framework_sha256") == proof.get("source_framework_sha256") == PHOTOS_BASE_SHA
+            and lock.get("scope") == proof.get("scope") == ["com.google.android.apps.photos"]
+            and lock.get("source_targets") == PHOTOS_TARGETS
+            and proof.get("candidate_sha256") == sha256(framework)
+            and proof.get("candidate_bytes") == framework.stat().st_size,
+            "Photos framework candidate/source/scope mismatch")
+    sources = {str(p.relative_to(native.ROOT)) for p in PHOTOS_COMPONENT.rglob("*") if p.is_file()}
+    sources |= {"build_photos_native.py", "test_build_photos_native.py"}
+    require(set(proof.get("sources", {})) == sources, "unexpected Photos source proof")
+    for name, digest in proof["sources"].items():
+        native.checked({"path": str(native.ROOT / name), "sha256": digest})
+    require(proof.get("transform") == {"changed_signatures": PHOTOS_TARGETS,
+            "changed_classes": [target.split("->")[0] for target in PHOTOS_TARGETS], "changed_count": 2}
+            and proof.get("preservation") == {"original_classes": 6969, "unchanged_classes": 6967,
+                "unchanged_methods_in_changed_classes": 684,
+                "changed_methods": [target.split("->")[1] for target in PHOTOS_TARGETS],
+                "original_bodies_and_metadata_preserved": True}
+            and proof.get("unchanged_original_dex") == [f"classes{i}.dex" for i in range(2, 7)],
+            "Photos two-method preservation proof mismatch")
+    from patch_taskmanager import verify_dex
+    with zipfile.ZipFile(framework) as archive:
+        names = archive.namelist()
+        dex = {name for name in names if name.endswith(".dex")}
+        require(len(names) == len(set(names)) and dex == {"classes.dex", *[f"classes{i}.dex" for i in range(2, 8)]}
+                and sum(info.file_size for info in archive.infolist()) <= 128 * 1024**2,
+                "invalid Photos framework ZIP")
+        require(archive.testzip() is None and [verify_dex(archive.read(name)) for name in ("classes.dex", "classes7.dex")]
+                == proof.get("dex"), "Photos framework DEX proof mismatch")
+    return proof
+
+
+def photos_boot_payloads(framework, bundle, receipt):
+    require(bundle.stat().st_size <= 256 * 1024**2, "Photos boot bundle exceeds size limit")
+    proof = json.loads(receipt.read_text())
+    require(type(proof.get("schema")) is int and proof["schema"] == 1
+            and proof.get("framework_sha256") == sha256(framework)
+            and proof.get("bundle_sha256") == sha256(bundle)
+            and proof.get("art_version") == "119" and proof.get("oat_version") == "279"
+            and proof.get("private_namespace_verified") is True,
+            "Photos boot candidate/version/namespace proof mismatch")
+    cases = proof.get("namespace_cases")
+    require(isinstance(cases, list) and len(cases) == 3
+            and all(isinstance(case, dict) and isinstance(case.get("isolated_process_mode"), str) for case in cases)
+            and {case.get("isolated_process_mode") for case in cases} == {"other", "forged", "photos"},
+            "Photos namespace cases mismatch")
+    for case in cases:
+        photos = case["isolated_process_mode"] == "photos"
+        require(all(case.get(key) is True for key in ("helper_from_boot_classloader", "coherent_boot_images_mapped",
+                    "scope_and_profile_pass", "version_fields_preserved"))
+                and case.get("direct_model") == ("Pixel XL" if photos else "OPD2415")
+                and (not photos or case.get("real_package_manager_hook") is True),
+                "Photos namespace scope/profile proof mismatch")
+    require(isinstance(proof.get("files"), dict) and set(proof["files"]) == PHOTOS_BOOT_ENTRIES,
+            "Photos boot file set mismatch")
+    payloads = {}
+    with zipfile.ZipFile(bundle) as archive:
+        names = archive.namelist()
+        require(len(names) == len(set(names)) and set(names) == PHOTOS_BOOT_ENTRIES
+                and sum(info.file_size for info in archive.infolist()) <= 256 * 1024**2,
+                "invalid Photos boot ZIP entries/size")
+        for info in archive.infolist():
+            mode = info.external_attr >> 16
+            require(0 < info.file_size <= 128 * 1024**2 and not info.flag_bits & 1
+                    and stat.S_IFMT(mode) in (0, stat.S_IFREG)
+                    and info.compress_type in (zipfile.ZIP_STORED, zipfile.ZIP_DEFLATED),
+                    "invalid Photos boot ZIP file/limit")
+            data = archive.read(info)  # ZipFile verifies each entry's CRC while reading.
+            require(proof["files"][info.filename] == {"sha256": hashlib.sha256(data).hexdigest(), "bytes": len(data)},
+                    "Photos boot file hash/size mismatch")
+            if info.filename.endswith(".art"):
+                valid = data.startswith(b"art\n119\0")
+            elif info.filename.endswith(".oat"):
+                valid = (data[:6] == b"\x7fELF\x02\x01" and data[18:20] == b"\xb7\0" and b"oat\n279\0" in data)
+            else:
+                valid = data.startswith(b"vdex")
+            require(valid, "Photos boot ART/OAT/VDEX magic mismatch: " + info.filename)
+            payloads[info.filename] = data
+    return payloads
+
+
+def photos_image_plan(image, entries, files):
+    require(sha256(image) == r5_userspace.IMAGE_SHAS["system"], "Photos requires the pinned original R5 System")
+    paths = json.loads((PHOTOS_COMPONENT / "boot-paths.json").read_text())
+    replacements = {name: "/system/framework/" + (name.removeprefix("arm64/") if name.endswith(".vdex") else name)
+                    for name in PHOTOS_BOOT_ENTRIES | {"framework.jar"}}
+    links = {"/system/framework/arm64/" + group + ".vdex": "../" + group + ".vdex"
+             for group in ("boot", "boot-framework-adservices")}
+    require(paths.get("schema") == 1 and paths.get("source_framework_sha256") == PHOTOS_BASE_SHA
+            and paths.get("replacement_paths") == replacements and paths.get("preserved_symlinks") == links,
+            "Photos boot path/source manifest mismatch")
+    removals = paths.get("remove_paths")
+    require(isinstance(removals, list) and all(isinstance(p, str) for p in removals)
+            and len(removals) == len(set(removals)), "invalid Photos removal list")
+    removals = set(removals)
+    require(not removals & (set(replacements.values()) | links.keys()), "Photos path overlap")
+    for path in removals | set(replacements.values()) | links.keys():
+        require(path in entries and not stat.S_ISDIR(entries[path]["mode"]), "Photos original path missing/type drift: " + path)
+    for path in removals:
+        require(str(PurePosixPath(path)) == path and ".." not in PurePosixPath(path).parts
+                and (re.fullmatch(r"/system/framework/(?:arm64/|oat/arm64/)?[^/]+\.(?:art|oat|odex|vdex|fsv_meta)", path)
+                     or path in {"/system/etc/security/fsverity/BuildManifest.apk", "/system/etc/security/fsverity/BuildManifest.apk.idsig"}),
+                "Photos removal is not a generated System artifact: " + path)
+    require(all(stat.S_ISREG(entries[p]["mode"]) for p in replacements.values()), "Photos replacement is not a regular file")
+    for path, target in links.items():
+        require(stat.S_ISLNK(entries[path]["mode"]) and content(image, path) == target.encode(), "Photos VDEX symlink drift: " + path)
+    for path, entry in entries.items():
+        if path not in removals and stat.S_ISLNK(entry["mode"]) and re.search(r"\.(?:art|oat|odex|vdex)(?:\.fsv_meta)?$", path):
+            target = posixpath.normpath(posixpath.join(posixpath.dirname(path), content(image, path).decode()))
+            require(target in entries and target not in removals, "Photos retained compiled symlink is dangling: " + path)
+    lock = json.loads((PHOTOS_COMPONENT / "source-lock.json").read_text())
+    require(lock.get("source_framework_sha256") == PHOTOS_BASE_SHA
+            and hashlib.sha256(content(image, replacements["framework.jar"])).hexdigest() == PHOTOS_BASE_SHA,
+            "Photos original framework JAR drift")
+    payloads = photos_boot_payloads(files["photos_framework"], files["photos_boot_bundle"], files["photos_boot_verification"])
+    payloads["framework.jar"] = files["photos_framework"].read_bytes()
+    return {replacements[name]: data for name, data in payloads.items()}, removals
 
 
 def additions_and_changes(entries, payloads):
@@ -389,6 +526,11 @@ def partition_plan(image, partition, recipe, inputs):
                      "/system/etc/init/update_engine.rc": bundled_rc}
         if recipe["sequence"] >= 4:
             payloads[TABLET_STATE_JAR] = patch_tablet_state(payloads.get(TABLET_STATE_JAR, content(image, TABLET_STATE_JAR)))
+        if recipe["sequence"] >= 8:
+            photos, obsolete = photos_image_plan(image, entries, inputs["files"])
+            require(not photos.keys() & payloads.keys(), "Photos replacement overlaps another integration")
+            payloads |= photos
+            removals |= obsolete
     elif partition == "system_ext":
         cil, digest = native_policy(payloads.get(POLICY, content(image, POLICY)), content(image, POLICY_MAPPING),
                                    payloads.get(POLICY_HASH, content(image, POLICY_HASH)))
@@ -447,6 +589,13 @@ def assemble_partition(partition, recipe, inputs, output, scratch):
         require(final.stat().st_size % 4096 == 0, "unaligned EROFS output")
         for path, data in expected.items():
             require(content(final, path) == data, "assembled file differs: " + path)
+        if partition == "system" and recipe["sequence"] >= 8:
+            paths = json.loads((PHOTOS_COMPONENT / "boot-paths.json").read_text())
+            after = inventory(final)
+            require(not set(paths["remove_paths"]) & after.keys(), "Photos obsolete paths retained")
+            for path, target in paths["preserved_symlinks"].items():
+                require(path in after and stat.S_ISLNK(after[path]["mode"]) and content(final, path) == target.encode(),
+                        "Photos assembled VDEX symlink drift: " + path)
         native.checked(recipe["images"][partition])
         return result | {"path": str(final), "base_sha256": recipe["images"][partition]["sha256"],
                          "changed_paths": sorted(changes), "added_paths": sorted(additions)}

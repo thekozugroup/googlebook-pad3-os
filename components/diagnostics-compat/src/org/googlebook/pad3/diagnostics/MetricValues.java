@@ -4,6 +4,7 @@ import java.text.NumberFormat;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 
@@ -62,6 +63,8 @@ public final class MetricValues {
         }
 
         public List<List<Integer>> series() {
+            // The donor renderer calls first() on each series before drawing its marker.
+            if (totals.isEmpty()) return Collections.emptyList();
             return Arrays.asList(new ArrayList<>(totals), new ArrayList<>(systems));
         }
     }

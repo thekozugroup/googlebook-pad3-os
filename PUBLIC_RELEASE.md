@@ -6,7 +6,53 @@ GitHub. The public target is `thekozugroup/googlebook-pad3-os`; the parent publi
 reviewed source there using fresh history. Do not copy the private `.git` directory.
 The exporter never changes Git identity, initializes a repository or publishes.
 
-## Native7 metrics candidate: host checks only
+## Native8 Photos framework candidate
+
+Native8 combines the metric corrections below with Photos compatibility built
+into the framework. The implementation follows crDroid Android 17's Photos
+Build profile and feature handling, with an independent exact-package guard.
+Only Google Photos receives the Pixel XL identity. Real Android version,
+security patch, ABI, native properties and other app identities are preserved.
+There is no Photos manager APK or Xposed/Zygisk dependency in this component.
+The separate Diagnostics adapter still requires Vector/Zygisk.
+
+The guarded framework graft changes two methods. Preservation checks cover
+6,967 unrelated classes, 684 other methods in the changed classes, original
+control flow, declarations, annotations, parameters and string literals. Five
+other original DEX files remain identical. The source includes the framework
+builder, boot-image builder and their negative tests.
+
+The boot builder rebases the donor profile, compiles the 15-JAR primary group
+with speed-profile and its 38-JAR extension with verify, using the matching
+ART119/OAT279 compiler. An actual private mount-namespace test loaded both
+groups, exercised the package-manager hook, and rejected a forged Photos
+request from another package context. The repeatability run passed and removed
+its device files/processes. Real system and user ART caches were preserved.
+The image plan removes 367 obsolete preopt/integrity paths and preserves the
+two valid VDEX symlinks; it does not clear device data or forge donor manifests.
+
+The private owner OTA installed from native6/A to B without a reset. Native8
+booted in 30.9 seconds; all 15 live image hashes match the signed targets,
+snapshot state is NONE, and B is successful/bootable. SukiSU 41100/UAPI6,
+enforcing SELinux, tablet posture and the metrics service are active. Installed
+framework probes also passed all three scope cases and the real feature hook.
+The old Photos module was disabled before this reboot and its APK subsequently
+uninstalled. The real Photos process logs the built-in profile and maps no old
+Photos hook. Its existing Original-quality backup remains enabled and complete;
+no backup setting was changed and no test media was uploaded. Fresh server-side
+quota treatment was not measured.
+
+After sign-in all five Diagnostics sections stayed resumed. Battery design
+capacity displays 12,140 mAh, OEM health 100%, and cycle/current values agree
+with the kernel gauge. CPU load/history, temperature and frequency are live;
+RAM shows 11.17 GiB total, and Wi-Fi channel/frequency match the active band.
+The original 348 package UIDs and account counts are preserved, tablet posture
+and fullscreen mode persist, and the pen service and BLE connection are active.
+A three-minute/13-sample probe recorded no query errors, crashes, ANRs or
+restarts. This finite test does not certify stability or the unsupported laptop
+factory routines. The public feed remains native3; no native8 binary is published.
+
+## Native7 metrics preparation, superseded by native8
 
 Native7 is a private native6/A-to-B update candidate with the same R5 base,
 kernel, vendor, firmware and root interface. It preserves userdata. The shared
@@ -31,8 +77,11 @@ were subsequently run and passed. Product6-to-7 review found only build.prop
 content changed, with all 757 paths and metadata preserved and 610 file/link
 contents checked. The Google Diagnostics APK hash still matches the original.
 
-The tablet disconnected before installing the adapter or native7. These are
-host results, not runtime acceptance. The public native3 feed remains unchanged.
+The code2 adapter was subsequently installed on native6: all five tabs stayed
+resumed, with real CPU history, binary RAM values and the correct 6 GHz Wi-Fi
+channel. This also fixed an initial empty-chart startup crash. New gauge policy
+and the full native8 combination still require post-update acceptance. Native7
+was staged but never applied. The public native3 feed remains unchanged.
 
 ## Native6 R5 owner test and remaining metric defects
 
@@ -233,6 +282,9 @@ added after review. The selection consists of:
   builder and contract tests. No APK, API dependency archive, signing material or
   private runtime evidence enters the export. Its exact APK hash gate is a source
   verification pin, not a Google signing-key replacement.
+- The eight exact Photos-native source, test, license, provenance and image-plan
+  files, plus both builders and their tests. Generated framework/ART files,
+  device identifiers, logs, private receipts and firmware remain excluded.
 - The six named native policy/profile inputs under
   `profiles/erhai-crdroid-20261025`, with their original verification hashes.
 - The 12 exact `PHOTOS_FILES` under `components/photos-spoof`: locked source

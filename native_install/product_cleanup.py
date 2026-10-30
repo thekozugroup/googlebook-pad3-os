@@ -10,6 +10,7 @@ TARGET_SHA = "41313b3bcd00fe8a2d4f4919f8a21feed33b35dc02f5ddbd7758eb5cdf8d86e9"
 R5_TARGET_SHA = "53e7e09eec141acd876d4fa773daeddb541684fff64f7ba2488f28d6132728bc"
 R5_DIAGNOSTICS_TARGET_SHA = "d607b85a21e7f375fff46b12ecdac9986d5e614f0ea323022016675505cbd9bf"
 R5_METRICS_TARGET_SHA = "72d0d40877d132377671478436ff33cb3114fa04b0357eb1c0b45f221f540f61"
+R5_PHOTOS_TARGET_SHA = "c1167a5b434fde5a18fa566f4ffaf25954d560cd39f0453a6dd083570d08c6c5"
 REMOVALS = frozenset({
     "/priv-app/DellDiagnosticsStub/DellDiagnosticsStub.apk",
     "/priv-app/DellRepairStub/DellRepairStub.apk",
@@ -23,9 +24,9 @@ def validate(source, target):
 
 
 def validate_release(target, source=None):
-    """Accept only audited native3/4 through native7 Product and exact delta baselines."""
+    """Accept only audited native3/4 through native8 Product and exact delta baselines."""
     target_sha = sha256(target)
-    require(target_sha in {TARGET_SHA, R5_TARGET_SHA, R5_DIAGNOSTICS_TARGET_SHA, R5_METRICS_TARGET_SHA},
+    require(target_sha in {TARGET_SHA, R5_TARGET_SHA, R5_DIAGNOSTICS_TARGET_SHA, R5_METRICS_TARGET_SHA, R5_PHOTOS_TARGET_SHA},
             "Product must contain a reviewed physical Dell APK removal")
     if source is not None:
         if target_sha == TARGET_SHA:

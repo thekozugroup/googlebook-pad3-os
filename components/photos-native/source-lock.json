@@ -1,0 +1,23 @@
+{
+  "schema": 1,
+  "source_framework_sha256": "18419dba5cd7bc48e67c5ace4c162a817ef9126ea628276def8ff5535a51ce49",
+  "source_framework_bytes": 49856122,
+  "reference": {
+    "repository": "https://github.com/crdroidandroid/android_frameworks_base",
+    "commit": "1c3f7bb086682d3eaae68430e4c15e814f3cf8f8",
+    "photos_behavior": "Build fields at app bind and Photos-specific feature answers; no native property hook",
+    "implementation": "New Photos-only implementation; no upstream PIF service code vendored"
+  },
+  "scope": [
+    "com.google.android.apps.photos"
+  ],
+  "helper_class": "com.android.internal.util.googlebook.PhotosCompat",
+  "source_targets": [
+    "Landroid/app/ActivityThread;->handleBindApplication(Landroid/app/ActivityThread$AppBindData;)V",
+    "Landroid/app/ApplicationPackageManager;->hasSystemFeature(Ljava/lang/String;I)Z"
+  ],
+  "version_and_security_fields": "preserved",
+  "native_properties": "preserved",
+  "attestation": "unchanged",
+  "dependency_on_zygisk_or_xposed": false
+}

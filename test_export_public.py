@@ -15,6 +15,19 @@ import export_public as public
 
 
 class PublicExport(unittest.TestCase):
+    def test_encoded_apex_preopt_paths_have_narrow_email_exception(self):
+        scanner = public.Scanner()
+        path = "components/photos-native/boot-paths.json"
+        row = (b'  "/system/framework/oat/arm64/apex' + b'@' + b'com.android.adservices'
+               + b'@' + b'javalib' + b'@' + b'framework-adservices.jar' + b'@' + b'classes.odex.fsv_meta",\n')
+        self.assertEqual(scanner.scan(row, path), [])
+        self.assertIn("email", {f["classification"] for f in scanner.scan(row, "other.json")})
+        personal = b"owner" + b"@" + b"review.test"
+        for data in (row + personal, row.replace(b"com.android.adservices", b"review.test")):
+            self.assertIn("email", {f["classification"] for f in scanner.scan(data, path)})
+        scanner.add_secret(b"framework-adservices.jar")
+        self.assertIn("known_secret", {f["classification"] for f in scanner.scan(row, path)})
+
     def test_versioned_android_library_is_not_email_but_known_values_still_block(self):
         scanner = public.Scanner()
         library = b"android.hardware.boot@1.2.so"

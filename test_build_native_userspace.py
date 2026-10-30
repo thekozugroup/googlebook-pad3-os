@@ -278,6 +278,211 @@ class TextTests(unittest.TestCase):
                 userspace.verify_inputs(inputs)
 
 
+class PhotosTests(unittest.TestCase):
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory(dir=os.environ.get("EROFS_TEST_SCRATCH"))
+        self.addCleanup(self.temp.cleanup)
+        self.root = Path(self.temp.name)
+        self.component = self.root / "components/photos-native"
+        shutil.copytree(userspace.PHOTOS_COMPONENT, self.component)
+        for name in ("build_photos_native.py", "test_build_photos_native.py"):
+            shutil.copyfile(userspace.native.ROOT / name, self.root / name)
+        self.addCleanup(patch.stopall)
+        patch.object(userspace.native, "ROOT", self.root).start()
+        patch.object(userspace, "PHOTOS_COMPONENT", self.component).start()
+        self.framework, self.receipt = self.root / "framework.jar", self.root / "framework.json"
+        with zipfile.ZipFile(self.framework, "w") as archive:
+            for i in range(1, 8):
+                archive.writestr("classes" + (str(i) if i > 1 else "") + ".dex", b"synthetic DEX")
+        self.dex = {"sha256": hashlib.sha256(b"synthetic DEX").hexdigest()}
+        patch.object(taskmanager, "verify_dex", return_value=self.dex).start()
+        self.proof = {
+            "source_framework_sha256": userspace.PHOTOS_BASE_SHA,
+            "candidate_sha256": userspace.sha256(self.framework), "candidate_bytes": self.framework.stat().st_size,
+            "scope": ["com.google.android.apps.photos"],
+            "sources": {str(p.relative_to(self.root)): userspace.sha256(p)
+                        for p in [*self.component.rglob("*"), self.root / "build_photos_native.py",
+                                  self.root / "test_build_photos_native.py"] if p.is_file()},
+            "transform": {"changed_signatures": userspace.PHOTOS_TARGETS,
+                          "changed_classes": [p.split("->")[0] for p in userspace.PHOTOS_TARGETS], "changed_count": 2},
+            "preservation": {"original_classes": 6969, "unchanged_classes": 6967,
+                             "unchanged_methods_in_changed_classes": 684,
+                             "changed_methods": [p.split("->")[1] for p in userspace.PHOTOS_TARGETS],
+                             "original_bodies_and_metadata_preserved": True},
+            "dex": [self.dex, self.dex], "unchanged_original_dex": [f"classes{i}.dex" for i in range(2, 7)]}
+        self.receipt.write_text(json.dumps(self.proof))
+        self.bundle, self.boot_receipt = self.root / "boot.zip", self.root / "boot.json"
+        self.boot_data = {name: (b"art\n119\0payload" if name.endswith(".art") else
+                               b"\x7fELF\x02\x01" + b"\0" * 12 + b"\xb7\0oat\n279\0payload" if name.endswith(".oat") else
+                               b"vdexpayload") for name in userspace.PHOTOS_BOOT_ENTRIES}
+        self.boot_proof = {"schema": 1, "framework_sha256": userspace.sha256(self.framework),
+                           "art_version": "119", "oat_version": "279", "private_namespace_verified": True,
+                           "namespace_cases": [{"isolated_process_mode": mode,
+                               "direct_model": "Pixel XL" if mode == "photos" else "OPD2415",
+                               "helper_from_boot_classloader": True, "coherent_boot_images_mapped": True,
+                               "scope_and_profile_pass": True, "version_fields_preserved": True,
+                               "real_package_manager_hook": mode == "photos"} for mode in ("other", "forged", "photos")]}
+        self.save_boot()
+        self.files = {"photos_framework": self.framework, "photos_framework_verification": self.receipt,
+                      "photos_boot_bundle": self.bundle, "photos_boot_verification": self.boot_receipt}
+        self.paths = json.loads((self.component / "boot-paths.json").read_text())
+
+    def save_boot(self, data=None):
+        with zipfile.ZipFile(self.bundle, "w") as archive:
+            for name, payload in (self.boot_data if data is None else data).items():
+                archive.writestr(name, payload)
+        self.boot_proof["bundle_sha256"] = userspace.sha256(self.bundle)
+        self.boot_proof["files"] = {name: {"bytes": len(payload), "sha256": hashlib.sha256(payload).hexdigest()}
+                                    for name, payload in (self.boot_data if data is None else data).items()}
+        self.boot_receipt.write_text(json.dumps(self.boot_proof))
+
+    def test_framework_receipt_binds_candidate_scope_targets_and_every_current_source(self):
+        self.assertIn("components/photos-native/boot-paths.json", self.proof["sources"])
+        self.assertEqual(userspace.verify_photos(self.framework, self.receipt), self.proof)
+        for key, value in (("candidate_sha256", "0" * 64), ("source_framework_sha256", "0" * 64),
+                           ("candidate_bytes", 1), ("scope", ["other.package"]), ("sources", {}),
+                           ("transform", dict(self.proof["transform"], changed_signatures=userspace.PHOTOS_TARGETS[:1])),
+                           ("preservation", dict(self.proof["preservation"], unchanged_methods_in_changed_classes=683)),
+                           ("dex", [])):
+            self.receipt.write_text(json.dumps(dict(self.proof, **{key: value})))
+            with self.subTest(key=key), self.assertRaises(ValueError):
+                userspace.verify_photos(self.framework, self.receipt)
+        self.receipt.write_text(json.dumps(self.proof))
+        (self.component / "boot-paths.json").write_text("changed after receipt")
+        with self.assertRaisesRegex(ValueError, "SHA-256 mismatch"):
+            userspace.verify_photos(self.framework, self.receipt)
+
+    def test_boot_receipt_binds_exact_candidates_versions_and_all_namespace_cases(self):
+        self.assertEqual(userspace.photos_boot_payloads(self.framework, self.bundle, self.boot_receipt), self.boot_data)
+        for key, value in (("schema", True), ("framework_sha256", "0" * 64), ("bundle_sha256", "0" * 64),
+                           ("art_version", "118"), ("oat_version", "278"), ("private_namespace_verified", 1),
+                           ("files", {}), ("namespace_cases", self.boot_proof["namespace_cases"][:2])):
+            self.boot_receipt.write_text(json.dumps(dict(self.boot_proof, **{key: value})))
+            with self.subTest(key=key), self.assertRaises(ValueError):
+                userspace.photos_boot_payloads(self.framework, self.bundle, self.boot_receipt)
+        for i in range(3):
+            for key, value in (("helper_from_boot_classloader", False), ("coherent_boot_images_mapped", False),
+                               ("scope_and_profile_pass", 1), ("version_fields_preserved", False),
+                               ("direct_model", "wrong"), ("isolated_process_mode", "photos" if i != 2 else "other")):
+                proof = json.loads(json.dumps(self.boot_proof))
+                proof["namespace_cases"][i][key] = value
+                self.boot_receipt.write_text(json.dumps(proof))
+                with self.subTest(case=i, key=key), self.assertRaises(ValueError):
+                    userspace.photos_boot_payloads(self.framework, self.bundle, self.boot_receipt)
+        proof = json.loads(json.dumps(self.boot_proof))
+        proof["namespace_cases"][2]["real_package_manager_hook"] = False
+        self.boot_receipt.write_text(json.dumps(proof))
+        with self.assertRaisesRegex(ValueError, "scope/profile"):
+            userspace.photos_boot_payloads(self.framework, self.bundle, self.boot_receipt)
+
+    def test_boot_zip_rejects_entries_hashes_magic_duplicates_crc_and_limits(self):
+        for name in userspace.PHOTOS_BOOT_ENTRIES:
+            self.save_boot(dict(self.boot_data, **{name: b"wrong magic"}))
+            with self.subTest(name=name), self.assertRaisesRegex(ValueError, "magic"):
+                userspace.photos_boot_payloads(self.framework, self.bundle, self.boot_receipt)
+        self.save_boot(dict(self.boot_data, **{"../outside": b"escape"}))
+        with self.assertRaises(ValueError):
+            userspace.photos_boot_payloads(self.framework, self.bundle, self.boot_receipt)
+        self.save_boot()
+        self.boot_proof["files"]["arm64/boot.art"]["sha256"] = "0" * 64
+        self.boot_receipt.write_text(json.dumps(self.boot_proof))
+        with self.assertRaisesRegex(ValueError, "hash/size"):
+            userspace.photos_boot_payloads(self.framework, self.bundle, self.boot_receipt)
+        self.save_boot()
+        # Change stored payload bytes while retaining the entry's original CRC.
+        data = self.bundle.read_bytes().replace(self.boot_data["arm64/boot.art"], b"art\n119\0PAYLOAD", 1)
+        self.bundle.write_bytes(data)
+        self.boot_proof["bundle_sha256"] = userspace.sha256(self.bundle)
+        self.boot_receipt.write_text(json.dumps(self.boot_proof))
+        with self.assertRaises(zipfile.BadZipFile):
+            userspace.photos_boot_payloads(self.framework, self.bundle, self.boot_receipt)
+        self.save_boot()
+        original = zipfile.ZipFile.infolist
+        def oversized(archive):
+            infos = original(archive)
+            infos[0].file_size = 129 * 1024**2
+            return infos
+        with patch.object(zipfile.ZipFile, "infolist", oversized), self.assertRaisesRegex(ValueError, "limit"):
+            userspace.photos_boot_payloads(self.framework, self.bundle, self.boot_receipt)
+        self.save_boot()
+        import warnings
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", UserWarning)
+            with zipfile.ZipFile(self.bundle, "a") as archive:
+                archive.writestr("arm64/boot.art", self.boot_data["arm64/boot.art"])
+        self.boot_proof["bundle_sha256"] = userspace.sha256(self.bundle)
+        self.boot_receipt.write_text(json.dumps(self.boot_proof))
+        with self.assertRaisesRegex(ValueError, "ZIP entries"):
+            userspace.photos_boot_payloads(self.framework, self.bundle, self.boot_receipt)
+
+    def test_image_plan_requires_all_original_paths_regular_payloads_and_preserved_links(self):
+        original = b"original framework"
+        base_sha = hashlib.sha256(original).hexdigest()
+        self.paths["source_framework_sha256"] = base_sha
+        manifest = self.component / "boot-paths.json"
+        manifest.write_text(json.dumps(self.paths))
+        (self.component / "source-lock.json").write_text(json.dumps({"source_framework_sha256": base_sha}))
+        entries = {path: {"mode": stat.S_IFREG | 0o644}
+                   for path in self.paths["remove_paths"] + list(self.paths["replacement_paths"].values())}
+        entries |= {path: {"mode": stat.S_IFLNK | 0o777} for path in self.paths["preserved_symlinks"]}
+        def contents(image, path):
+            return self.paths["preserved_symlinks"][path].encode() if path in self.paths["preserved_symlinks"] else original
+        with patch.object(userspace, "sha256", return_value=userspace.r5_userspace.IMAGE_SHAS["system"]), \
+             patch.object(userspace, "PHOTOS_BASE_SHA", base_sha), patch.object(userspace, "content", side_effect=contents), \
+             patch.object(userspace, "photos_boot_payloads", return_value=self.boot_data):
+            payloads, removals = userspace.photos_image_plan(Path("/source.img"), entries, self.files)
+            self.assertEqual(removals, set(self.paths["remove_paths"]))
+            self.assertEqual(set(payloads), set(self.paths["replacement_paths"].values()))
+            self.assertEqual(payloads["/system/framework/boot.vdex"], self.boot_data["arm64/boot.vdex"])
+            dangling = "/system/framework/arm64/obsolete.vdex"
+            with patch.object(userspace, "content", side_effect=lambda image, path:
+                              self.paths["remove_paths"][0].encode() if path == dangling else contents(image, path)), \
+                 self.assertRaisesRegex(ValueError, "retained compiled symlink is dangling"):
+                userspace.photos_image_plan(Path("/source.img"), dict(entries, **{dangling: {"mode": stat.S_IFLNK}}), self.files)
+            for path in entries:
+                with self.subTest(missing=path), self.assertRaisesRegex(ValueError, "original path missing"):
+                    userspace.photos_image_plan(Path("/source.img"), {p: e for p, e in entries.items() if p != path}, self.files)
+            path = self.paths["replacement_paths"]["arm64/boot.vdex"]
+            with self.assertRaisesRegex(ValueError, "regular file"):
+                userspace.photos_image_plan(Path("/source.img"), dict(entries, **{path: {"mode": stat.S_IFLNK}}), self.files)
+            with patch.object(userspace, "content", return_value=b"wrong"), self.assertRaisesRegex(ValueError, "symlink drift"):
+                userspace.photos_image_plan(Path("/source.img"), entries, self.files)
+            with patch.object(userspace, "content", side_effect=lambda image, path:
+                              contents(image, path) if path in self.paths["preserved_symlinks"] else b"wrong framework"), \
+                 self.assertRaisesRegex(ValueError, "original framework JAR drift"):
+                userspace.photos_image_plan(Path("/source.img"), entries, self.files)
+            for path in ("/system/framework/framework.jar", "/system/framework/arm64/boot.vdex", "/data/cache/file"):
+                manifest.write_text(json.dumps(dict(self.paths, remove_paths=self.paths["remove_paths"] + [path])))
+                with self.subTest(overlap=path), self.assertRaises(ValueError):
+                    userspace.photos_image_plan(Path("/source.img"), dict(entries, **{path: {"mode": stat.S_IFREG}}), self.files)
+            manifest.write_text(json.dumps(self.paths))
+            with patch.object(userspace, "sha256", return_value="0" * 64), self.assertRaisesRegex(ValueError, "pinned original R5"):
+                userspace.photos_image_plan(Path("/source.img"), entries, self.files)
+
+    def test_recipe_keeps_old_inputs_closed_and_requires_all_four_photos_pins_from_eight(self):
+        recipe = {"schema": 1, "sequence": 1, "timestamp": 1793220000,
+                  "images": {name: pin(self.framework) for name in userspace.PARTITIONS},
+                  "trust": {name: pin(self.framework) for name in userspace.TRUST_PATHS}}
+        path = self.root / "recipe.json"
+        with patch.object(userspace.native, "image_kind", return_value="erofs"):
+            for sequence in range(1, 10):
+                recipe["sequence"] = sequence
+                names = userspace.FILE_INPUTS | (userspace.DIAGNOSTICS_INPUTS if sequence >= 7 else set())
+                names |= userspace.PHOTOS_INPUTS if sequence >= 8 else set()
+                recipe["files"] = {name: pin(self.framework) for name in names}
+                path.write_text(json.dumps(recipe))
+                self.assertEqual(userspace.load_recipe(path)[0], recipe)
+                for name in userspace.PHOTOS_INPUTS:
+                    changed = dict(recipe, files=dict(recipe["files"]))
+                    if sequence >= 8:
+                        changed["files"].pop(name)
+                    else:
+                        changed["files"][name] = pin(self.framework)
+                    path.write_text(json.dumps(changed))
+                    with self.subTest(sequence=sequence, pin=name), self.assertRaisesRegex(ValueError, "pinned inputs"):
+                        userspace.load_recipe(path)
+
+
 @unittest.skipUnless(os.environ.get("EROFS_TEST_SCRATCH") and all(shutil.which(tool) for tool in ("mkfs.erofs", "dump.erofs", "fsck.erofs")), "supply owned CleanOS scratch and installed EROFS tools")
 class AssemblyTests(unittest.TestCase):
     def setUp(self):
@@ -415,6 +620,54 @@ class AssemblyTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.run_build(output)
         self.assertEqual(sentinel.read_bytes(), b"existing")
+
+    def test_native8_system_replaces_coherent_boot_files_removes_manifest_and_keeps_vdex_links(self):
+        image = Path(self.recipe["images"]["system"]["path"])
+        entries = inventory(image)
+        files = {p: content(image, p) for p, e in entries.items() if stat.S_ISREG(e["mode"])}
+        links = {p: content(image, p).decode() for p, e in entries.items() if stat.S_ISLNK(e["mode"])}
+        paths = json.loads((userspace.PHOTOS_COMPONENT / "boot-paths.json").read_text())
+        original = b"original framework fixture"
+        source_sha = hashlib.sha256(original).hexdigest()
+        paths["source_framework_sha256"] = source_sha
+        component = self.root / "photos-component"
+        component.mkdir()
+        (component / "boot-paths.json").write_text(json.dumps(paths))
+        (component / "source-lock.json").write_text(json.dumps({"source_framework_sha256": source_sha}))
+        files |= {p: b"obsolete generated artifact" for p in paths["remove_paths"]}
+        files |= {p: b"original boot file" for p in paths["replacement_paths"].values()}
+        files["/system/framework/framework.jar"] = original
+        files[userspace.TABLET_STATE_JAR] = b"original tablet state"
+        links |= paths["preserved_symlinks"]
+        self.make_image(image, files, links)
+        self.recipe["images"]["system"] = pin(image)
+        self.recipe["sequence"] = 8
+        framework = self.root / "photos.jar"
+        framework.write_bytes(b"Photos candidate")
+        inputs = {group: {name: Path(record["path"]) for name, record in self.recipe[group].items()}
+                  for group in ("images", "files", "trust")}
+        inputs["files"] |= {name: framework for name in userspace.PHOTOS_INPUTS}
+        boot = {name: (name + " coherent replacement").encode() for name in userspace.PHOTOS_BOOT_ENTRIES}
+        output = self.root / "native8-system"
+        output.mkdir()
+        with patch.object(userspace, "PHOTOS_COMPONENT", component), patch.object(userspace, "PHOTOS_BASE_SHA", source_sha), \
+             patch.dict(userspace.r5_userspace.IMAGE_SHAS, system=userspace.sha256(image)), \
+             patch.object(userspace, "TASKMANAGER_BASE_SHA", hashlib.sha256(self.jar).hexdigest()), \
+             patch.object(userspace, "patch_tablet_state", return_value=b"patched tablet state"), \
+             patch.object(userspace, "photos_boot_payloads", return_value=boot), \
+             patch.object(userspace.engine_libraries, "integration_inputs", return_value=(
+                 self.engine_additions, inputs["files"]["update_engine_rc"].read_bytes())):
+            userspace.assemble_partition("system", self.recipe, inputs, output, self.root)
+        final = output / "system.img"
+        after = inventory(final)
+        self.assertFalse(set(paths["remove_paths"]) & after.keys())
+        for name, path in paths["replacement_paths"].items():
+            self.assertTrue(stat.S_ISREG(after[path]["mode"]))
+            self.assertEqual(content(final, path), framework.read_bytes() if name == "framework.jar" else boot[name])
+        for path, target in paths["preserved_symlinks"].items():
+            self.assertTrue(stat.S_ISLNK(after[path]["mode"]))
+            self.assertEqual(content(final, path), target.encode())
+        self.assertEqual(content(final, "/system/app/Signed.apk"), self.keep)
 
     def test_standalone_partition_cleans_failed_verification_and_preserves_existing(self):
         output = self.root / "partition"

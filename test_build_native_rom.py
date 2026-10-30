@@ -273,17 +273,18 @@ class ValidationTests(unittest.TestCase):
         from native_install import product_cleanup
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            old, current, updated, fixed, metrics = [root / name for name in ("old", "current", "updated", "fixed", "metrics")]
-            for path in (old, current, updated, fixed, metrics):
+            old, current, updated, fixed, metrics, photos = [root / name for name in ("old", "current", "updated", "fixed", "metrics", "photos")]
+            for path in (old, current, updated, fixed, metrics, photos):
                 path.write_bytes(path.name.encode())
             with patch.object(product_cleanup, "SOURCE_SHA", payload.sha256(old)), \
                  patch.object(product_cleanup, "TARGET_SHA", payload.sha256(current)), \
                  patch.object(product_cleanup, "R5_TARGET_SHA", payload.sha256(updated)), \
                  patch.object(product_cleanup, "R5_DIAGNOSTICS_TARGET_SHA", payload.sha256(fixed)), \
-                 patch.object(product_cleanup, "R5_METRICS_TARGET_SHA", payload.sha256(metrics)):
-                for target, source in ((current, None), (updated, None), (fixed, None), (metrics, None), (current, old), (updated, current), (fixed, updated), (metrics, fixed)):
+                 patch.object(product_cleanup, "R5_METRICS_TARGET_SHA", payload.sha256(metrics)), \
+                 patch.object(product_cleanup, "R5_PHOTOS_TARGET_SHA", payload.sha256(photos)):
+                for target, source in ((current, None), (updated, None), (fixed, None), (metrics, None), (photos, None), (current, old), (updated, current), (fixed, updated), (metrics, fixed), (photos, fixed)):
                     product_cleanup.validate_release(target, source)
-                for target, source in ((updated, old), (current, updated), (fixed, old), (fixed, current), (updated, fixed), (metrics, old), (metrics, updated), (fixed, metrics)):
+                for target, source in ((updated, old), (current, updated), (fixed, old), (fixed, current), (updated, fixed), (metrics, old), (metrics, updated), (fixed, metrics), (photos, metrics), (photos, updated)):
                     with self.assertRaises(ValueError):
                         product_cleanup.validate_release(target, source)
                 updated.write_bytes(b"unreviewed target")
@@ -532,6 +533,7 @@ class PayloadTests(unittest.TestCase):
             bootstrap = native.manager_bootstrap()
             output = directory / "overlay"
             with patch.object(native, "ROOT", directory), \
+                 patch.dict(os.environ, {"GOOGLEBOOK_MANAGER_CHECKER": str(checker)}), \
                  patch.object(native, "scratch_output", side_effect=lambda path: Path(path)), \
                  patch.object(native, "MANAGER_CHECKER_SHA", payload.sha256(checker)), \
                  patch.object(native, "manager_bootstrap", return_value=bootstrap), \

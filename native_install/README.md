@@ -4,7 +4,12 @@ Private native5/native6 rebase userspace onto mica R5/build 16693588.
 Native5 preserved apps/accounts and passed layout and pen-service checks; its
 15-minute probe captured one Diagnostics crash. Native6 addresses the absent
 laptop vendor service and booted with all 15 live image hashes matching its
-signed payload. Its app checks await owner sign-in. Schema 2 composes clean R5
+signed payload. Private native8 adds Photos-only framework compatibility and
+metric corrections. It booted, matched all 15 target hashes, retained root and
+enforcing SELinux, and passed installed framework scope probes. Photos and
+Diagnostics app checks passed; the old Photos module is removed. A three-minute
+probe had no errors or new crashes. Diagnostics still requires its scoped adapter.
+Schema 2 composes clean R5
 images with the reviewed tablet graft; see [donor-extractor](donor-extractor/README.md).
 The public binary feed remains native3.
 

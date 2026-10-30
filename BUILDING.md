@@ -1,6 +1,9 @@
 # Local build inputs
 
 Use an existing local SDK and JDK; do not copy full toolchains into this checkout.
+Set ANDROID_HOME and JAVA_HOME to their verified local installations. The Java
+contract tests also accept a working JDK on PATH; macOS launcher stubs alone
+do not provide a runtime.
 On macOS, create a CleanOS task for disposable build output and verify its
 backup-copy exclusion. On Linux, use maintenance_workspace.py to create an
 explicitly owned private task. See MAINTAINING.md for both host paths.

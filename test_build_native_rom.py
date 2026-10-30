@@ -19,6 +19,13 @@ from native_install.avb import verify as verify_avb
 from native_install.layout import check_layout, parse_text_layout, check_target_state
 from native_install.public_image import audit_text, check as check_public_image
 
+
+def java_bin():
+    home, compiler = os.environ.get("JAVA_HOME"), shutil.which("javac")
+    directory = Path(home) / "bin" if home else Path(compiler).parent if compiler else None
+    return directory if directory and all((directory / tool).is_file() for tool in ("java", "javac")) else None
+
+
 FSTAB = """# Native EXT4 entries
 system /system ext4 ro,barrier=1,discard wait,slotselect,avb=vbmeta_system,logical,first_stage_mount
 system_ext /system_ext ext4 ro,barrier=1,discard wait,slotselect,avb=vbmeta_system,logical,first_stage_mount
@@ -467,7 +474,7 @@ class ManagerBootstrapTests(unittest.TestCase):
                 self.assertEqual(result.returncode == 0, success, result.stderr)
                 self.assertEqual(installed.exists(), should_install)
 
-    @unittest.skipUnless(Path("/opt/homebrew/opt/openjdk/libexec/openjdk.jdk/Contents/Home/bin/javac").exists(), "installed JDK required")
+    @unittest.skipUnless(java_bin(), "installed JDK required")
     def test_current_certificate_version_and_path_decisions(self):
         with tempfile.TemporaryDirectory(prefix="manager-java-test-") as directory:
             directory = Path(directory)
@@ -488,7 +495,7 @@ class ManagerBootstrapTests(unittest.TestCase):
                 expect(20, ManagerDecision.decide(true, true, 41100, false, false, true));
               }
             }''')
-            jdk = Path("/opt/homebrew/opt/openjdk/libexec/openjdk.jdk/Contents/Home/bin")
+            jdk = java_bin()
             result = subprocess.run([str(jdk / "javac"), "--release", "8", "-d", str(directory),
                                      str(native.ROOT / "native_install/manager/ManagerDecision.java"), str(harness)], capture_output=True)
             self.assertEqual(result.returncode, 0, result.stderr)
@@ -707,7 +714,9 @@ class PayloadTests(unittest.TestCase):
             feed_public = payload.openssl("pkey", "-pubin", "-inform", "DER", "-in", self.feed_public, "-pubout")
             payload.verify_digest(hashlib.sha256(signed).digest(), (output / "stable.json.sig").read_bytes(), feed_public, directory)
             # Compile the actual updater consumer against the actual writer ZIP, including ZIP64.
-            jdk = Path("/opt/homebrew/opt/openjdk/libexec/openjdk.jdk/Contents/Home/bin")
+            jdk = java_bin()
+            if jdk is None:
+                self.skipTest("set JAVA_HOME or put a JDK on PATH for the writer/consumer contract")
             bridge = directory / "NativeProducerConsumerTest.java"
             bridge.write_text('''package org.googlebook.pad3.updater;
               import java.io.*; import java.util.*;

@@ -27,9 +27,9 @@
       "sha256": "bed5b3883431db30c207653faa0eba7e54bbcaedd1e89cae8f48a75fb7790227"
     },
     "BUILDING.md": {
-      "bytes": 2477,
+      "bytes": 2659,
       "executable": false,
-      "sha256": "46b75901eddf2d87ac10d11af60515e9f5acc0fd032dd58dc03860085e5f4e2c"
+      "sha256": "5f5e12b8f3b1f0acdd7e2aa243257cae3572b793e9a30e8fd1a76e4ea4afe284"
     },
     "COMMUNITY_NOTES.md": {
       "bytes": 2412,
@@ -962,9 +962,9 @@
       "sha256": "bfa08816025b38267a4bf53754e597d8e7d6057241d5aaf8887d533c83ad2dac"
     },
     "export_public.py": {
-      "bytes": 81349,
+      "bytes": 81531,
       "executable": false,
-      "sha256": "382d1fa24051444b7ebba2df5b1f0def6762fe8151bb4f6a6c8ea74bd1918393"
+      "sha256": "f796a39a0dabf504afc86648ba65e3b1f124b6f97b587f78c0fe78005627d45f"
     },
     "ext4_source.py": {
       "bytes": 2262,
@@ -1312,9 +1312,9 @@
       "sha256": "487a8dfbb850f2d1d55699f36bb290d72895421df16cf5ab6fab440e6c004b9b"
     },
     "test_build_native_rom.py": {
-      "bytes": 55660,
+      "bytes": 55886,
       "executable": false,
-      "sha256": "8cb1338c604a4cde76d83f4d8b31c3d9f19cfc4305cdd78bbcc9cbe0b1b1acd5"
+      "sha256": "a02ac0f6c064aee804bba82e5ec46b523dded1144c9a75df84882ad10d800bd5"
     },
     "test_build_native_userspace.py": {
       "bytes": 47055,

@@ -1,0 +1,66 @@
+{
+  "automatic_build_or_install": false,
+  "coverage": "Google full recovery catalog, latest public OTA index page and pinned source branches; rollout-only or older index records can be missed.",
+  "errors": [],
+  "incremental_otas": [
+    {
+      "new_url": true,
+      "record": "https://otachecker.com/ota/2851",
+      "source_fingerprint": "Dell/mica/mica:17/CL3B.260622.273.R1/16471258:user/release-keys",
+      "trust": "discovery_only_not_signature_verified",
+      "url": "https://ota.googlezip.net/packages/ota-api/package/1779f5e576cebe6b4c23a9628fcd5c62eb967c6d.zip"
+    }
+  ],
+  "recoveries": [
+    {
+      "build": "16560795",
+      "changed_fields": [],
+      "compatibility": "not_assessed",
+      "device": "mica",
+      "newer_than_reviewed_donor": false,
+      "published": "2026-10-22",
+      "relation": "matches_pin",
+      "url": "https://dl.google.com/device/recovery/mica-user/16560795/recovery.zip",
+      "version": "CL3B.260622.276.R2",
+      "zip_md5": "be97fb4fe368e50bb6102dcede1b2a80"
+    }
+  ],
+  "reviewed_donor": {
+    "build": "16693588",
+    "device": "mica",
+    "security_patch": "2026-10-01",
+    "version": "CL3B.260622.276.R5"
+  },
+  "schema": 1,
+  "sources": [
+    {
+      "branch": "lineage-24.0",
+      "changed": false,
+      "observed_sha": "3005381974b1dbe0fc5835d4393b83b134bfda46",
+      "repository": "LineageOS/android_device_oneplus_erhai",
+      "reviewed_sha": "3005381974b1dbe0fc5835d4393b83b134bfda46"
+    },
+    {
+      "branch": "lineage-24.0",
+      "changed": false,
+      "observed_sha": "96d2864971ddf3bf9c6114007d743d9254482028",
+      "repository": "LineageOS/android_device_oneplus_sm8750-common",
+      "reviewed_sha": "96d2864971ddf3bf9c6114007d743d9254482028"
+    },
+    {
+      "branch": "lineage-24.0",
+      "changed": false,
+      "observed_sha": "6350e8af3f4c452d087fbd6fe1aabe03cbc0af75",
+      "repository": "LineageOS/android_kernel_oneplus_sm8750",
+      "reviewed_sha": "6350e8af3f4c452d087fbd6fe1aabe03cbc0af75"
+    },
+    {
+      "branch": "17.0",
+      "changed": true,
+      "observed_sha": "9e37e797c72e8ac797e9e91a06ebd7e1cee1697d",
+      "repository": "crdroidandroid/android_frameworks_base",
+      "reviewed_sha": "1c3f7bb086682d3eaae68430e4c15e814f3cf8f8"
+    }
+  ],
+  "status": "review_required"
+}

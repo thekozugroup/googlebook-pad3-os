@@ -38,6 +38,19 @@ public final class WindowModeTest {
         for (String[] invalid : new String[][]{{}, {"status"}, {"apply", "1010123"}, {"toggle;id", "1010123"},
                 {"toggle", "-1"}, {"status", "1010123;id"}, {"toggle", "9999999999"}, {"toggle", "1010123", "5"}})
             rejects(() -> WindowMode.requestedUid(invalid));
+        WindowMode.Requests requests = new WindowMode.Requests();
+        check(requests.begin(false));
+        check(!requests.begin(true));
+        check(!requests.begin(false));
+        check(!requests.begin(true));
+        check(requests.complete()); // One switch survives any taps during the initial refresh.
+        check(requests.begin(true));
+        check(!requests.begin(true));
+        check(!requests.complete()); // A repeated tap cannot reverse an in-flight switch.
+        check(requests.begin(false));
+        check(!requests.complete()); // Opening the panel alone never switches layout.
+        check(requests.begin(true));
+        check(!requests.complete()); // The next deliberate tap works after completion.
         System.out.println("WINDOW_MODE_CHECKS_PASSED=" + checks);
     }
 }

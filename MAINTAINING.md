@@ -103,8 +103,12 @@ The package handoff authenticates the feed, checks local parts and the joined
 archive hash, and binds every output filename, size and hash. Missing or extra
 assets block the handoff. Recheck those bytes before any later publication.
 
-The runner currently supports reviewed R5 sequences 5–8 and their exact Product
-hashes. A later release requires reviewed source/profile changes and new tests.
+The runner currently supports reviewed R5 sequences 5–8 and 10 with their exact
+Product hashes. Sequence 10 requires `files.product_reuse` pinned to the reviewed
+native8/9 Product; it copies those bytes unchanged while updating System and
+SystemExt. Its separate planned target sizes still require live inactive-slot
+capacity and snapshot checks before installation. A later release requires
+reviewed source/profile changes and new tests.
 Do not change the supported sequence merely to bypass a failing donor check.
 
 For Actions, provision a dedicated self-hosted runner labelled `pad3-maintainer`,

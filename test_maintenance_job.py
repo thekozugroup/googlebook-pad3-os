@@ -146,7 +146,8 @@ class JobTests(unittest.TestCase):
             self.config = original
 
     def test_new_profile_sequence_and_donor_are_rejected(self):
-        for change in (dict(sequence=9), dict(schema=1), dict(lineage="unreviewed")):
+        for change in (dict(sequence=9), dict(sequence=11), dict(sequence=100),
+                       dict(schema=1), dict(lineage="unreviewed")):
             recipe = dict(self.recipe, **change)
             self.config["recipe"] = self.put_json("recipe.json", recipe)
             with self.assertRaises(ValueError):
@@ -155,6 +156,54 @@ class JobTests(unittest.TestCase):
         self.config["recipe"] = self.put_json("recipe.json", recipe)
         with self.assertRaises(ValueError):
             self.prepare()
+
+    def test_native10_requires_exact_product_reuse_and_resolves_its_pin(self):
+        reuse = self.put("product8.img", b"reviewed Product8")
+        self.recipe["sequence"] = 10
+        with mock.patch.object(product_cleanup, "R5_PHOTOS_TARGET_SHA", reuse["sha256"]):
+            for value in (None, dict(reuse, sha256="0" * 64), dict(reuse, arbitrary_path="input:other.img")):
+                self.recipe["files"] = {"tablet_graft_source": dict(self.image)}
+                if value is not None:
+                    self.recipe["files"]["product_reuse"] = value
+                self.config["recipe"] = self.put_json("recipe.json", self.recipe)
+                with self.subTest(pin=value), self.assertRaises(ValueError):
+                    self.prepare()
+            self.recipe["files"]["product_reuse"] = reuse
+            self.config["recipe"] = self.put_json("recipe.json", self.recipe)
+            prepared = self.prepare()
+            self.assertEqual(prepared["configs"]["recipe"]["files"]["product_reuse"],
+                             dict(reuse, path=str(self.roots["input"] / "product8.img")))
+            job.reviewed_product(reuse["sha256"], 10)
+            for sequence in (9, 11, 100):
+                with self.subTest(sequence=sequence), self.assertRaises(ValueError):
+                    job.reviewed_product(reuse["sha256"], sequence)
+            with self.assertRaises(ValueError):
+                job.reviewed_product(product_cleanup.R5_TARGET_SHA, 10)
+
+    def test_native10_assembly_handoff_preserves_the_pinned_product_hash(self):
+        reuse = self.put("product8.img", b"unchanged Product8 bytes")
+        self.recipe["sequence"] = 10
+        self.recipe["files"]["product_reuse"] = reuse
+        self.config["recipe"] = self.put_json("recipe.json", self.recipe)
+        def builder(command, **kwargs):
+            output = self.roots["output"] / "userspace"
+            output.mkdir()
+            for name in job.PARTITIONS:
+                (output / (name + ".img")).write_bytes(b"candidate" if name != "product" else b"unchanged Product8 bytes")
+            recipe = Path(command[command.index("--recipe") + 1])
+            report = dict(status="NATIVE_USERSPACE_ASSEMBLED_UNBOOTED", recipe_sha256=job.digest(recipe),
+                          images={name: dict(sha256=job.digest(output / (name + ".img"))) for name in job.PARTITIONS})
+            (output / "userspace-build.json").write_text(json.dumps(report))
+            return subprocess.CompletedProcess(command, 0)
+        with mock.patch.object(product_cleanup, "R5_PHOTOS_TARGET_SHA", reuse["sha256"]):
+            prepared = self.prepare()
+            with mock.patch.object(job.subprocess, "run", side_effect=builder):
+                result = job.execute(prepared, trusted_runner=True)
+        handoff = job.read_json(job.reference(result["handoff"], self.roots))
+        self.assertEqual(handoff["sequence"], 10)
+        self.assertEqual(handoff["images"]["product"], reuse["sha256"])
+        self.assertEqual(handoff["recipe_sha256"], self.config["recipe"]["sha256"])
+        self.bound.assert_called_with(self.config["source_commit"])
 
     def test_reference_escape_symlink_and_absolute_paths_are_rejected(self):
         alias = self.roots["input"] / "alias.img"

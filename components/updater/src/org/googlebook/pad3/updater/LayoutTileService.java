@@ -13,7 +13,8 @@ import java.util.concurrent.*;
 public final class LayoutTileService extends TileService {
     private final ExecutorService worker = Executors.newSingleThreadExecutor();
     private final Handler main = new Handler(Looper.getMainLooper());
-    private boolean busy, listening, destroyed;
+    private final WindowMode.Requests requests = new WindowMode.Requests();
+    private boolean listening, destroyed;
 
     @Override public void onStartListening() { super.onStartListening(); listening = true; request(false); }
     @Override public void onStopListening() { listening = false; super.onStopListening(); }
@@ -34,9 +35,11 @@ public final class LayoutTileService extends TileService {
         tile.updateTile();
     }
     private void request(boolean toggle) {
-        if (busy || destroyed) return;
-        busy = true;
-        show("Window layout", toggle ? "Switching layout…" : "Checking layout…", Tile.STATE_UNAVAILABLE);
+        if (destroyed || !requests.begin(toggle)) return;
+        Tile current = getQsTile();
+        String currentLabel = current != null && current.getLabel() != null ? current.getLabel().toString() : "Window layout";
+        int currentState = current != null && current.getState() == Tile.STATE_ACTIVE ? Tile.STATE_ACTIVE : Tile.STATE_INACTIVE;
+        show(currentLabel, toggle ? "Switching layout…" : "Checking layout…", toggle ? Tile.STATE_UNAVAILABLE : currentState);
         worker.execute(() -> {
             String label = "Root unavailable", detail = "Allow System update in SukiSU";
             int state = Tile.STATE_INACTIVE;
@@ -70,7 +73,10 @@ public final class LayoutTileService extends TileService {
             } finally { if (process != null) process.destroy(); }
             String resultLabel = label, resultDetail = detail;
             int resultState = state;
-            main.post(() -> { busy = false; show(resultLabel, resultDetail, resultState); });
+            main.post(() -> {
+                if (requests.complete() && !destroyed) request(true);
+                else show(resultLabel, resultDetail, resultState);
+            });
         });
     }
     @Override public void onDestroy() {

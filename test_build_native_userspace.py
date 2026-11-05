@@ -32,6 +32,85 @@ def apk_fixture(code):
     return stream.getvalue()
 
 
+class ProductReuseTests(unittest.TestCase):
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory(prefix="native10-reuse-")
+        self.addCleanup(self.temp.cleanup)
+        self.root = Path(self.temp.name)
+        self.donor = self.root / "donor.img"
+        self.donor.write_bytes(b"clean R5 donor")
+        self.source = self.root / "reviewed.img"
+        self.original = b"reviewed Product8 bytes\0" * 1024
+        self.source.write_bytes(self.original)
+        self.recipe = {"schema": 2, "lineage": userspace.r5_userspace.LINEAGE, "sequence": 10,
+                       "images": {part: pin(self.donor) for part in userspace.PARTITIONS},
+                       "files": {"tablet_graft_source": pin(self.donor), "product_reuse": pin(self.source)}}
+        props = (b"ro.product.product.device=erhai\n"
+                 b"ro.product.build.fingerprint=Googlebook/erhai/erhai:17/GBOS/8:user/release-keys\n"
+                 b"ro.product.build.version.incremental=8\n")
+        for mocked in (patch.dict(userspace.r5_userspace.IMAGE_SHAS,
+                                  {part: userspace.sha256(self.donor) for part in userspace.PARTITIONS}),
+                       patch.object(userspace.r5_userspace, "GRAFT_SHA", userspace.sha256(self.donor)),
+                       patch.object(userspace.product_cleanup, "R5_PHOTOS_TARGET_SHA", userspace.sha256(self.source)),
+                       patch.object(userspace.product_cleanup, "content", return_value=props),
+                       patch.object(userspace.native, "scratch_output", side_effect=lambda path: path),
+                       patch.object(userspace, "partition_plan", side_effect=AssertionError("must not repack Product"))):
+            mocked.start()
+            self.addCleanup(mocked.stop)
+
+    def assemble(self):
+        return userspace.assemble_partition("product", self.recipe, {}, self.root, self.root)
+
+    def test_native10_copy_preserves_bytes_and_records_exact_reused_input(self):
+        receipt = self.assemble()
+        target = self.root / "product.img"
+        self.assertEqual(target.read_bytes(), self.original)
+        self.assertEqual(self.source.read_bytes(), self.original)
+        self.assertFalse(target.samefile(self.source))
+        self.assertEqual(receipt["sha256"], userspace.sha256(target))
+        self.assertEqual(receipt["bytes"], len(self.original))
+        self.assertEqual(receipt["reused_from"], self.recipe["files"]["product_reuse"])
+        self.assertFalse(receipt["full_rewrite"])
+        for field in ("changed_paths", "added_paths", "removed_paths"):
+            self.assertEqual(receipt[field], [])
+
+    def test_changed_actual_input_and_symlink_are_rejected_before_output(self):
+        self.source.write_bytes(b"different bytes")
+        with self.assertRaisesRegex(ValueError, "SHA-256 mismatch"):
+            self.assemble()
+        self.assertFalse((self.root / "product.img").exists())
+        self.source.write_bytes(self.original)
+        link = self.root / "linked.img"
+        link.symlink_to(self.source)
+        self.recipe["files"]["product_reuse"]["path"] = str(link)
+        with self.assertRaisesRegex(ValueError, "absolute regular file"):
+            self.assemble()
+        self.assertFalse((self.root / "product.img").exists())
+
+    def test_copy_failure_removes_only_partial_output(self):
+        def fail(source, target):
+            target.write(b"partial")
+            raise OSError("copy failed")
+        with patch.object(userspace.shutil, "copyfileobj", side_effect=fail), self.assertRaisesRegex(OSError, "copy failed"):
+            self.assemble()
+        self.assertFalse((self.root / "product.img").exists())
+        self.assertEqual(self.source.read_bytes(), self.original)
+
+    def test_postcopy_hash_check_removes_corrupt_output(self):
+        with patch.object(userspace.shutil, "copyfileobj", side_effect=lambda source, target: target.write(b"corrupt")), \
+             self.assertRaisesRegex(ValueError, "unchanged reviewed native8"):
+            self.assemble()
+        self.assertFalse((self.root / "product.img").exists())
+        self.assertEqual(self.source.read_bytes(), self.original)
+
+    def test_existing_output_is_never_overwritten_or_deleted(self):
+        target = self.root / "product.img"
+        target.write_bytes(b"preserve existing output")
+        with self.assertRaises(FileExistsError):
+            self.assemble()
+        self.assertEqual(target.read_bytes(), b"preserve existing output")
+
+
 class TextTests(unittest.TestCase):
     def test_pinned_product_followup_uses_physical_cleanup_without_property_changes(self):
         with tempfile.TemporaryDirectory() as directory:

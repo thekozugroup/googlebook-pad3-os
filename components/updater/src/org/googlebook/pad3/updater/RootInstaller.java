@@ -36,6 +36,8 @@ public final class RootInstaller {
     static void guard(UpdateCore.Release release) throws Exception {
         NativeIdentity.requireNative();
         profile.ensureActive();
+        Class.forName("NativeBootControlProbe").getMethod("requireReady", String.class)
+                .invoke(null, SystemProperties.get("ro.boot.slot_suffix"));
         release.validate(System.currentTimeMillis() / 1000);
         Map<String,String> properties = new HashMap<>();
         for (String name : Arrays.asList("ro.googlebook.pad3.native", "ro.googlebook.pad3.device", "ro.googlebook.pad3.base_profile",

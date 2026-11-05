@@ -28,6 +28,38 @@ distinct from manufacturer certification; see GOOGLE_SERVICES.md. General
 release and security-sensitive app compatibility remain unqualified.
 See MAINTAINING.md for the portable workflow and PRIVACY_AUDIT.md for audit scope.
 
+Full native phone integration is still a release blocker. The unsupported AVF
+attestation-provider hang has a source correction and passed reboot checks.
+The maintainer's existing rooted compatibility setup now establishes the secure
+companion channel and passes the native phone-app chooser, AV1 AppCast video,
+remote `7+5=12` and cold-launch `5+6=11`, without an explicit diagnostic service
+start. Native Ambient four-flag anonymous source-0 publication, real client commit,
+cold restart and overnight persistence passed. The deployed two-flag
+receiver-settings profile exposes the native Notifications switch; off/on passed
+and the original on state was restored. Tablet role 2 and phone-only source
+controls are preserved. Text/PNG file roundtrips and thumbnail checks passed;
+test files and temporary phone-file probes were removed.
+
+Native Chrome task handoff also passed end to end: the phone advertised the task,
+a native badged taskbar click produced a correlated request/result and local
+Chrome launch, and the local URL matched the exact test page including its
+fragment. This qualifies the tested Chrome URL restoration. Handoff requires
+opt-in apps; arbitrary apps remain unqualified. Both test tabs were removed and
+the original phone tab preserved. Fresh server sync, reboot persistence and general file/media sync
+remain unqualified. Qualcomm provisioning remains unrepaired;
+rooted-module compatibility does not establish genuine factory trust or Strong
+Integrity. The module correction and native config helper have source recipes;
+no distributed OTA containing them is claimed. See GOOGLE_SERVICES.md and
+qa/PHONE_INTEGRATION.md for the measured scope. These checks do not establish a
+general stable release.
+
+Private native9 includes the AVF correction and a layout-tile race fix. Its
+owner update preserved all 347 existing package UIDs and both accounts, matched
+all 15 live partition hashes, and completed snapshot merging on successful slot
+A. The actual Quick Settings tile passed 20 rapid-tap, panel-collapse/reopen and
+repeated-tap trials. These finite checks do not qualify full phone integration
+or repeat every prior hardware test. The public binary feed remains native3.
+
 A 66.77-second native3 baseline showed about 5.5 GiB available RAM, 4.62% aggregate CPU load, 2.31 GiB occupied zRAM slots using about 778 MiB actual RAM, zero swap-outs and negligible memory-pressure stalls. No tuning was justified. This is a short baseline, not a heavy-load or battery benchmark.
 
 Google's recovery catalog lists mica R2/build 16560795. On October 29 the maintainer acquired and verified the signed R2-to-R5 ARM incremental OTA targeting CL3B.260622.276.R5/build 16693588 with the October 1 patch. Native5 preserved accounts/apps and completed a 15-minute probe with one Diagnostics crash. Native6 addresses the missing laptop vendor service; it installed, booted and matched all 15 live image hashes, with root and SELinux enforcing. Native6 passed five-section Diagnostics startup checks; its finite probe had no new crashes but one ADB-unavailable sample. Native8 combines remaining metric corrections with Photos-only framework compatibility. It installed without a reset, booted, matched all 15 live targets, and passed installed framework scope probes. Photos and all five Diagnostics sections passed owner-device checks, the old Photos module is removed, and a three-minute probe captured no errors or new crashes. Diagnostics still needs its scoped adapter; factory hardware routines remain limited. See PUBLIC_RELEASE.md for coverage and limitations. No stable or new public binary release is claimed; the public feed stays native3. Never apply the laptop OTA directly to tablet firmware.

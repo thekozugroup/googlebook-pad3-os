@@ -57,6 +57,14 @@ def validate_lineage(recipe):
     require(isinstance(recipe["files"]["tablet_graft_source"], dict)
             and recipe["files"]["tablet_graft_source"].get("sha256") == GRAFT_SHA,
             "schema 2 requires the immutable V10 tablet graft source")
+    if recipe["sequence"] == 10:
+        reuse = recipe["files"].get("product_reuse")
+        require(recipe.get("schema") == 2 and type(recipe["sequence"]) is int
+                and isinstance(reuse, dict) and set(reuse) == {"path", "sha256"}
+                and reuse["sha256"] == product_cleanup.R5_PHOTOS_TARGET_SHA,
+                "native10 requires the exact reviewed native8 Product reuse pin")
+    else:
+        require("product_reuse" not in recipe["files"], "Product reuse requires R5 native10")
 
 
 def production_init(data):

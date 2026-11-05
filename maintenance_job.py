@@ -89,7 +89,7 @@ def materialize(value, roots, pins):
 def reviewed_recipe(recipe, profile):
     from native_install import r5_userspace
     require(profile == r5_userspace.LINEAGE and recipe.get("schema") == 2
-            and type(recipe.get("sequence")) is int and 5 <= recipe["sequence"] <= 8,
+            and type(recipe.get("sequence")) is int and recipe["sequence"] in (5, 6, 7, 8, 10),
             "unreviewed profile or sequence; source adaptation requires review")
     r5_userspace.validate_lineage(recipe)
 
@@ -97,8 +97,10 @@ def reviewed_recipe(recipe, profile):
 def reviewed_product(sha256, sequence):
     from native_install import product_cleanup
     products = {5: product_cleanup.R5_TARGET_SHA, 6: product_cleanup.R5_DIAGNOSTICS_TARGET_SHA,
-                7: product_cleanup.R5_METRICS_TARGET_SHA, 8: product_cleanup.R5_PHOTOS_TARGET_SHA}
-    require(sha256 == products[sequence], "unreviewed Product hash requires review")
+                7: product_cleanup.R5_METRICS_TARGET_SHA, 8: product_cleanup.R5_PHOTOS_TARGET_SHA,
+                10: product_cleanup.R5_PHOTOS_TARGET_SHA}
+    require(type(sequence) is int and sequence in products and sha256 == products[sequence],
+            "unreviewed Product hash or sequence requires review")
 
 
 def prepare(job_path, job_sha256, roots):

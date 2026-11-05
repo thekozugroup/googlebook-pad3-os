@@ -38,6 +38,7 @@ validate_candidate.py UpdateDsuImages.java VerifyDsuImages.java
 test_android_disk.py test_bootanimation_geometry.py test_build_dsu_diagnostic.py
 test_build_native_rom.py test_build_oplus_pen.py test_build_pen_dsu.py test_build_updater.py test_build_face_overlay.py test_check_sukisu_layout.py
 test_build_native_userspace.py test_native_r5_userspace.py test_initial_install.py test_engine_libraries.py test_source_copy.py
+test_product_cleanup.py
 test_patch_taskmanager.py
 test_check_updates.py test_cold_build_dsu.py test_desktop_repair_gate.py
 test_erofs_overlay.py test_erofs_sanitize.py test_flash_test.py test_pen_policy.py test_port_changes.py
@@ -89,7 +90,7 @@ avb.py fstab.py layout.py payload.py public_image.py product_cleanup.py r5_users
 patch_sukisu_module.py
 donor-extractor/README.md donor-extractor/LICENSE donor-extractor/source-lock.json donor-extractor/native-lz4.patch
 source-pins.json sukisu-layout-baseline.json plan.example.json tools.example.json
-review.example.json bootcontrol/build_probe.py bootcontrol/NativeBootControlProbe.java
+review.example.json bootcontrol/build_probe.py bootcontrol/NativeBootControlProbe.java bootcontrol/NativeBootControlDecisionTest.java
 plan.schema.json review.schema.json slot-state.example.json slot-state.schema.json
 bootcontrol/aidl/android/hardware/boot/IBootControl.aidl
 bootcontrol/aidl/android/hardware/boot/MergeStatus.aidl
@@ -110,6 +111,10 @@ src/org/googlebook/pad3/updater/UpdateService.java
 src/org/googlebook/pad3/updater/WindowMode.java
 src/org/googlebook/pad3/updater/RootWindowMode.java
 src/org/googlebook/pad3/updater/LayoutTileService.java
+src/org/googlebook/pad3/updater/PhoneBootReceiver.java
+src/org/googlebook/pad3/updater/PhoneCompatibilityJob.java
+src/org/googlebook/pad3/updater/RootPhoneCompatibility.java
+tests/PhoneCompatibilityTest.java
 tests/WindowModeTest.java
 tests/FeedOrderTest.java tests/UpdateCoreTest.java tests/ProducerConsumerTest.java tests/ManifestCodecTest.java
 """.split()
@@ -146,6 +151,15 @@ src/com/android/internal/util/googlebook/PhotosCompat.java
 tests/PhotosCompatSelfTest.java build-support/GraftFramework.java
 device-test/PhotosNativeProbe.java
 """.split()
+TRICKYSTORE_IDENTITY_FILES = """
+README.md build.py BuildIdentityPatch.java
+src/org/googlebook/pad3/compat/SystemIdentityAppId.java
+tests/SystemIdentityAppIdTest.java tests/test_build.py
+""".split()
+PHONE_FEATURE_FILES = """
+README.md build.py NativeConfigRepair.java
+tests/FeatureConfigBoundaryTest.java tests/test_build.py
+""".split()
 ALLOWLIST = tuple(sorted(ROOT_FILES + [COMPONENT + n for n in COMPONENT_FILES]
                          + [COMPONENT + "upstream/" + n for n in UPSTREAM_FILES]
                          + [PROFILE + n for n in PROFILE_FILES]
@@ -156,12 +170,15 @@ ALLOWLIST = tuple(sorted(ROOT_FILES + [COMPONENT + n for n in COMPONENT_FILES]
                          + ["components/photos-spoof/" + n for n in PHOTOS_FILES]
                          + ["components/diagnostics-compat/" + n for n in DIAGNOSTICS_FILES]
                          + ["components/photos-native/" + n for n in PHOTOS_NATIVE_FILES]
+                         + ["components/trickystore-system-identity/" + n for n in TRICKYSTORE_IDENTITY_FILES]
+                         + ["components/phone-feature-config/" + n for n in PHONE_FEATURE_FILES]
                          + ["maintenance/upstream.json", "maintenance/job.example.json"]
                          + [".github/workflows/" + n for n in ("source-checks.yml", "upstream-watch.yml", "native-maintenance.yml")]
-                         + ["qa/serve_probe.py", "qa/test_serve_probe.py", "qa/tablet-probe.html"]))
+                         + ["qa/serve_probe.py", "qa/test_serve_probe.py", "qa/tablet-probe.html",
+                            "qa/PhoneFileRoundtrip.java", "qa/PHONE_INTEGRATION.md"]))
 JSON_TRANSFORMS = {COMPONENT + n for n in ("toolchain.json", "donor-inputs.json", "integration/requirements.json")} | {
     "components/updater/toolchain.json", "native_install/tools.example.json", "native_install/plan.example.json"}
-INTEGRATION_DIRS = ("native_install", "components/oplus-pen", "components/updater", "components/face-preview-overlay", "components/taskmanager-compat", "components/photos-spoof", "components/photos-native", "components/diagnostics-compat")
+INTEGRATION_DIRS = ("native_install", "components/oplus-pen", "components/updater", "components/face-preview-overlay", "components/taskmanager-compat", "components/photos-spoof", "components/photos-native", "components/diagnostics-compat", "components/trickystore-system-identity", "components/phone-feature-config")
 ANNOUNCED_BUILDERS = ("build_face_overlay.py", "patch_taskmanager.py", "build_native_userspace.py")
 ANNOUNCED_TESTS = ("test_build_face_overlay.py", "test_patch_taskmanager.py", "test_build_native_userspace.py")
 PRIVATE_CAPTURE = "native_install/capture-manifest.json"
@@ -389,7 +406,7 @@ Do not substitute the laptop updater for the captured Android native service.
 Never bypass strict policy checks or treat a successful offline build as proof
 of boot, recovery, manager recognition, OTA success, migration or rollback.
 
-The boot-control getter probe is source-only here; see bootcontrol/README.md.
+The updater embeds a read-only BootControl readiness check; see bootcontrol/README.md.
 Keep all probe output and native device evidence out of the public source tree.
 """,
     "native_install/bootcontrol/README.md": """# Boot-control getter probe source
@@ -398,6 +415,11 @@ The Java probe, build helper and frozen AOSP boot AIDL sources are included.
 No compiled DEX/JAR or device capture is exported. The source checks the frozen
 getter transaction declarations and packages the getter probe only. Inspect the
 retained AIDL license headers and review the parent native instructions.
+
+The updater also compiles this source into its APK. Before applying an OTA it
+requires the current slot to be bootable, successful and active, with no merge
+or pending switch. The check uses only frozen getters and a five-second deadline.
+`NativeBootControlDecisionTest` covers rejected slot/merge states on the host.
 
 Use an existing SDK through `ANDROID_HOME` and an existing JDK through `JAVA_HOME`.
 From the checkout root, use `python3 -B -m native_install.bootcontrol.build_probe
@@ -472,13 +494,26 @@ recognition and user setup. Host tests do not establish an Android runtime pass.
 """,
     "components/updater/README.md": """# Native updater source
 
-Version 1.3 (code 4) adds a Window layout Quick Settings tile: Tablet layout sets
+Version 1.5 (code 6) retains the Window layout Quick Settings tile: Tablet layout sets
 internal display 0's default to fullscreen; Desktop layout selects freeform.
 Existing windows may retain their layout. Physical tablet posture remains
 independent, and external displays are untouched. Add the tile through Edit.
 It reuses the owner's System update SukiSU grant and verifies native boot,
 current-user ownership, enforcing ksu context and the canonical system APK.
 Only fixed display 0 commands run, with readback; no polling service is added.
+
+After user unlock at boot or replacement of this updater, a bounded JobService
+checks the two pinned native GMS feature profiles. NativeConfigRepair is compiled
+into the built-in APK. Correct existing overrides are reused without duplicate
+rows or states; unknown or conflicting state fails closed. The existing corrected
+TrickyStore module and targets remain in shared userdata and are verified only;
+no keybox is read or shipped. The job reuses the owner's existing root grant.
+Cancellation closes the root caller pipe and stops its child; cancelled work
+does not replace saved results. Configuration checks do not prove live pairing.
+
+The installer also checks the frozen read-only BootControl getters before apply:
+the current slot must be successful and active, with no snapshot merge or pending
+slot switch. This check contains no BootControl setter.
 
 The source, compile-only Android API declarations, host tests, manifest, donor API
 pins and integration requirements are included. No APK or release key is copied.

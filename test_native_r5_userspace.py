@@ -33,6 +33,16 @@ def recipe():
     return value
 
 
+def native10_recipe():
+    value = recipe()
+    value["sequence"] = 10
+    value["files"].update({name: {"path": "/inputs/" + name, "sha256": "0" * 64}
+                           for name in userspace.DIAGNOSTICS_INPUTS | userspace.PHOTOS_INPUTS})
+    value["files"]["product_reuse"] = {"path": "/inputs/product8.img",
+                                      "sha256": userspace.product_cleanup.R5_PHOTOS_TARGET_SHA}
+    return value
+
+
 class LineageTests(unittest.TestCase):
     def load(self, value):
         with tempfile.TemporaryDirectory() as directory:
@@ -52,6 +62,39 @@ class LineageTests(unittest.TestCase):
             del (bad if field == "lineage" else bad["files"])[field]
             with self.subTest(field=field), self.assertRaisesRegex(ValueError, "unexpected|missing"):
                 self.load(bad)
+
+    def test_native10_requires_explicit_reviewed_product_reuse(self):
+        value = native10_recipe()
+        with patch.object(userspace.native, "checked", side_effect=lambda pin: Path(pin["path"])), \
+             patch.object(userspace.native, "image_kind", return_value="erofs"):
+            loaded, inputs = self.load(value)
+        self.assertEqual(loaded, value)
+        self.assertEqual(inputs["files"]["product_reuse"], Path("/inputs/product8.img"))
+
+    def test_reuse_rejects_wrong_hash_lineage_sequence_schema_and_arbitrary_paths(self):
+        values = []
+        for field, replacement in (("lineage", "unreviewed"), ("sequence", 5), ("sequence", 8),
+                                   ("sequence", 9), ("sequence", 11), ("sequence", 10.0), ("schema", 1)):
+            bad = native10_recipe()
+            bad[field] = replacement
+            values.append(bad)
+        for change in ("missing", "wrong_hash", "extra_file", "extra_pin_field", "extra_top_level"):
+            bad = native10_recipe()
+            if change == "missing":
+                del bad["files"]["product_reuse"]
+            elif change == "wrong_hash":
+                bad["files"]["product_reuse"]["sha256"] = r5.IMAGE_SHAS["product"]
+            elif change == "extra_file":
+                bad["files"]["arbitrary_path"] = dict(bad["files"]["product_reuse"])
+            elif change == "extra_pin_field":
+                bad["files"]["product_reuse"]["arbitrary_path"] = "/inputs/other.img"
+            else:
+                bad["arbitrary_path"] = "/inputs/other.img"
+            values.append(bad)
+        with patch.object(userspace.native, "checked", side_effect=AssertionError("must reject before input reads")):
+            for bad in values:
+                with self.subTest(recipe=bad), self.assertRaises(ValueError):
+                    self.load(bad)
 
     def test_wrong_lineage_image_or_graft_pin_fails_before_file_reads(self):
         values = []
@@ -115,13 +158,14 @@ class FunctionalTests(unittest.TestCase):
                 r5.production_init(bad)
 
     def test_properties_compose_tablet_display_heap_and_native_identity(self):
-        props = {"system": b"trusty.security_vm.enabled=0\nro.secure=1\nservice.adb.listen_addrs=tcp:localhost:5555\n",
+        props = {"system": b"trusty.security_vm.enabled=0\navf.remote_attestation.enabled=0\nro.secure=1\nservice.adb.listen_addrs=tcp:localhost:5555\n",
                  "system_ext": b"ro.sf.lcd_density=420\n", "product": b"other=yes\n"}
         functional = port.display_heap_properties(props)
         result = userspace.native_properties(functional, "system", 5, 1793301598)
         for name, value in (port.DISPLAY_PROPERTIES | port.HEAP_PROPERTIES).items():
             self.assertEqual(result.count((name + "=" + value + "\n").encode()), 1)
         self.assertIn(b"trusty.security_vm.enabled=0\n", result)
+        self.assertIn(b"avf.remote_attestation.enabled=0\n", result)
         self.assertIn(b"Googlebook/erhai/erhai:17/GBOS/5:user/release-keys", result)
         self.assertNotIn(b"service.adb.listen_addrs", result)
         for part in props:

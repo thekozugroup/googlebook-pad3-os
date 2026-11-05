@@ -1,6 +1,8 @@
 {
   "schema": 1,
   "donor": "mica 16560795",
+  "verification_image": "artifacts/private/upstream/mica-r5/images/system.img",
+  "verification_image_sha256": "9cfaeb99137407f7a995e91cdac3e0ce27c6ef2891297445e6dbbc2e88d363d3",
   "framework_sha256": "18419dba5cd7bc48e67c5ace4c162a817ef9126ea628276def8ff5535a51ce49",
   "engine_sha256": "337865c0f96ec45df79141933a9cc432330d8d3dfdd9974ac5ddd295ab1d32a2",
   "methods": [

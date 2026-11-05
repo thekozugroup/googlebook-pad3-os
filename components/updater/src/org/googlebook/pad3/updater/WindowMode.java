@@ -2,6 +2,25 @@ package org.googlebook.pad3.updater;
 
 /** Exact internal-display protocol; no caller-supplied shell commands or display IDs. */
 final class WindowMode {
+    static final class Requests {
+        private boolean busy, switching, queued;
+        boolean begin(boolean toggle) {
+            if (busy) {
+                if (toggle && !switching) queued = true;
+                return false;
+            }
+            busy = true;
+            switching = toggle;
+            return true;
+        }
+        boolean complete() {
+            busy = false;
+            switching = false;
+            boolean next = queued;
+            queued = false;
+            return next;
+        }
+    }
     static int requestedUid(String[] args) throws Exception {
         UpdateCore.require(args.length == 2 && (args[0].equals("status") || args[0].equals("toggle"))
                 && args[1].matches("[0-9]{1,10}"), "Unknown layout operation/UID");

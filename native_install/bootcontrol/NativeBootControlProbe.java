@@ -24,6 +24,33 @@ public final class NativeBootControlProbe {
         }
     }
 
+    static void guardReady(int active, int current, int count, int merge, boolean bootable, boolean successful, String suffix) {
+        int expected = "_a".equals(suffix) ? 0 : "_b".equals(suffix) ? 1 : -1;
+        if (expected < 0 || count != 2 || current != expected || active != current || merge != 0 || !bootable || !successful)
+            throw new IllegalStateException("BootControl requires a successful current slot, no pending switch and no snapshot merge");
+    }
+
+    public static void requireReady(String suffix) throws Exception {
+        java.util.concurrent.FutureTask<Void> check = new java.util.concurrent.FutureTask<>(() -> { ready(suffix); return null; });
+        Thread worker = new Thread(check, "BootControlReadOnly"); worker.setDaemon(true); worker.start();
+        try { check.get(5, java.util.concurrent.TimeUnit.SECONDS); }
+        finally { check.cancel(true); }
+    }
+
+    private static void ready(String suffix) throws Exception {
+        IBinder service = (IBinder) Class.forName("android.os.ServiceManager")
+                .getMethod("checkService", String.class).invoke(null, SERVICE);
+        if (service == null || !DESCRIPTOR.equals(service.getInterfaceDescriptor()))
+            throw new IllegalStateException("AIDL BootControl service unavailable or wrong descriptor");
+        int active = (Integer) read(service, 1, null, false);
+        int current = (Integer) read(service, 2, null, false);
+        int count = (Integer) read(service, 3, null, false);
+        int merge = (Integer) read(service, 4, null, false);
+        if (current < 0 || current >= 2) throw new IllegalStateException("Unreviewed current boot slot");
+        guardReady(active, current, count, merge, ((Integer) read(service, 6, current, false)) == 1,
+                ((Integer) read(service, 7, current, false)) == 1, suffix);
+    }
+
     public static void main(String[] arguments) throws Exception {
         if (arguments.length != 0) throw new IllegalArgumentException("No arguments accepted");
         IBinder service = (IBinder) Class.forName("android.os.ServiceManager")

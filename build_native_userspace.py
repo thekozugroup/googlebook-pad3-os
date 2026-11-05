@@ -14,6 +14,7 @@ Sequence 7 and later also require files.diagnostics_compat and its source-bound
 diagnostics_compat_verification receipt for the exact Diagnostics-only adapter.
 Sequence 8 and later require the Photos-only framework and coherent boot bundle,
 each with a source/candidate-bound verification receipt.
+R5 sequence 10 requires files.product_reuse, the exact reviewed native8 Product.
 Supply JAVA_HOME for the installed apksigner. Trust files come from the parent's
 trust_overlay call; components and the one-shot shell service are reviewed inputs.
 """
@@ -215,10 +216,12 @@ def load_recipe(path):
     require(type(recipe["sequence"]) is int and recipe["sequence"] > 0
             and type(recipe["timestamp"]) is int and 1792932356 <= recipe["timestamp"] < 2**63,
             "invalid release sequence/timestamp")
+    require(recipe["sequence"] != 10 or clean, "native10 Product reuse requires R5 schema 2")
     require(set(recipe["images"]) == set(PARTITIONS)
             and set(recipe["files"]) == FILE_INPUTS | ({"tablet_graft_source"} if clean else set())
                 | (DIAGNOSTICS_INPUTS if recipe["sequence"] >= 7 else set())
                 | (PHOTOS_INPUTS if recipe["sequence"] >= 8 else set())
+                | ({"product_reuse"} if recipe["sequence"] == 10 else set())
             and set(recipe["trust"]) == set(TRUST_PATHS), "missing or unexpected pinned inputs")
     if clean:
         r5_userspace.validate_lineage(recipe)
@@ -574,6 +577,26 @@ def partition_plan(image, partition, recipe, inputs):
 def assemble_partition(partition, recipe, inputs, output, scratch):
     image = native.checked(recipe["images"][partition])
     final = native.scratch_output(Path(output) / (partition + ".img"))
+    if partition == "product" and recipe.get("sequence") == 10:
+        r5_userspace.validate_lineage(recipe)
+        reuse = recipe["files"]["product_reuse"]
+        source = native.checked(reuse)
+        product_cleanup.validate_release(source, sequence=10)
+        created = False
+        try:
+            with final.open("xb") as target:
+                created = True
+                with source.open("rb") as stream:
+                    shutil.copyfileobj(stream, target)
+            product_cleanup.validate_release(final, sequence=10)
+            native.checked(reuse)
+            return {"path": str(final), "sha256": reuse["sha256"], "bytes": final.stat().st_size,
+                    "base_sha256": recipe["images"][partition]["sha256"], "reused_from": dict(reuse),
+                    "full_rewrite": False, "changed_paths": [], "added_paths": [], "removed_paths": []}
+        except BaseException:
+            if created:
+                final.unlink(missing_ok=True)
+            raise
     if recipe.get("schema", 1) == 1 and partition == "product" and sha256(image) == product_cleanup.SOURCE_SHA:
         # Keep the audited Product baseline's other files byte-identical for delta updates.
         result = product_cleanup.build(image, final, scratch)

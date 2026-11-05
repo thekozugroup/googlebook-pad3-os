@@ -302,6 +302,9 @@ def tablet_changes(images):
     system["/system/build.prop"] = replace_property(
         content(images["system"], "/system/build.prop"),
         "trusty.security_vm.enabled", "0", expected="1")
+    # AVF's Trusty provider is absent; let RKPD continue with the tablet's QTI provider.
+    system["/system/build.prop"] = replace_property(
+        system["/system/build.prop"], "avf.remote_attestation.enabled", "0")
     # Retain the desktop UI and headless-user design. Match the tablet's native DPI.
     extension["/etc/build.prop"] = replace_property(
         content(images["system_ext"], "/etc/build.prop"), "ro.sf.lcd_density", "420")

@@ -2,6 +2,7 @@
 import argparse
 from pathlib import Path
 
+from erofs_overlay import content
 from erofs_sanitize import rewrite
 from native_install.payload import require, sha256
 
@@ -23,9 +24,20 @@ def validate(source, target):
     require(sha256(target) == TARGET_SHA, "Product cleanup target differs from the reviewed three-APK removal")
 
 
-def validate_release(target, source=None):
-    """Accept only audited native3/4 through native8 Product and exact delta baselines."""
+def validate_release(target, source=None, *, sequence=None):
+    """Accept reviewed historical deltas or unchanged native8 Product for native10."""
     target_sha = sha256(target)
+    if sequence == 10:
+        require(type(sequence) is int and source is None and target_sha == R5_PHOTOS_TARGET_SHA,
+                "native10 requires unchanged reviewed native8 Product")
+        expected = {"ro.product.product.device": "erhai",
+                    "ro.product.build.fingerprint": "Googlebook/erhai/erhai:17/GBOS/8:user/release-keys",
+                    "ro.product.build.version.incremental": "8"}
+        lines = content(target, "/etc/build.prop").decode().splitlines()
+        for key, value in expected.items():
+            values = [line.partition("=")[2].strip() for line in lines if line.partition("=")[0].strip() == key]
+            require(values == [value], "native10 reused Product metadata mismatch: " + key)
+        return
     require(target_sha in {TARGET_SHA, R5_TARGET_SHA, R5_DIAGNOSTICS_TARGET_SHA, R5_METRICS_TARGET_SHA, R5_PHOTOS_TARGET_SHA},
             "Product must contain a reviewed physical Dell APK removal")
     if source is not None:

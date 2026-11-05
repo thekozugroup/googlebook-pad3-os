@@ -17,6 +17,7 @@ public final class MainActivity extends Activity {
     private void command(String action) { startForegroundService(new Intent(this, UpdateService.class).setAction(action)); }
     @Override public void onCreate(Bundle state) {
         super.onCreate(state);
+        PhoneCompatibilityJob.schedule(this);
         LinearLayout body = new LinearLayout(this); body.setOrientation(LinearLayout.VERTICAL);
         int padding = (int)(24 * getResources().getDisplayMetrics().density); body.setPadding(padding, padding, padding, padding);
         body.setOnApplyWindowInsetsListener((view, insets) -> {

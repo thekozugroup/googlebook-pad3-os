@@ -77,5 +77,5 @@ Do not substitute the laptop updater for the captured Android native service.
 Never bypass strict policy checks or treat a successful offline build as proof
 of boot, recovery, manager recognition, OTA success, migration or rollback.
 
-The boot-control getter probe is source-only here; see bootcontrol/README.md.
+The updater embeds a read-only BootControl readiness check; see bootcontrol/README.md.
 Keep all probe output and native device evidence out of the public source tree.

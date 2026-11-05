@@ -31,6 +31,12 @@ jobs:
           test_build_photos_native test_build_photos_boot
           test_build_native_userspace test_build_native_rom
           test_diagnostics_compat test_export_public
+      - name: Check phone-integration build boundaries
+        env:
+          TMPDIR: ${{ runner.temp }}
+        run: |
+          python3 -B -m unittest discover -s components/trickystore-system-identity/tests -p test_build.py
+          python3 -B -m unittest discover -s components/phone-feature-config/tests -p test_build.py
       - name: Summarize without raw logs or private artifacts
         if: always()
         run: |

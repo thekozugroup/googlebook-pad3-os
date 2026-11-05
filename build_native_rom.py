@@ -284,7 +284,8 @@ def validate_plan(plan, certificate, tools):
     root_image = check_root_images(hardware, images, copies)
     from native_install import product_cleanup
     product_cleanup.validate_release(images["product"],
-                                    None if "product" in copies else checked(tools["product_source"]))
+                                    None if "product" in copies else checked(tools["product_source"]),
+                                    sequence=plan["sequence"])
     for name in HARDWARE - {"init_boot", "vendor_boot", "recovery", "vbmeta", "vbmeta_system", "vbmeta_vendor"}:
         require(sha256(images[name]) == sha256(hardware[name]), "mismatched hardware base: " + name)
     for name, image in images.items():

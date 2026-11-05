@@ -15,6 +15,7 @@ import zipfile
 sys.dont_write_bytecode = True
 ROOT = Path(__file__).resolve().parent
 COMPONENT = ROOT / "components/updater"
+PHONE_COMPONENT = ROOT / "components/phone-feature-config"
 OUTPUT = ROOT / "artifacts/component-candidates/Pad3Updater-unsigned.apk"
 FEED = "https://raw.githubusercontent.com/thekozugroup/googlebook-pad3-os/refs/heads/main/updates/erhai/stable.json"
 
@@ -100,8 +101,11 @@ def build(work, key_path=None, feed=FEED, output=None):
     directory = work / "updater-build"
     require(not directory.exists(), "build output already exists; preserve/review before rebuilding")
     directory.mkdir()
-    canonical_sources = sorted([p for p in COMPONENT.rglob("*") if p.is_file() and p.suffix in (".java", ".json", ".xml", ".te", ".txt")] +
-                               [ROOT / "build_updater.py", ROOT / "test_build_updater.py"])
+    canonical_sources = sorted([p for base in (COMPONENT, PHONE_COMPONENT) for p in base.rglob("*")
+                                if p.is_file() and p.suffix in (".java", ".json", ".xml", ".te", ".txt")] +
+                               [ROOT / "build_updater.py", ROOT / "test_build_updater.py",
+                                ROOT / "native_install/bootcontrol/NativeBootControlProbe.java",
+                                ROOT / "native_install/bootcontrol/NativeBootControlDecisionTest.java"])
     source_hashes = {str(path.relative_to(ROOT)): sha256(path) for path in canonical_sources}
     for name in ("tmp", "host-tests", "stubs", "classes", "dex", "assets", "generated/org/googlebook/pad3/updater"):
         (directory / name).mkdir(parents=True)
@@ -142,17 +146,27 @@ def build(work, key_path=None, feed=FEED, output=None):
     # Bind compile-only API declarations to the exact inspected donor, without shipping donor code.
     api = json.loads((COMPONENT / "donor-api.json").read_text())
     image = Path(os.environ.get("GOOGLEBOOK_INPUTS", "build-inputs")) / "donor-images/system_a.img"
-    pins = json.loads((ROOT / "inputs.json").read_text())
-    require(sha256(image) == pins["donor"]["partitions"]["system_a"], "donor image drift")
+    require(sha256(image) == api["verification_image_sha256"], "donor image drift")
     framework = directory / "framework.jar"
     with framework.open("xb") as out:
         extraction = subprocess.run(["dump.erofs", "--cat", "--path=/system/framework/framework.jar", str(image)], stdout=out, stderr=subprocess.PIPE)
     require(extraction.returncode == 0 and sha256(framework) == api["framework_sha256"], "inspected donor API drift")
     stubs = sorted((COMPONENT / "build-support").rglob("*.java"))
     run([javac, "--release", "17", "-cp", tools["android_jar"], "-d", directory / "stubs", *stubs], env, directory, commands)
-    sources = sorted((COMPONENT / "src").rglob("*.java")) + sorted((directory / "generated").rglob("*.java"))
+    sources = sorted((COMPONENT / "src").rglob("*.java")) + sorted((directory / "generated").rglob("*.java")) + [
+        PHONE_COMPONENT / "NativeConfigRepair.java", ROOT / "native_install/bootcontrol/NativeBootControlProbe.java"]
     run([javac, "--release", "17", "-cp", str(directory / "stubs") + os.pathsep + tools["android_jar"],
          "-d", directory / "classes", *sources], env, directory, commands)
+    phone_classpath = os.pathsep.join((str(directory / "classes"), str(directory / "stubs"), tools["android_jar"], str(tests)))
+    run([javac, "--release", "17", "-cp", phone_classpath, "-d", tests,
+         COMPONENT / "tests/PhoneCompatibilityTest.java", PHONE_COMPONENT / "tests/FeatureConfigBoundaryTest.java",
+         ROOT / "native_install/bootcontrol/NativeBootControlDecisionTest.java"], env, directory, commands)
+    for test, marker in (("org.googlebook.pad3.updater.PhoneCompatibilityTest", "PHONE_COMPATIBILITY_CHECKS_PASSED="),
+                         ("FeatureConfigBoundaryTest", "FEATURE_CONFIG_BOUNDARIES_PASS checks="),
+                         ("NativeBootControlDecisionTest", "BOOT_CONTROL_DECISION_CHECKS_PASSED=")):
+        phone_result = run([java, "-cp", phone_classpath, test], env, directory, commands)
+        require(marker in phone_result, "phone compatibility boundary checks did not complete")
+        result += "; " + phone_result.strip()
     for name in ("stubs", "classes"):
         with zipfile.ZipFile(directory / (name + ".jar"), "w", zipfile.ZIP_DEFLATED) as archive:
             for path in sorted((directory / name).rglob("*.class")):
@@ -194,7 +208,8 @@ def build(work, key_path=None, feed=FEED, output=None):
                   artifact={"path": str(output), "bytes": output.stat().st_size, "sha256": sha256(output), "signed": False},
                   build={"sdk": "37.2", "build_tools": "36.0.0", "jdk": lock["java_version"], "host_tests": result.strip() + "; " + parser_result.strip(),
                          "apk_classes": len(declarations), "compile_stubs_packaged": False, "settings_intent_verified": True,
-                         "donor_framework_sha256": api["framework_sha256"], "feed": feed, "no_gradle_androidx_or_new_dependencies": True},
+                         "donor_framework_sha256": api["framework_sha256"], "feed": feed, "no_gradle_androidx_or_new_dependencies": True,
+                         "phone_config_helper_embedded": True, "phone_boot_job": "bounded_after_user_unlock"},
                   source_sha256=source_hashes)
     report_path.write_text(json.dumps(report, indent=2) + "\n")
     return report

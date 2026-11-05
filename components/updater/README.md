@@ -1,12 +1,25 @@
 # Native updater source
 
-Version 1.3 (code 4) adds a Window layout Quick Settings tile: Tablet layout sets
+Version 1.5 (code 6) retains the Window layout Quick Settings tile: Tablet layout sets
 internal display 0's default to fullscreen; Desktop layout selects freeform.
 Existing windows may retain their layout. Physical tablet posture remains
 independent, and external displays are untouched. Add the tile through Edit.
 It reuses the owner's System update SukiSU grant and verifies native boot,
 current-user ownership, enforcing ksu context and the canonical system APK.
 Only fixed display 0 commands run, with readback; no polling service is added.
+
+After user unlock at boot or replacement of this updater, a bounded JobService
+checks the two pinned native GMS feature profiles. NativeConfigRepair is compiled
+into the built-in APK. Correct existing overrides are reused without duplicate
+rows or states; unknown or conflicting state fails closed. The existing corrected
+TrickyStore module and targets remain in shared userdata and are verified only;
+no keybox is read or shipped. The job reuses the owner's existing root grant.
+Cancellation closes the root caller pipe and stops its child; cancelled work
+does not replace saved results. Configuration checks do not prove live pairing.
+
+The installer also checks the frozen read-only BootControl getters before apply:
+the current slot must be successful and active, with no snapshot merge or pending
+slot switch. This check contains no BootControl setter.
 
 The source, compile-only Android API declarations, host tests, manifest, donor API
 pins and integration requirements are included. No APK or release key is copied.

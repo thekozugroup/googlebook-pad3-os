@@ -1,0 +1,72 @@
+{
+  "automatic_build_or_install": false,
+  "coverage": "Google full recovery catalog, latest public OTA index page and pinned source branches; rollout-only or older index records can be missed.",
+  "errors": [],
+  "incremental_otas": [
+    {
+      "new_url": true,
+      "record": "https://otachecker.com/ota/2927",
+      "source_fingerprint": "Dell/mica/mica:17/CL3B.260622.276.R5/16693588:user/release-keys",
+      "trust": "discovery_only_not_signature_verified",
+      "url": "https://ota.googlezip.net/packages/ota-api/package/ce9b569334fea5087a89bc1965b7c2e4714af31f.zip"
+    }
+  ],
+  "recoveries": [
+    {
+      "build": "16693588",
+      "changed_fields": [
+        "build",
+        "url",
+        "published",
+        "zip_md5",
+        "version"
+      ],
+      "compatibility": "not_assessed",
+      "device": "mica",
+      "newer_than_reviewed_donor": false,
+      "published": "2026-11-06",
+      "relation": "newer_build",
+      "url": "https://dl.google.com/device/recovery/mica-user/16693588/recovery.zip",
+      "version": "CL3B.260622.276.R5",
+      "zip_md5": "47a9db285a6604653424f90af3943295"
+    }
+  ],
+  "reviewed_donor": {
+    "build": "16693588",
+    "device": "mica",
+    "security_patch": "2026-10-01",
+    "version": "CL3B.260622.276.R5"
+  },
+  "schema": 1,
+  "sources": [
+    {
+      "branch": "lineage-24.0",
+      "changed": false,
+      "observed_sha": "3005381974b1dbe0fc5835d4393b83b134bfda46",
+      "repository": "LineageOS/android_device_oneplus_erhai",
+      "reviewed_sha": "3005381974b1dbe0fc5835d4393b83b134bfda46"
+    },
+    {
+      "branch": "lineage-24.0",
+      "changed": true,
+      "observed_sha": "b4ef1f63ed30e61aa1d65aad9f71c10537923a62",
+      "repository": "LineageOS/android_device_oneplus_sm8750-common",
+      "reviewed_sha": "96d2864971ddf3bf9c6114007d743d9254482028"
+    },
+    {
+      "branch": "lineage-24.0",
+      "changed": true,
+      "observed_sha": "01ee97578159bc9cb2a60f559d20510ce33add6a",
+      "repository": "LineageOS/android_kernel_oneplus_sm8750",
+      "reviewed_sha": "6350e8af3f4c452d087fbd6fe1aabe03cbc0af75"
+    },
+    {
+      "branch": "17.0",
+      "changed": true,
+      "observed_sha": "bc33ac2c46c147377f89b520ced3fa30be0615bb",
+      "repository": "crdroidandroid/android_frameworks_base",
+      "reviewed_sha": "1c3f7bb086682d3eaae68430e4c15e814f3cf8f8"
+    }
+  ],
+  "status": "review_required"
+}
